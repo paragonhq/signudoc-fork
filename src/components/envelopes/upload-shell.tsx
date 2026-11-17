@@ -37,6 +37,10 @@ import {
   renderPdfThumbnail,
   uploadEnvelopeThumbnail,
 } from "@/lib/pdf-thumbnail";
+import {
+  describePdfPreviewFailure,
+  PREVIEW_UNAVAILABLE_MESSAGE,
+} from "@/lib/pdf-preview-error";
 import { assertPdfPreviewRenderable } from "@/lib/pdfjs-client";
 import { type CreateEnvelopeResponse } from "@/lib/schemas/envelope";
 
@@ -56,8 +60,7 @@ type UploadErrorCode = "invalid-type" | "preview-unavailable" | "too-large";
 const errorMessageMap: Record<UploadErrorCode, string> = {
   "invalid-type":
     "That kind of file can't be used. Add a PDF or a Word document (.docx), or write the document here.",
-  "preview-unavailable":
-    "We couldn't render this PDF in the editor. Please export it as a standard PDF and try again.",
+  "preview-unavailable": PREVIEW_UNAVAILABLE_MESSAGE,
   "too-large":
     "That file is over the 20 MB limit. Compress it or split it into smaller PDFs, then try again.",
 };
@@ -276,7 +279,9 @@ export function UploadShell({ directUploadPrefix = null }: UploadShellProps) {
       });
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : errorMessageMap["invalid-type"],
+        error instanceof Error
+          ? error.message
+          : errorMessageMap["invalid-type"],
       );
       setRefusals((count) => count + 1);
     } finally {
@@ -401,7 +406,7 @@ export function UploadShell({ directUploadPrefix = null }: UploadShellProps) {
           "Failed to validate the PDF preview before draft creation.",
           error,
         );
-        setErrorMessage(errorMessageMap["preview-unavailable"]);
+        setErrorMessage(describePdfPreviewFailure(error));
         setRefusals((count) => count + 1);
         setIsCreatingDraft(false);
         setPhase("idle");
@@ -515,7 +520,7 @@ export function UploadShell({ directUploadPrefix = null }: UploadShellProps) {
     >
       <input
         accept={`.pdf,application/pdf,${COMPOSER_IMPORT_ACCEPT}`}
-        aria-label="Upload a document"
+        aria-label="Upload PDF or Word document"
         className="sr-only"
         onChange={handleInputChange}
         ref={fileInputRef}

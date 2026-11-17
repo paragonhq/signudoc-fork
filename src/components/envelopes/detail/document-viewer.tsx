@@ -49,6 +49,7 @@ const FIELD_LABELS: Record<EnvelopeDetailFieldView["type"], string | null> = {
   date: "Date",
   dropdown: "Choice",
   initials: "Initials",
+  name: "Name",
   number: "Number",
   radio: null,
   signature: "Signature",

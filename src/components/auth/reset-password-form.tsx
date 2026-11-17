@@ -15,6 +15,10 @@ import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth/client";
+import {
+  describePasswordRefusal,
+  newPasswordLengthError,
+} from "@/lib/password-messages";
 
 function normalize(error: { message?: string } | null | undefined) {
   return error?.message?.trim().toLowerCase() ?? "";
@@ -42,8 +46,10 @@ export function ResetPasswordForm({ resetToken }: { resetToken: string }) {
       formData.get("reset-password") ?? password,
     ).trim();
 
-    if (trimmedPassword.length < 15) {
-      setError("Password must be at least 15 characters");
+    const lengthError = newPasswordLengthError(trimmedPassword);
+
+    if (lengthError) {
+      setError(lengthError);
       return;
     }
 
@@ -62,11 +68,8 @@ export function ResetPasswordForm({ resetToken }: { resetToken: string }) {
       setError(
         message.includes("invalid token")
           ? "This reset link is invalid or has expired."
-          : message.includes("password too short")
-            ? "Password must be at least 15 characters"
-            : message.includes("compromised")
-              ? "Choose a password that hasn't appeared in a breach"
-              : "Something went wrong. Please try again.",
+          : (describePasswordRefusal(result.error) ??
+              "Something went wrong. Please try again."),
       );
       setIsSubmitting(false);
       return;
@@ -108,7 +111,7 @@ export function ResetPasswordForm({ resetToken }: { resetToken: string }) {
               <FormField
                 disabled={isSubmitting}
                 error={error ?? undefined}
-                hint="Must be at least 15 characters"
+                hint="15 to 128 characters"
                 label="New password"
               >
                 <Input

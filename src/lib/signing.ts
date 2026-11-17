@@ -995,6 +995,7 @@ function isFieldSubmissionComplete(
     case "signature":
     case "initials":
     case "date":
+    case "name":
       return typeof update.submittedAt === "number";
     case "text":
     case "number":
@@ -2302,6 +2303,19 @@ function buildSignerSubmission(
         inputMethod: "auto",
         submittedAt,
         value: localDateValue,
+      });
+      continue;
+    }
+
+    // The name the sender gave this signer, as it stands when they sign.
+    if (field.type === "name") {
+      fieldUpdates.set(field.id, {
+        checked: null,
+        fieldId: field.id,
+        imageKey: null,
+        inputMethod: "auto",
+        submittedAt,
+        value: context.signer.name,
       });
       continue;
     }

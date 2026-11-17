@@ -36,7 +36,7 @@ export type PrepareShellSigner = {
 export type FieldTool = {
   defaultHeight: number;
   defaultWidth: number;
-  /** The digit that arms it (1–8). */
+  /** The digit that arms it (1–9). */
   key: string;
   label: string;
   minHeight: number;
@@ -81,9 +81,20 @@ export const fieldTools: readonly FieldTool[] = [
     type: "date",
   },
   {
+    // Filled in with the name the sender gave the signer, when they sign.
+    defaultHeight: 0.045,
+    defaultWidth: 0.2,
+    key: "4",
+    label: "Name",
+    minHeight: 0.0045,
+    minWidth: 0.006,
+    placeholderLabel: "Name",
+    type: "name",
+  },
+  {
     defaultHeight: 0.055,
     defaultWidth: 0.18,
-    key: "4",
+    key: "5",
     label: "Text",
     minHeight: 0.0045,
     minWidth: 0.006,
@@ -93,7 +104,7 @@ export const fieldTools: readonly FieldTool[] = [
   {
     defaultHeight: 0.023,
     defaultWidth: 0.03,
-    key: "5",
+    key: "6",
     label: "Checkbox",
     minHeight: 0.0045,
     minWidth: 0.006,
@@ -103,7 +114,7 @@ export const fieldTools: readonly FieldTool[] = [
   {
     defaultHeight: 0.045,
     defaultWidth: 0.16,
-    key: "6",
+    key: "7",
     label: "Number",
     minHeight: 0.0045,
     minWidth: 0.006,
@@ -113,7 +124,7 @@ export const fieldTools: readonly FieldTool[] = [
   {
     defaultHeight: 0.045,
     defaultWidth: 0.22,
-    key: "7",
+    key: "8",
     label: "Dropdown",
     minHeight: 0.0045,
     minWidth: 0.006,
@@ -123,7 +134,7 @@ export const fieldTools: readonly FieldTool[] = [
   {
     defaultHeight: 0.023,
     defaultWidth: 0.03,
-    key: "8",
+    key: "9",
     label: "Radio button",
     minHeight: 0.0045,
     minWidth: 0.006,
@@ -139,7 +150,7 @@ export function getFieldTool(type: PrepareFieldType) {
   return fieldTools.find((tool) => tool.type === type) ?? fieldTools[0];
 }
 
-/** Fields the sender may leave optional. Signature, initials, date never. */
+/** Fields the sender may leave optional. Signature, initials, date and name never. */
 export function canBeOptional(type: PrepareFieldType) {
   return (
     type === "text" ||

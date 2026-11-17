@@ -85,6 +85,8 @@ import {
 } from "./services/audit.ts";
 import {
   createEmailService,
+  EMAIL_NOT_CONNECTED_MESSAGE,
+  isEmailNotConnectedError,
   resolveEmailAddresses,
   type EmailService,
 } from "./services/email.ts";
@@ -323,6 +325,7 @@ type ReviewFieldSummary =
   | "Date"
   | "Dropdown"
   | "Initials"
+  | "Name"
   | "Number"
   | "Radio group"
   | "Signature"
@@ -469,6 +472,23 @@ export class EnvelopeMutationError extends Error {
   }
 }
 
+/**
+ * The email service for a send. With no provider connected, sending is
+ * refused with a message that says so, before anything changes, instead of
+ * failing as an unexpected server error (issue #53).
+ */
+function createEmailServiceForSending(): EmailService {
+  try {
+    return createEmailService();
+  } catch (error) {
+    if (isEmailNotConnectedError(error)) {
+      throw new EnvelopeMutationError(EMAIL_NOT_CONNECTED_MESSAGE, 503);
+    }
+
+    throw error;
+  }
+}
+
 export class EnvelopeDocumentAccessError extends Error {
   readonly statusCode: number;
 
@@ -499,6 +519,7 @@ const FIELD_TYPE_SUMMARY_LABELS: Record<
   date: "Date",
   dropdown: "Dropdown",
   initials: "Initials",
+  name: "Name",
   number: "Number",
   radio: "Radio group",
   signature: "Signature",
@@ -506,14 +527,15 @@ const FIELD_TYPE_SUMMARY_LABELS: Record<
 };
 
 const FIELD_TYPE_SORT_ORDER: Record<FieldRecord["type"], number> = {
-  checkbox: 6,
+  checkbox: 7,
   date: 2,
-  dropdown: 5,
+  dropdown: 6,
   initials: 1,
-  number: 4,
-  radio: 7,
+  name: 3,
+  number: 5,
+  radio: 8,
   signature: 0,
-  text: 3,
+  text: 4,
 };
 
 const TIMELINE_TONE_MAP: Record<
@@ -2462,7 +2484,7 @@ export async function sendDraftEnvelope(
     );
   }
 
-  const emailService = createEmailService();
+  const emailService = createEmailServiceForSending();
   const storageService = createStorageService();
   const sourcePdfHead = await storageService.headObject(envelope.sourcePdfKey);
 

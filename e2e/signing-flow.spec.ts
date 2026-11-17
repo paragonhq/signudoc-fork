@@ -1216,6 +1216,132 @@ test("a signer signs with a qualified signature in their own name, through the s
   });
 });
 
+test("a signer who declines is told the decline was recorded, not that the link expired", async ({
+  browser,
+  page,
+}, testInfo) => {
+  const runId = String(Date.now());
+  const signerEmail = `decliner+${runId}@example.com`;
+  const database = new pg.Client({ connectionString: e2eDatabaseUrl });
+  let adminEmail = "";
+
+  await database.connect();
+
+  try {
+    const admin = await database.query<{ email: string }>(
+      `select email from public."user" where role = 'admin' limit 1`,
+    );
+
+    adminEmail = admin.rows[0]?.email ?? "";
+  } finally {
+    await database.end();
+  }
+
+  expect(adminEmail).not.toBe("");
+
+  let envelopeId = "";
+
+  await test.step("the sender sends a document to one signer", async () => {
+    const pdfPath = await writeSamplePdf(testInfo.outputPath("terms.pdf"));
+
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(adminEmail);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+
+    await page.goto("/envelopes/new");
+    await page.getByLabel("Envelope title").fill("Terms to decline");
+    await page.getByLabel("Upload PDF").setInputFiles(pdfPath);
+    await page.getByRole("button", { name: "Next ->" }).click();
+    await expect(page).toHaveURL(/\/envelopes\/[^/]+\/signers$/);
+    envelopeId = /\/envelopes\/([^/]+)\/signers$/.exec(page.url())?.[1] ?? "";
+
+    await page.getByLabel("Signer 1 name").fill("Dana Decliner");
+    await page.getByLabel("Signer 1 email").fill(signerEmail);
+    await page.getByRole("button", { name: "Next →" }).click();
+    await expect(page).toHaveURL(/\/prepare$/);
+
+    await page.getByRole("button", { exact: true, name: "Signature" }).click();
+
+    const placementTarget = page.getByLabel("Place Signature on page 1");
+    const box = await placementTarget.boundingBox();
+
+    await placementTarget.click({
+      position: { x: box!.width * 0.3, y: box!.height * 0.6 },
+    });
+    await expect(page.getByRole("status")).toHaveText("Saved");
+    await page.getByRole("button", { name: "Next →" }).click();
+    await expect(page).toHaveURL(/\/review$/);
+    await page.getByRole("button", { name: "Send envelope" }).click();
+
+    const confirmation = page.getByRole("dialog", {
+      name: "Send this envelope?",
+    });
+
+    await confirmation.getByRole("checkbox").check();
+    await confirmation.getByRole("button", { name: "Send now" }).click();
+    await expect(page).toHaveURL(new RegExp(`/envelopes/${envelopeId}$`));
+  });
+
+  await test.step("the signer declines and sees that it was recorded", async () => {
+    const invitation = await waitForEmail({
+      template: "signing_invitation",
+      to: signerEmail,
+    });
+    const signerContext = await browser.newContext({
+      viewport: { height: 900, width: 1440 },
+    });
+    const signerPage = await signerContext.newPage();
+
+    await signerPage.goto(extractLink(invitation.text, "/sign/"));
+
+    const consent = signerPage.getByRole("dialog", { name: "Before you sign" });
+
+    await consent
+      .getByRole("checkbox", {
+        name: "I agree to use electronic records and signatures",
+      })
+      .check();
+    await consent.getByRole("button", { name: "Agree and continue" }).click();
+    await signerPage
+      .getByRole("button", { exact: true, name: "Decline" })
+      .click();
+
+    const decline = signerPage.getByRole("dialog", {
+      name: "Decline to sign?",
+    });
+
+    await decline
+      .getByLabel("Reason (optional)")
+      .fill("Terms in section 2 are not what we agreed.");
+    await decline.getByRole("button", { name: "Decline to sign" }).click();
+
+    const declined = signerPage.getByRole("heading", {
+      name: "You declined to sign",
+    });
+
+    await expect(declined).toBeVisible();
+    // Focus moves to the outcome, so a screen reader reads it out.
+    await expect(declined).toBeFocused();
+    await expect(signerPage.getByText("This link has expired")).toHaveCount(0);
+    await expect(
+      signerPage.getByText(/Request a new signing link/),
+    ).toHaveCount(0);
+    await signerContext.close();
+  });
+
+  await test.step("the sender sees the decline and its reason", async () => {
+    await waitForEmail({ template: "decline_notification", to: adminEmail });
+    await page.goto(`/envelopes/${envelopeId}`);
+    await expect(
+      page.getByText(
+        "Decline reason: Terms in section 2 are not what we agreed.",
+      ),
+    ).toBeVisible();
+  });
+});
+
 test("two-step sign-in: an administrator sets it up and requires it of everyone", async ({
   browser,
   page,

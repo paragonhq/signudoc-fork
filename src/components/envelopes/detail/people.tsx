@@ -401,7 +401,7 @@ function SignerRow({
 
         {node.declineReason ? (
           <span className="mt-1 text-[0.8125rem] leading-5 text-pretty text-(--fg)">
-            <span className="text-(--secondary)">Their reason: </span>
+            <span className="text-(--secondary)">Decline reason: </span>
             {node.declineReason}
           </span>
         ) : null}

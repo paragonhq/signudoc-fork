@@ -30,6 +30,7 @@ const FIELD_LABELS: Record<string, string> = {
   date: "Date",
   dropdown: "Dropdown",
   initials: "Initials",
+  name: "Name",
   number: "Number",
   signature: "Signature",
   text: "Text",

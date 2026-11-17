@@ -102,6 +102,8 @@ export function getFieldLabel(
       return "Initial here";
     case "date":
       return "Date";
+    case "name":
+      return "Name";
     case "text":
       return "Enter text";
     case "checkbox":
@@ -132,6 +134,8 @@ export function getCanvasFieldLabel(
       return "Initial";
     case "date":
       return "Date";
+    case "name":
+      return "Name";
     case "text":
       return "Text";
     case "checkbox":
@@ -156,6 +160,8 @@ export function getFieldKindLabel(field: Pick<SigningCurrentField, "type">) {
       return "Initials";
     case "date":
       return "Date";
+    case "name":
+      return "Name";
     case "text":
       return "Text";
     case "checkbox":
@@ -288,11 +294,19 @@ export function orderFields<T extends SigningCurrentField>(
  * The fields the progress list shows: everything the signer fills in
  * (dates fill themselves), with a group of radio buttons listed once.
  */
+/**
+ * Fields the signer never types: the date and their name are filled in
+ * when they finish, so they are not counted as left to do.
+ */
+export function isAutoFilledField(field: Pick<SigningCurrentField, "type">) {
+  return field.type === "date" || field.type === "name";
+}
+
 export function getChecklistFields(fields: readonly SigningCurrentField[]) {
   const seenGroups = new Set<string>();
 
   return orderFields(fields).filter((field) => {
-    if (field.type === "date") {
+    if (isAutoFilledField(field)) {
       return false;
     }
 

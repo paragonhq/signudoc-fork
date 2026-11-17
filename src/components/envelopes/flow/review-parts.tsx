@@ -13,6 +13,7 @@ export type ReviewFieldSummaryLabel =
   | "Date"
   | "Dropdown"
   | "Initials"
+  | "Name"
   | "Number"
   | "Radio group"
   | "Signature"

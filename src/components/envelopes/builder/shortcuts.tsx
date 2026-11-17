@@ -36,7 +36,7 @@ export function ShortcutsButton({ mod }: { mod: string }) {
           Keyboard shortcuts
         </h2>
         <dl className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5 text-[0.8125rem] text-(--secondary)">
-          <Shortcut keys={["1", "–", "8"]} label="Pick a field" />
+          <Shortcut keys={["1", "–", "9"]} label="Pick a field" />
           <Shortcut keys={["⇧", "Click"]} label="Select several" />
           <Shortcut keys={["←", "→", "↑", "↓"]} label="Nudge (⇧ for 10)" />
           <Shortcut keys={[mod, "D"]} label="Duplicate" />

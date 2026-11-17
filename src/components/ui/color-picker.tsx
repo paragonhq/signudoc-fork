@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -9,7 +8,11 @@ import {
 } from "react";
 
 import { Check } from "@/components/ui/icons";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/cn";
 
 /*
@@ -136,23 +139,31 @@ export function ColorPicker({
     () => hexToHsv(value) ?? hexToHsv(fallback)!,
   );
   const [draft, setDraft] = useState(value || fallback);
-  const lastEmitted = useRef<string | null>(null);
+  const [lastEmitted, setLastEmitted] = useState<string | null>(null);
 
   // Follow outside changes (typed elsewhere, reset) without fighting the
   // hue when saturation is 0 — only resync when the hex really differs.
-  useEffect(() => {
-    if (value.toLowerCase() === lastEmitted.current) return;
-    const next = hexToHsv(value) ?? hexToHsv(fallback);
-    if (next) setHsv(next);
-    setDraft(value || fallback);
-  }, [value, fallback]);
+  // Adjusted during render (React's pattern for props that drive state),
+  // not in an effect, so there is no extra render with stale colours.
+  const [synced, setSynced] = useState({ fallback, value });
+
+  if (synced.value !== value || synced.fallback !== fallback) {
+    setSynced({ fallback, value });
+
+    if (value.toLowerCase() !== lastEmitted) {
+      const next = hexToHsv(value) ?? hexToHsv(fallback);
+
+      if (next) setHsv(next);
+      setDraft(value || fallback);
+    }
+  }
 
   const hex = hsvToHex(hsv);
 
   function commit(next: Hsv, keepDraft = false) {
     setHsv(next);
     const out = hsvToHex(next);
-    lastEmitted.current = out;
+    setLastEmitted(out);
     if (!keepDraft) setDraft(out);
     onChange(out);
   }
@@ -179,13 +190,20 @@ export function ColorPicker({
           <div
             {...field}
             aria-label="Saturation and brightness"
+            aria-valuemax={100}
+            aria-valuemin={0}
+            aria-valuenow={Math.round(hsv.s * 100)}
             aria-valuetext={`Saturation ${Math.round(hsv.s * 100)}%, brightness ${Math.round(hsv.v * 100)}%`}
             className="relative h-36 touch-none cursor-crosshair rounded-[0.625rem] outline-none focus-visible:shadow-(--focus-ring)"
             onKeyDown={(event) => {
               const d = arrowDelta(event, 0.01);
               if (!d) return;
               event.preventDefault();
-              commit({ ...hsv, s: clamp(hsv.s + d[0]), v: clamp(hsv.v + d[1]) });
+              commit({
+                ...hsv,
+                s: clamp(hsv.s + d[0]),
+                v: clamp(hsv.v + d[1]),
+              });
             }}
             role="slider"
             style={{
@@ -236,7 +254,11 @@ export function ColorPicker({
           </div>
 
           {/* Presets */}
-          <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Presets">
+          <div
+            className="grid grid-cols-6 gap-1.5"
+            role="group"
+            aria-label="Presets"
+          >
             {PRESETS.map((preset) => {
               const selected = preset === hex;
               return (
@@ -250,7 +272,11 @@ export function ColorPicker({
                   type="button"
                 >
                   {selected ? (
-                    <Check aria-hidden="true" className="size-3.5 text-white" strokeWidth={2.5} />
+                    <Check
+                      aria-hidden="true"
+                      className="size-3.5 text-white"
+                      strokeWidth={2.5}
+                    />
                   ) : null}
                 </button>
               );

@@ -53,6 +53,7 @@ import {
   type ProviderSignatureProblem,
   type ReusableSignatureEntries,
   type SignatureEntry,
+  isAutoFilledField,
 } from "./field-logic";
 import { FinishTray } from "./finish-tray";
 import { SealMoment } from "./seal-moment";
@@ -181,7 +182,7 @@ export function SigningLiveShell({
   // Dates fill themselves, so they are not counted as the signer's work.
   const requiredCount = countAnswerableFields(
     fields,
-    (field) => field.required && field.type !== "date",
+    (field) => field.required && !isAutoFilledField(field),
   );
   const remainingCount = countAnswerableFields(
     fields,
@@ -196,7 +197,8 @@ export function SigningLiveShell({
   // The field the flag points at: the one the signer is on, while it still
   // needs them, else the next required field after it that is not done.
   const pendingRequired = orderedFields.filter(
-    (field) => field.required && field.type !== "date" && !isComplete(field),
+    (field) =>
+      field.required && !isAutoFilledField(field) && !isComplete(field),
   );
   const cursorIndex = cursorId
     ? orderedFields.findIndex((field) => field.id === cursorId)
@@ -734,6 +736,7 @@ export function SigningLiveShell({
               isTarget={isConsented && target?.id === field.id}
               key={field.id}
               localDateLabel={localDateLabel}
+              signerName={record.signer.name}
               onCheckboxChange={(checked) => {
                 setSubmitError(null);
                 setCheckboxValues((current) => {
@@ -952,7 +955,7 @@ export function SigningLiveShell({
         error={consentError}
         fieldCount={countAnswerableFields(
           fields,
-          (field) => field.type !== "date",
+          (field) => !isAutoFilledField(field),
         )}
         isSaving={isSavingConsent}
         onAgree={handleConsent}
@@ -1006,8 +1009,11 @@ export function SigningLiveShell({
         record={record}
       />
 
+      {/* A click, not a hold: the tray itself is the confirmation, and the
+          signer may be on a phone with one hand (upstream e2e clicks it). */}
       <ConfirmTray
         confirmLabel="Decline to sign"
+        hold={false}
         description={`${record.senderName} will be told that you declined. This cannot be undone.`}
         error={declineError}
         onConfirm={handleDecline}

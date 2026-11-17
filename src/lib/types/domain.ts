@@ -38,6 +38,7 @@ export const fieldTypes = [
   "signature",
   "initials",
   "date",
+  "name",
   "text",
   "checkbox",
   "number",

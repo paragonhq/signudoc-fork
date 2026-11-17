@@ -7,6 +7,7 @@ import {
   SquareCheckIcon,
   SquareChevronDownIcon,
   TypeIcon,
+  UserRoundIcon,
   type IconComponent,
   type IconProps,
 } from "@/components/ui/icons";
@@ -30,6 +31,7 @@ export const fieldToolIcons: Record<PrepareFieldType, FieldGlyph> = {
   date: CalendarDaysIcon,
   dropdown: SquareChevronDownIcon,
   initials: CaseSensitiveIcon,
+  name: UserRoundIcon,
   number: HashIcon,
   radio: CircleDotIcon,
   signature: SignatureIcon,

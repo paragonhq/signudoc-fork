@@ -242,7 +242,7 @@ export function BrandingPanel({
           >
             <div className="flex flex-wrap items-center gap-2">
               <ColorPicker
-                aria-label="Choose a brand color"
+                aria-label="Open color picker"
                 disabled={disabled}
                 displayColor={palette.accent}
                 fallback={DEFAULT_BRAND_COLOR}

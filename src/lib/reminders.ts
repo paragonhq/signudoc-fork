@@ -22,7 +22,12 @@ import {
   recordAuditEvent,
   recordEmailSent,
 } from "./services/audit.ts";
-import { createEmailService, type EmailService } from "./services/email.ts";
+import {
+  createEmailService,
+  EMAIL_NOT_CONNECTED_MESSAGE,
+  isEmailNotConnectedError,
+  type EmailService,
+} from "./services/email.ts";
 import {
   buildDeadlineLine,
   buildSigningRequestHtml,
@@ -626,6 +631,20 @@ export async function sendManualEnvelopeNudge(
     nowUnixTimestamp = Math.floor(Date.now() / 1000),
   }: SendReminderOptions = {},
 ) {
+  // Before the reminder is saved: saving retires the signer's current link,
+  // so with no email to carry the new one the signer would be left with none.
+  let service: EmailService;
+
+  try {
+    service = emailService ?? createEmailService();
+  } catch (error) {
+    if (isEmailNotConnectedError(error)) {
+      throw new ReminderMutationError(EMAIL_NOT_CONNECTED_MESSAGE, 503);
+    }
+
+    throw error;
+  }
+
   const persisted = await persistReminder(
     envelopeId,
     { ...input, kind: "manual", userId },
@@ -633,12 +652,7 @@ export async function sendManualEnvelopeNudge(
     database,
   );
 
-  await deliverReminder(
-    persisted,
-    "manual",
-    database,
-    emailService ?? createEmailService(),
-  );
+  await deliverReminder(persisted, "manual", database, service);
 
   return manualNudgeResponseSchema.parse({
     envelopeId: persisted.envelopeId,

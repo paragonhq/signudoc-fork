@@ -82,6 +82,8 @@ type CurrentSignerFieldProps = {
   /** A signature is ready to drop in with one tap. */
   hasReusableSignature: boolean;
   localDateLabel: string;
+  /** What a name field shows: the name the sender gave this signer. */
+  signerName?: string;
   onCheckboxChange: (checked: boolean) => void;
   onFocusField: () => void;
   /**
@@ -105,6 +107,7 @@ export function CurrentSignerField({
   isInvalid,
   isTarget,
   localDateLabel,
+  signerName = "",
   onCheckboxChange,
   onFocusField,
   onOpenFill,
@@ -205,7 +208,9 @@ export function CurrentSignerField({
     );
   }
 
-  if (field.type === "date") {
+  if (field.type === "date" || field.type === "name") {
+    const autoValue = field.type === "name" ? signerName : localDateLabel;
+
     return (
       <div
         className={cn(
@@ -220,7 +225,7 @@ export function CurrentSignerField({
       >
         {showValue ? (
           <span className="truncate px-[6%] text-[clamp(8px,52cqh,13px)] font-medium">
-            {localDateLabel}
+            {autoValue}
           </span>
         ) : null}
       </div>

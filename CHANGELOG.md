@@ -8,6 +8,49 @@ release says when it does.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-17
+
+A name field, and fixes for nine reported bugs. This release changes the
+database: see the end of this entry.
+
+### Envelopes
+
+- A name field. Place it where the signer's printed name belongs, and it is
+  filled in with the name the sender gave that signer when they sign, the
+  way a date field is filled in with the day. It is always required, and the
+  signer does not type it. Contributed by @sumnerboy12 (#49, PR #50).
+
+### Fixes
+
+- The certificate's "sent" and reminder rows name the sender, not the first
+  signer next to the sender's email address (#52).
+- Sending or reminding when email is not set up says so, instead of failing
+  with a generic server error. A manual reminder no longer retires the
+  signer's link before finding there is no email to send it with (#53).
+- A password-locked PDF is named as locked on upload, instead of being
+  reported as a file that could not be rendered (#54).
+- After a signer declines, the page says the decline was recorded, instead
+  of "This link has expired" (#55).
+- Setup refuses a password over 128 characters instead of silently cutting
+  it short, which made the next sign-in fail (#56).
+- Sign-in and sign-up say a password is too long, instead of "too short" or
+  "something went wrong" (#57).
+- Typed signatures in the script font keep every letter when the text is
+  copied or searched, and no longer show gaps inside names where the font
+  joins letters (#58, #59).
+
+### Documentation
+
+- The agent deploy guide checks Vercel's rule that the free Hobby plan is
+  for non-commercial use before choosing free plans for a company (#47).
+
+Thanks to @coygeek for the detailed bug reports, and to @sumnerboy12 for the
+name field.
+
+This release changes the database (`20261118090000_name_field.sql`). On
+Vercel the production build applies it. On other hosts, run
+`npm run db:migrate` as on every deploy.
+
 ## [0.3.0] - 2026-11-16
 
 Sign-in security and audit features for organizations that need them, and
@@ -204,6 +247,7 @@ checked against the real services:
 
 SignuDoc is software, not legal advice. See the README's legal disclaimer.
 
+[0.4.0]: https://github.com/NYLLON-SOFTWARE/SignuDoc/releases/tag/v0.4.0
 [0.3.0]: https://github.com/NYLLON-SOFTWARE/SignuDoc/releases/tag/v0.3.0
 [0.2.1]: https://github.com/NYLLON-SOFTWARE/SignuDoc/releases/tag/v0.2.1
 [0.2.0]: https://github.com/NYLLON-SOFTWARE/SignuDoc/releases/tag/v0.2.0

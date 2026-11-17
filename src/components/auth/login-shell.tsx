@@ -25,6 +25,10 @@ import { FormField } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth/client";
 import { loginSchema } from "@/lib/schemas/auth";
+import {
+  describePasswordRefusal,
+  PASSWORD_TOO_LONG_MESSAGE,
+} from "@/lib/password-messages";
 
 const verificationRequiredMessage =
   "Verify your email before logging in. Check your inbox for a fresh link.";
@@ -191,6 +195,12 @@ function LiveLoginShell({
       } else if (normalizedErrorMessage.includes("email not verified")) {
         setBanner(danger(verificationRequiredMessage));
         setShowResendVerification(true);
+      } else if (
+        describePasswordRefusal(result.error) === PASSWORD_TOO_LONG_MESSAGE
+      ) {
+        // No account has a password this long, so it cannot be right. Say
+        // why instead of "Something went wrong" (issue #57).
+        setErrors({ password: PASSWORD_TOO_LONG_MESSAGE });
       } else {
         setBanner(
           danger(

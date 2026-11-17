@@ -445,7 +445,8 @@ export function SetupForm({
                   >
                     <Input
                       autoComplete="new-password"
-                      maxLength={128}
+                      // No maxLength: the browser would cut a longer password
+                      // short without a word. Setup refuses one over 128.
                       minLength={15}
                       name="setup-password"
                       onChange={handleChange("password")}

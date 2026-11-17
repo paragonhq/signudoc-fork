@@ -151,6 +151,33 @@ function redactAuditEventForRecipients(
   });
 }
 
+/**
+ * Who did what an audit row records. An event's `signerName` and
+ * `signerEmail` metadata name the signer it concerns, which is the actor
+ * only on the signer's own events: a send or a reminder names the signer it
+ * went to while the sender (or the system) did it, so the signer's name must
+ * never be put in front of the sender's address (issue #52).
+ */
+export function describeAuditActor(event: AuditEventRecord): string {
+  if (event.actorType !== "signer") {
+    return event.actorEmail ?? event.actorType;
+  }
+
+  const actor =
+    event.actorEmail ??
+    (typeof event.metadata?.signerEmail === "string"
+      ? event.metadata.signerEmail
+      : event.actorType);
+  const signerName =
+    typeof event.metadata?.signerName === "string"
+      ? event.metadata.signerName
+      : null;
+
+  return signerName && actor !== signerName
+    ? `${signerName} <${actor}>`
+    : actor;
+}
+
 type WrappedLine = {
   font: TextFace;
   size: number;
@@ -459,6 +486,7 @@ export async function stampFieldValue(
       return;
     }
     case "date":
+    case "name":
     case "text":
     case "number":
     case "dropdown": {
@@ -766,18 +794,7 @@ function buildAuditLines(input: {
   });
 
   for (const event of auditEvents) {
-    const actor =
-      event.actorEmail ??
-      (typeof event.metadata?.signerEmail === "string"
-        ? event.metadata.signerEmail
-        : event.actorType);
-    const signerName =
-      typeof event.metadata?.signerName === "string"
-        ? event.metadata.signerName
-        : null;
-    const actorLabel =
-      signerName && actor !== signerName ? `${signerName} <${actor}>` : actor;
-
+    const actorLabel = describeAuditActor(event);
     const eventLabel =
       event.event === "signer_corrected" ? "Signer corrected" : event.event;
 

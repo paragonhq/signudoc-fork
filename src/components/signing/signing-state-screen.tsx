@@ -6,7 +6,7 @@ import {
   RotateCcwIcon,
 } from "@/components/ui/icons";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { useBranding } from "@/components/layout/branding-provider";
 import { Button } from "@/components/ui/button";
@@ -83,12 +83,27 @@ function getCopy(
  * and at most one thing to do.
  */
 export function SigningStateScreen({
+  focusHeading,
   senderName,
   state,
 }: {
+  /**
+   * Move focus to the heading when this screen replaces the document in
+   * place (after a decline), so a screen reader reads the outcome out.
+   */
+  focusHeading?: boolean;
   senderName?: string;
   state: SigningStateScreenState;
 }) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const shouldFocus = focusHeading ?? state === "declined-by-you";
+
+  useEffect(() => {
+    if (shouldFocus) {
+      headingRef.current?.focus();
+    }
+  }, [shouldFocus]);
+
   const { organizationName, productName, supportAddress } = useBranding();
   const copy = getCopy(state, senderName);
   const contactName = organizationName ?? productName;
@@ -138,8 +153,10 @@ export function SigningStateScreen({
           />
         </div>
         <h1
-          className="mt-6 text-xl leading-7 font-semibold tracking-[-0.02em] text-balance text-(--fg)"
+          className="mt-6 text-xl leading-7 font-semibold tracking-[-0.02em] text-balance text-(--fg) outline-none"
           id="signing-state-title"
+          ref={headingRef}
+          tabIndex={-1}
         >
           {copy.title}
         </h1>
