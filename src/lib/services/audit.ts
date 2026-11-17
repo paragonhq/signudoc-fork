@@ -125,6 +125,9 @@ export async function listAuditEventsForEnvelope(
         created_at AS "createdAt"
       FROM audit_events
       WHERE envelope_id = $1
+      -- created_at is in whole seconds and id is random, so the chain's
+      -- sequence decides the order of events from the same second. Rows
+      -- from before the chain have none and come first.
       ORDER BY sequence ASC NULLS FIRST, created_at ASC, id ASC
     `,
     [envelopeId],

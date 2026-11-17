@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 
 import { type Branding } from "./branding.ts";
+import { removeUnclaimedEnvelopeCertificates } from "./certificate-cleanup.ts";
 import {
   type DbExecutor,
   type DbPool,
@@ -3171,11 +3172,54 @@ export async function declineSigningForToken(
     declinedAuditEvent,
   ];
   const storedCertificateKeys: string[] = [];
-  let certificate: { key: string; sha256: string };
-  let recipientCertificateSha256: string;
+  // The seal's key and the install's name, read before the transaction:
+  // sealing inside it then needs no second connection from the pool.
+  const seal = await loadInstallSealer();
 
-  try {
-    certificate = await storeEnvelopeCertificatePdf(
+  await withTransaction(async (tx) => {
+    await lockSentEnvelope(context.envelope.id, tx);
+    await assertStillSignersTurn(context.envelope.id, currentSignerId, tx);
+    await lockSignerForPresentedToken(tx, {
+      envelopeId: context.envelope.id,
+      signerId: currentSignerId,
+      tokenHash: presentedTokenHash,
+    });
+
+    // The certificates below are made from the recipients read when the link
+    // was opened. If the sender corrected one of them since, they would name
+    // the old person and leave the correction out, so nothing is stored. A
+    // correction cannot commit while this lock is held, so comparing here
+    // covers the whole window.
+    const recipientsNow = await tx.query<{
+      email: string;
+      id: string;
+      name: string;
+    }>(
+      `
+        SELECT id, name, email FROM signers
+        WHERE envelope_id = $1 AND id = ANY($2::text[])
+      `,
+      [context.envelope.id, context.signers.map((signer) => signer.id)],
+    );
+    const recipientsChanged =
+      recipientsNow.rows.length !== context.signers.length ||
+      recipientsNow.rows.some((row) => {
+        const seen = context.signers.find((signer) => signer.id === row.id);
+
+        return !seen || seen.name !== row.name || seen.email !== row.email;
+      });
+
+    if (recipientsChanged) {
+      throw new SigningMutationError(
+        "This envelope changed while you were declining. Open your signing link again.",
+        409,
+      );
+    }
+
+    // Made while the envelope is locked: the certificates have fixed keys,
+    // and a void, the last signature or a second decline at the same time
+    // waits, then stops above without touching the files this one saved.
+    const certificate = await storeEnvelopeCertificatePdf(
       {
         auditEvents,
         certificate: canonicalCertificate,
@@ -3183,6 +3227,7 @@ export async function declineSigningForToken(
         signers: declinedSigners,
       },
       {
+        seal,
         storageService,
       },
     );
@@ -3202,145 +3247,105 @@ export async function declineSigningForToken(
         signers: declinedSigners,
       },
       {
+        seal,
         storageService,
       },
     );
     storedCertificateKeys.push(recipientCertificate.key);
-    recipientCertificateSha256 = recipientCertificate.sha256;
-  } catch (error) {
-    await Promise.all(
-      storedCertificateKeys.map((key) =>
-        storageService.deleteObject(key).catch(() => undefined),
-      ),
+
+    const declinedSignerResult = await tx.query(
+      `
+        UPDATE signers
+        SET
+          status = 'declined',
+          signing_token_hash = NULL,
+          signing_token_expires_at = NULL,
+          declined_at = $1,
+          decline_reason = $2,
+          updated_at = $3
+        WHERE id = $4
+          AND envelope_id = $5
+          AND status = 'notified'
+          AND signing_token_hash = $6
+      `,
+      [
+        declinedAt,
+        declineReason ?? null,
+        declinedAt,
+        currentSignerId,
+        context.envelope.id,
+        presentedTokenHash,
+      ],
     );
-    throw error;
-  }
 
-  try {
-    await withTransaction(async (tx) => {
-      await lockSentEnvelope(context.envelope.id, tx);
-      await lockSignerForPresentedToken(tx, {
-        envelopeId: context.envelope.id,
-        signerId: currentSignerId,
-        tokenHash: presentedTokenHash,
-      });
-
-      // The certificates above were made before the envelope lock, from the
-      // recipients read when the link was opened. If the sender corrected one
-      // of them since, they name the old person and leave the correction
-      // out, so they must not be kept. A correction cannot commit while this
-      // lock is held, so comparing here covers the whole window.
-      const recipientsNow = await tx.query<{
-        email: string;
-        id: string;
-        name: string;
-      }>(
-        `
-          SELECT id, name, email FROM signers
-          WHERE envelope_id = $1 AND id = ANY($2::text[])
-        `,
-        [context.envelope.id, context.signers.map((signer) => signer.id)],
+    if (declinedSignerResult.rowCount !== 1) {
+      throw new SigningMutationError(
+        "This signing link is no longer active.",
+        409,
       );
-      const recipientsChanged =
-        recipientsNow.rows.length !== context.signers.length ||
-        recipientsNow.rows.some((row) => {
-          const seen = context.signers.find((signer) => signer.id === row.id);
+    }
 
-          return !seen || seen.name !== row.name || seen.email !== row.email;
-        });
+    const declinedEnvelopeResult = await tx.query(
+      `
+        UPDATE envelopes
+        SET
+          status = 'declined',
+          evidence_key = $1,
+          declined_at = $2,
+          updated_at = $3,
+          evidence_sha256 = $5,
+          recipient_evidence_sha256 = $6
+        WHERE id = $4
+          AND status = 'sent'
+      `,
+      [
+        certificate.key,
+        declinedAt,
+        declinedAt,
+        context.envelope.id,
+        certificate.sha256,
+        recipientCertificate.sha256,
+      ],
+    );
 
-      if (recipientsChanged) {
-        throw new SigningMutationError(
-          "This envelope changed while you were declining. Open your signing link again.",
-          409,
-        );
-      }
-
-      const declinedSignerResult = await tx.query(
-        `
-          UPDATE signers
-          SET
-            status = 'declined',
-            signing_token_hash = NULL,
-            signing_token_expires_at = NULL,
-            declined_at = $1,
-            decline_reason = $2,
-            updated_at = $3
-          WHERE id = $4
-            AND envelope_id = $5
-            AND status = 'notified'
-            AND signing_token_hash = $6
-        `,
-        [
-          declinedAt,
-          declineReason ?? null,
-          declinedAt,
-          currentSignerId,
-          context.envelope.id,
-          presentedTokenHash,
-        ],
+    if (declinedEnvelopeResult.rowCount !== 1) {
+      throw new SigningMutationError(
+        "This signing link is no longer active.",
+        409,
       );
+    }
 
-      if (declinedSignerResult.rowCount !== 1) {
-        throw new SigningMutationError(
-          "This signing link is no longer active.",
-          409,
-        );
-      }
-
-      const declinedEnvelopeResult = await tx.query(
-        `
-          UPDATE envelopes
-          SET
-            status = 'declined',
-            evidence_key = $1,
-            declined_at = $2,
-            updated_at = $3,
-            evidence_sha256 = $5,
-            recipient_evidence_sha256 = $6
-          WHERE id = $4
-            AND status = 'sent'
-        `,
-        [
-          certificate.key,
-          declinedAt,
-          declinedAt,
-          context.envelope.id,
-          certificate.sha256,
-          recipientCertificateSha256,
-        ],
-      );
-
-      if (declinedEnvelopeResult.rowCount !== 1) {
-        throw new SigningMutationError(
-          "This signing link is no longer active.",
-          409,
-        );
-      }
-
-      await recordAuditEvent(
+    await recordAuditEvent(
+      {
+        actorEmail: declinedAuditEvent.actorEmail,
+        actorType: declinedAuditEvent.actorType,
+        id: declinedAuditEvent.id,
+        createdAt: declinedAuditEvent.createdAt,
+        envelopeId: declinedAuditEvent.envelopeId,
+        event: declinedAuditEvent.event,
+        ipAddress: declinedAuditEvent.ipAddress,
+        metadata: declinedAuditEvent.metadata,
+        userAgent: declinedAuditEvent.userAgent,
+      },
+      tx,
+    );
+  }, database).catch(async (error: unknown) => {
+    // Only files this call stored, so only once the envelope was its to end.
+    // That includes a failed COMMIT: the cleanup keeps the files if the
+    // envelope did end after all.
+    if (storedCertificateKeys.length > 0) {
+      await removeUnclaimedEnvelopeCertificates(
         {
-          actorEmail: declinedAuditEvent.actorEmail,
-          actorType: declinedAuditEvent.actorType,
-          id: declinedAuditEvent.id,
-          createdAt: declinedAuditEvent.createdAt,
-          envelopeId: declinedAuditEvent.envelopeId,
-          event: declinedAuditEvent.event,
-          ipAddress: declinedAuditEvent.ipAddress,
-          metadata: declinedAuditEvent.metadata,
-          userAgent: declinedAuditEvent.userAgent,
+          envelopeId: context.envelope.id,
+          keys: storedCertificateKeys,
+          storageService,
         },
-        tx,
+        database,
       );
-    }, database);
-  } catch (error) {
-    await Promise.all(
-      storedCertificateKeys.map((key) =>
-        storageService.deleteObject(key).catch(() => undefined),
-      ),
-    );
+    }
+
     throw error;
-  }
+  });
 
   try {
     const delivery = await emailService.send(

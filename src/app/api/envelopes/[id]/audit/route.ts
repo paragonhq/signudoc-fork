@@ -4,6 +4,7 @@ import { AuditExportError, exportEnvelopeAuditCsv } from "@/lib/audit-export";
 import { requireVerifiedSenderSession } from "@/lib/auth/route-session";
 import { logRouteError } from "@/lib/security/logging";
 import { getClientIpAddress, getRequestPathname } from "@/lib/security/request";
+import { buildContentDisposition } from "@/lib/services/storage";
 
 type EnvelopeAuditRouteContext = {
   params: Promise<{
@@ -30,7 +31,9 @@ export async function GET(
     return new Response(file.body, {
       headers: {
         "cache-control": "private, no-store",
-        "content-disposition": `attachment; filename="${file.fileName}"`,
+        // The name comes from the envelope's title, which may hold
+        // characters a header cannot carry as they are.
+        "content-disposition": buildContentDisposition(file.fileName),
         "content-type": "text/csv; charset=utf-8",
         "x-content-type-options": "nosniff",
       },

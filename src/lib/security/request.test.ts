@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { getClientIpAddress, getClientIpHeaderNames } from "./request.ts";
+import { auditEventRecordSchema } from "../schemas/envelope.ts";
+import {
+  getClientIpAddress,
+  getClientIpHeaderNames,
+  getRequestUserAgent,
+} from "./request.ts";
 
 const onVercel = { VERCEL: "1" };
 const elsewhere = {};
@@ -56,4 +61,22 @@ test("an empty header is passed over, and no header at all gives no address", ()
     "203.0.113.5",
   );
   assert.equal(getClientIpAddress(new Headers(), onVercel), null);
+});
+
+test("a user agent header with no value counts as no user agent", () => {
+  assert.equal(getRequestUserAgent(new Headers()), null);
+  assert.equal(getRequestUserAgent(new Headers({ "user-agent": "" })), null);
+  assert.equal(getRequestUserAgent(new Headers({ "user-agent": "  " })), null);
+  assert.equal(
+    getRequestUserAgent(new Headers({ "user-agent": " curl/8.5.0 " })),
+    "curl/8.5.0",
+  );
+});
+
+test("the audit schema accepts what an empty user agent header gives", () => {
+  const userAgent = getRequestUserAgent(new Headers({ "user-agent": "" }));
+
+  assert.ok(
+    auditEventRecordSchema.shape.userAgent.safeParse(userAgent).success,
+  );
 });

@@ -4,6 +4,7 @@ import { exportSystemAuditCsv } from "@/lib/audit-export";
 import { requireAdminSession } from "@/lib/auth/admin";
 import { logRouteError } from "@/lib/security/logging";
 import { getClientIpAddress, getRequestPathname } from "@/lib/security/request";
+import { buildContentDisposition } from "@/lib/services/storage";
 import {
   listSystemAuditEvents,
   verifySystemAuditChain,
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
       return new Response(file.body, {
         headers: {
           ...noStore,
-          "content-disposition": `attachment; filename="${file.fileName}"`,
+          "content-disposition": buildContentDisposition(file.fileName),
           "content-type": "text/csv; charset=utf-8",
           "x-content-type-options": "nosniff",
         },

@@ -4,6 +4,7 @@ import { PDFDocument } from "pdf-lib";
 
 import type { EnvelopePageRecord } from "../schemas/envelope.ts";
 import { MAX_UPLOAD_SIZE_BYTES } from "../types/domain.ts";
+import { getDisplayedPageGeometry } from "./pdf-page-geometry.ts";
 
 const PDF_MAGIC_HEADER = "%PDF-";
 
@@ -150,11 +151,14 @@ async function parsePdfDocument(
     ignoreEncryption: false,
   });
 
-  const pages = document.getPages().map((page, index) => ({
-    heightPt: page.getHeight(),
-    pageNumber: index + 1,
-    widthPt: page.getWidth(),
-  }));
+  // The size of each page as a reader shows it: the CropBox, with width and
+  // height swapped on a page rotated a quarter turn. The field overlay is
+  // laid out to this size, so it has to match what the browser draws.
+  const pages = document.getPages().map((page, index) => {
+    const { heightPt, widthPt } = getDisplayedPageGeometry(page);
+
+    return { heightPt, pageNumber: index + 1, widthPt };
+  });
 
   return {
     pages,

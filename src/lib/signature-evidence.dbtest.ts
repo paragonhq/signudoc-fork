@@ -9,7 +9,11 @@ import type pg from "pg";
 
 import { openTestDatabase } from "./db/test-database.ts";
 import { runRetentionSweep } from "./retention.ts";
-import { recordAuditEvent, verifyAuditChain } from "./services/audit.ts";
+import {
+  listAuditEventsForEnvelope,
+  recordAuditEvent,
+  verifyAuditChain,
+} from "./services/audit.ts";
 import type { EmailService } from "./services/email.ts";
 import { createStorageService } from "./services/storage.ts";
 import { eraseSignerData, exportSignerData } from "./signer-data.ts";
@@ -96,6 +100,32 @@ async function envelopeOwner(envelopeId: string) {
 
   return result.rows[0]?.user_id ?? null;
 }
+
+test("events from the same second are listed in the order they were recorded", async () => {
+  const owner = await createUser();
+  const createdAt = 1_800_000_000;
+  const recorded = ["sent", "viewed", "signed", "completed"] as const;
+
+  // The ids are random, so with enough envelopes an order that leans on
+  // them is sure to come out wrong for some.
+  for (let index = 0; index < 12; index += 1) {
+    const envelopeId = await createEnvelope(owner, "sent", "a@example.test");
+
+    for (const event of recorded) {
+      await recordAuditEvent(
+        { actorType: "system", createdAt, envelopeId, event },
+        database,
+      );
+    }
+
+    const listed = await listAuditEventsForEnvelope(envelopeId, database);
+
+    assert.deepEqual(
+      listed.map((event) => event.event),
+      recorded,
+    );
+  }
+});
 
 test("the audit chain verifies, and shows an edited row", async () => {
   const owner = await createUser();

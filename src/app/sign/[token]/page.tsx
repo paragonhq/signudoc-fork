@@ -2,7 +2,10 @@ import { cookies, headers } from "next/headers";
 
 import { SigningShell } from "@/components/signing/signing-shell";
 import { getDb } from "@/lib/db/connection";
-import { getClientIpAddress } from "@/lib/security/request";
+import {
+  getClientIpAddress,
+  getRequestUserAgent,
+} from "@/lib/security/request";
 import type { SigningVerificationState } from "@/lib/schemas/signing";
 import { verifiedMethodsFromCookies } from "@/lib/signer-checks";
 import {
@@ -47,7 +50,7 @@ export default async function SignPage({
       database: getDb(),
       requestMeta: {
         ipAddress: getClientIpAddress(requestHeaders),
-        userAgent: requestHeaders.get("user-agent")?.trim() ?? null,
+        userAgent: getRequestUserAgent(requestHeaders),
       },
       verifiedMethods: verifiedMethodsFromCookies(
         token,

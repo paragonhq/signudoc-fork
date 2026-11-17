@@ -36,7 +36,9 @@ export function getClientIpAddress(
 }
 
 export function getRequestUserAgent(headers: Headers): string | null {
-  return headers.get("user-agent")?.trim() ?? null;
+  // A header sent with no value reads as "", which the audit schema
+  // rejects; it counts as no user agent at all.
+  return headers.get("user-agent")?.trim() || null;
 }
 
 export function getRequestPathname(request: Request): string {
