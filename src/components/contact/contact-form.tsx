@@ -2,12 +2,14 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import { FieldShell, ShellButton } from "@/components/shared/form-shell";
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
+import { MailCheck } from "@/components/ui/icons";
+
+import { AuthNotice, IconTile } from "@/components/auth/auth-parts";
+import { AutoHeight } from "@/components/public/auto-height";
+import { StepSwap } from "@/components/public/step-swap";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { contactFormSchema } from "@/lib/schemas/contact";
 
@@ -165,95 +167,120 @@ export function ContactForm() {
   }
 
   return (
-    <section className="well p-5 sm:p-7">
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
-        >
-          <label htmlFor="company">Company</label>
-          <input
-            autoComplete="off"
-            id="company"
-            name="company"
-            onChange={handleChange("company")}
-            tabIndex={-1}
-            value={values.company}
-          />
-        </div>
-
+    <AutoHeight innerClassName="relative">
+      <StepSwap stepKey={successMessage ? "sent" : "form"}>
         {successMessage ? (
-          <div className="notice notice-success">
-            {successMessage}
-          </div>
-        ) : null}
-
-        {submitError ? (
-          <div className="notice notice-danger">
-            {submitError}
-          </div>
-        ) : null}
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <FieldShell
-            autoComplete="name"
-            disabled={isSubmitting}
-            error={errors.name}
-            label="Name"
-            name="contact-name"
-            onChange={handleChange("name")}
-            placeholder="Your name"
-            readOnly={false}
-            value={values.name}
-          />
-          <FieldShell
-            autoComplete="email"
-            disabled={isSubmitting}
-            error={errors.email}
-            label="Email"
-            name="contact-email"
-            onChange={handleChange("email")}
-            placeholder="you@example.com"
-            readOnly={false}
-            type="email"
-            value={values.email}
-          />
-        </div>
-
-        <Field className="gap-2 text-sm">
-          <FieldLabel
-            className="text-[0.8125rem] font-semibold text-(--secondary)"
-            htmlFor="contact-message"
+          <div
+            aria-label="Message sent"
+            className="flex flex-col items-center gap-5 rounded-(--radius-card) bg-(--paper) px-6 pt-9 pb-7 text-center shadow-(--shadow-card) sm:px-10"
+            role="region"
           >
-            Message
-          </FieldLabel>
-          <Textarea
-            aria-describedby="contact-message-description"
-            aria-invalid={errors.message ? true : undefined}
-            className={errors.message ? "border-(--danger)" : ""}
-            disabled={isSubmitting}
-            id="contact-message"
-            name="contact-message"
-            onChange={handleChange("message")}
-            placeholder="Tell us what you need, and include any account email, sender name, document title, or link that helps us identify the request."
-            value={values.message}
-          />
-          {errors.message ? (
-            <FieldError
-              className="text-xs font-semibold text-(--danger)"
-              id="contact-message-description"
+            <IconTile size="lg" tone="success">
+              <MailCheck />
+            </IconTile>
+            <div className="flex flex-col gap-1.5" role="status">
+              <p className="text-xl leading-7 font-semibold tracking-[-0.025em] text-(--fg)">
+                Message sent
+              </p>
+              <p className="max-w-[44ch] text-[0.9375rem] leading-6 text-pretty text-(--secondary)">
+                {successMessage}
+              </p>
+            </div>
+            <Button onClick={() => setSuccessMessage(null)} variant="outline">
+              Send another message
+            </Button>
+          </div>
+        ) : (
+          <form
+            className="rounded-(--radius-card) bg-(--paper) shadow-(--shadow-card)"
+            noValidate
+            onSubmit={handleSubmit}
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
             >
-              {errors.message}
-            </FieldError>
-          ) : null}
-        </Field>
+              <label htmlFor="company">Company</label>
+              <input
+                autoComplete="off"
+                id="company"
+                name="company"
+                onChange={handleChange("company")}
+                tabIndex={-1}
+                value={values.company}
+              />
+            </div>
 
-        <div className="flex pt-1 sm:justify-end">
-          <ShellButton loading={isSubmitting} type="submit">
-            {isSubmitting ? "Sending..." : "Send message"}
-          </ShellButton>
-        </div>
-      </form>
-    </section>
+            <div className="flex flex-col gap-5 p-5 sm:p-7">
+              <AuthNotice>{submitError}</AuthNotice>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <FormField
+                  disabled={isSubmitting}
+                  error={errors.name}
+                  label="Name"
+                >
+                  <Input
+                    autoComplete="name"
+                    name="contact-name"
+                    onChange={handleChange("name")}
+                    placeholder="Your name"
+                    value={values.name}
+                  />
+                </FormField>
+                <FormField
+                  disabled={isSubmitting}
+                  error={errors.email}
+                  hint="We reply here."
+                  label="Email"
+                >
+                  <Input
+                    autoComplete="email"
+                    inputMode="email"
+                    name="contact-email"
+                    onChange={handleChange("email")}
+                    placeholder="you@example.com"
+                    type="email"
+                    value={values.email}
+                  />
+                </FormField>
+              </div>
+
+              <FormField
+                disabled={isSubmitting}
+                error={errors.message}
+                id="contact-message"
+                label="Message"
+                labelAside={
+                  values.message.length > 4000 ? (
+                    <span className="text-[0.8125rem] text-(--secondary) tabular-nums">
+                      {(5000 - values.message.length).toLocaleString("en-US")}{" "}
+                      left
+                    </span>
+                  ) : undefined
+                }
+              >
+                <Textarea
+                  className="min-h-40"
+                  name="contact-message"
+                  onChange={handleChange("message")}
+                  placeholder="Tell us what you need, and include any account email, sender name, document title, or link that helps us identify the request."
+                  value={values.message}
+                />
+              </FormField>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 px-5 pb-5 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:pb-7">
+              <p className="text-[0.8125rem] text-(--secondary)">
+                Goes to the SignuDoc team.
+              </p>
+              <Button loading={isSubmitting} size="lg" type="submit">
+                Send message
+              </Button>
+            </div>
+          </form>
+        )}
+      </StepSwap>
+    </AutoHeight>
   );
 }

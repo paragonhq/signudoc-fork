@@ -8,6 +8,13 @@ import {
 } from "./db/connection.ts";
 import { SIGNUDOC_NAME } from "./branding.ts";
 import { createEmailService, type EmailService } from "./services/email.ts";
+import {
+  emailDetails,
+  emailHeading,
+  emailNote,
+  emailParagraph,
+  renderPlainEmail,
+} from "./services/email-layout.ts";
 import { recordSystemAuditEvent } from "./services/system-audit.ts";
 import { getBranding, getSettings } from "./settings.ts";
 import { type SignatureMeaning } from "./types/domain.ts";
@@ -503,11 +510,29 @@ async function alertAdministrators(
       "Their account can no longer sign until an administrator unlocks it under Settings, People.",
       "If this was not them, someone may be trying to sign in their name. Check with them before unlocking.",
     ].join("\n");
+    const htmlBody = renderPlainEmail({
+      contentHtml: [
+        emailHeading(`Signing locked for ${person.name}`),
+        emailParagraph(
+          `${person.name} gave the wrong password ${MAX_SIGNING_PASSWORD_ATTEMPTS} times in a row while signing on ${productName}. Their account can no longer sign until an administrator unlocks it under Settings, People.`,
+        ),
+        emailDetails([
+          { label: "Person", value: `${person.name} <${person.email}>` },
+        ]),
+        emailNote(
+          "If this was not them, someone may be trying to sign in their name. Check with them before unlocking.",
+        ),
+      ].join(""),
+      footerText: `A security alert for ${productName} administrators.`,
+      preheader: `${person.name} can't sign until an administrator unlocks their account.`,
+      productName,
+    });
 
     // One failed delivery must not keep the alert from the others.
     for (const admin of admins) {
       try {
         await service.send({
+          htmlBody,
           subject: `Signing locked for ${person.name}`,
           template: "signing_lock_alert",
           textBody,

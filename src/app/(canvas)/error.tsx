@@ -1,29 +1,39 @@
 "use client";
 
+import Link from "next/link";
+import { useEffect } from "react";
+
 import { StatusPanel } from "@/components/shared/status-panel";
+import { Button } from "@/components/ui/button";
 
 export default function CanvasError({
-  reset,
+  error,
+  retry,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
+  error: unknown;
+  retry: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <StatusPanel
-        description="Something went wrong while opening this document. Please try again."
-        footer={
-          <button
-            className="btn-quiet min-h-11 px-5"
-            onClick={reset}
-            type="button"
-          >
-            Reload canvas
-          </button>
-        }
-        title="We couldn't open this document."
-        tone="error"
-      />
+    <div className="flex min-h-dvh items-start justify-center bg-(--page) p-4 sm:items-center sm:p-8">
+      <div className="w-full max-w-xl">
+        <StatusPanel
+          description="Something went wrong while opening this document. Your fields are saved as you go, so trying again is safe."
+          footer={
+            <>
+              <Button onClick={() => retry()}>Try again</Button>
+              <Button asChild variant="ghost">
+                <Link href="/dashboard">Back to documents</Link>
+              </Button>
+            </>
+          }
+          title="We couldn't open this document"
+          tone="error"
+        />
+      </div>
     </div>
   );
 }

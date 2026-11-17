@@ -1,500 +1,215 @@
-import type { LucideIcon } from "lucide-react";
+import type { IconComponent } from "@/components/ui/icons";
 import Link from "next/link";
-import {
-  CheckIcon,
-  ClipboardCheck,
-  Globe,
-  Link2,
-  ShieldCheck,
-  XIcon,
-} from "lucide-react";
+import { Check, PenLine, ShieldCheck, Upload } from "@/components/ui/icons";
 
-import { Brand, BrandMark } from "@/components/layout/brand";
-import { PublicSessionMenu } from "@/components/layout/public-session-menu";
+import { IconTile, type IconTileTone } from "@/components/auth/auth-parts";
 import { PublicLegalFooter } from "@/components/layout/public-legal-links";
-import { LandingDashboardPreview } from "@/components/landing/dashboard-preview";
+import { HeroDocument } from "@/components/landing/landing-parts";
 import {
   LandingSessionLoginAction,
   LandingSessionPrimaryAction,
 } from "@/components/landing/landing-session-actions";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
+import { PublicHeader } from "@/components/public/public-header";
+import { Button } from "@/components/ui/button";
 
-type WorkflowStep = {
+/*
+ * The hosted service's landing page (docs/redesign/calm.md): calm and
+ * premium in the product's own language. A big plain hero, one product
+ * visual, three steps, the price in facts, one closing ask. White cards on
+ * the Bond page, nothing shouting.
+ */
+
+type Step = {
   body: string;
+  icon: IconComponent;
   title: string;
+  tone: IconTileTone;
 };
 
-type FaqItem = {
-  answer: string;
-  question: string;
-};
-
-const workflowSteps: readonly WorkflowStep[] = [
+const steps: readonly Step[] = [
   {
-    title: "Upload your PDF",
-    body: "Bring the contract you already wrote. No template rebuilding.",
+    body: "Upload the PDF you already have. Add who signs and in what order, then place signature, initials, date, text and checkbox fields.",
+    icon: Upload,
+    title: "Send",
+    tone: "accent",
   },
   {
-    title: "Add signers",
-    body: "Pick who signs first, second, third. Each person gets invited after the last one finishes.",
+    body: "Each signer gets a link of their own and signs in the browser. No account, no app. Nudge the slow ones with a reminder.",
+    icon: PenLine,
+    title: "Sign",
+    tone: "warning",
   },
   {
-    title: "Place fields",
-    body: "Drop signature, initials, date, text, and checkbox fields onto the page.",
-  },
-  {
-    title: "Send and track",
-    body: "Fire off a signing link. Nudge the slow ones. Download the final PDF.",
-  },
-] as const;
-
-type ComparisonRow = {
-  feature: string;
-  signudoc: string | boolean;
-  docusign: string | boolean;
-};
-
-const comparisonRows: readonly ComparisonRow[] = [
-  { feature: "Price", signudoc: "Free forever", docusign: "$10–15/mo" },
-  { feature: "Envelopes per month", signudoc: "Unlimited", docusign: "5" },
-  {
-    feature: "Signers per document",
-    signudoc: "Up to 10",
-    docusign: "Varies by plan",
-  },
-  { feature: "Reminders", signudoc: true, docusign: "Standard+ ($25+/mo)" },
-] as const;
-
-const faqItems: readonly FaqItem[] = [
-  {
-    question: "Do signers need a SignuDoc account?",
-    answer:
-      "Nope. You sign in to send documents, but your signers just click a link and sign. No account, no friction.",
-  },
-  {
-    question: "What field types can I place on a document?",
-    answer:
-      "Signature, initials, date, text, and checkbox. Everything most documents need.",
-  },
-  {
-    question: "Can I remind a signer if they are taking too long?",
-    answer:
-      "Yes. Hit the remind button and they get a nudge. No need to resend the whole document.",
-  },
-  {
-    question: "What do I get when everyone finishes signing?",
-    answer:
-      "You get the final signed PDF plus a tamper-proof certificate. Download both in one click.",
-  },
-] as const;
-
-type SecurityPillar = {
-  body: string;
-  icon: LucideIcon;
-  title: string;
-};
-
-const securityPillars: readonly SecurityPillar[] = [
-  {
-    title: "Encrypted at rest and in transit",
-    body: "Documents are kept in private, encrypted storage. All connections use HTTPS with HSTS enforcement.",
+    body: "The finished PDF comes back sealed, with a certificate of every view and signature. Anyone can check a copy against it.",
     icon: ShieldCheck,
-  },
-  {
-    title: "Complete audit trail",
-    body: "Every view, signature, and decline is logged with timestamps and IP addresses. Download the certificate PDF as proof.",
-    icon: ClipboardCheck,
-  },
-  {
-    title: "Secure signing links",
-    body: "Each signer gets a unique cryptographic token. Links expire at the deadline the sender sets and can't be guessed or reused.",
-    icon: Link2,
-  },
-  {
-    title: "Open source",
-    body: "The entire codebase is public. Inspect the security model, audit the logic, or self-host on your own infrastructure.",
-    icon: Globe,
+    title: "Seal",
+    tone: "success",
   },
 ];
 
-const sectionHeadingClassName =
-  "text-[clamp(1.875rem,4vw,2.75rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-(--fg)";
-const sectionLeadClassName =
-  "mx-auto mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-(--secondary)";
+const facts = [
+  "Unlimited envelopes",
+  "Up to 10 signers per document",
+  "Signers never need an account",
+  "Reminders included",
+  "Audit certificate with every document",
+  "Encrypted at rest and in transit",
+  "Open source, so you can run it yourself",
+] as const;
+
+const sectionTitle =
+  "text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.035em] text-balance text-(--fg) sm:text-[2.5rem] sm:leading-[1.1]";
 
 export function LandingShell() {
   return (
-    <div className="flex min-h-screen flex-col text-(--fg)">
-      <header className="sticky top-0 z-30 bg-[rgba(243,244,248,0.86)] backdrop-blur-md">
-        <div className="page-width flex items-center justify-between gap-3 py-3 sm:py-4">
-          <Brand href="/" />
-
-          <PublicSessionMenu>
-            <nav
-              aria-label="Public navigation"
-              className="flex items-center gap-1 sm:gap-2"
-            >
-              <Link
-                className={cn(
-                  buttonVariants({ size: "sm", variant: "ghost" }),
-                  "px-3 sm:px-4",
-                )}
-                href="/login"
-                prefetch
-              >
-                Log in
-              </Link>
-              <Link
-                className={buttonVariants({ size: "sm" })}
-                href="/signup"
-                prefetch
-              >
-                Start free
-              </Link>
-            </nav>
-          </PublicSessionMenu>
-        </div>
-      </header>
+    <div className="flex min-h-dvh flex-col overflow-x-clip text-(--fg)">
+      <PublicHeader>
+        <nav aria-label="Public navigation" className="flex items-center gap-1">
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/login" prefetch>
+              Log in
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/signup" prefetch>
+              Start free
+            </Link>
+          </Button>
+        </nav>
+      </PublicHeader>
 
       <main className="flex-1">
-        <section className="page-width pb-14 pt-12 sm:pt-16 lg:pb-20 lg:pt-20">
+        {/* Hero */}
+        <section className="page-width flex flex-col items-center pt-16 pb-24 text-center sm:pt-24 sm:pb-32">
           <div
-            className="mx-auto max-w-[52rem] text-center"
+            className="flex flex-col items-center gap-6"
             data-animate="enter"
           >
-            <SectionMarker>Free e-signature software</SectionMarker>
-
-            <h1 className="mx-auto max-w-[18ch] text-[clamp(2.375rem,6vw,4.25rem)] font-extrabold leading-[1.04] tracking-[-0.045em] text-(--fg)">
-              Sign PDFs Online for Free.{" "}
-              <span className="text-(--accent)">No catch.</span>
+            <h1 className="max-w-[14ch] text-[2.75rem] leading-[1.02] font-semibold tracking-[-0.045em] text-balance sm:text-[4.5rem] sm:leading-[1]">
+              E-signatures you actually own.
             </h1>
-
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-(--secondary) sm:text-[1.1875rem]">
-              Upload a PDF, drop in signature fields, and send. That&apos;s it.
+            <p className="max-w-[44ch] text-[1.0625rem] leading-7 text-pretty text-(--secondary) sm:text-lg">
+              Upload a PDF, place the fields, send. Free and open source, and
+              every finished document is sealed so anyone can check it.
             </p>
-
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
               <LandingSessionPrimaryAction />
-              <Link
-                className={buttonVariants({ size: "lg", variant: "outline" })}
-                href="#workflow"
-              >
-                See how it works
-              </Link>
+              <LandingSessionLoginAction />
             </div>
           </div>
 
           <div
-            className="mt-12 sm:mt-16"
+            className="mt-16 w-full sm:mt-20"
             data-animate="enter"
-            data-animate-delay="1"
+            data-animate-delay="2"
           >
-            <LandingDashboardPreview />
+            <HeroDocument />
           </div>
         </section>
 
-        <section className="scroll-mt-20 py-14 lg:py-20" id="workflow">
-          <div className="page-width">
-            <div className="mx-auto max-w-[40rem] text-center">
-              <SectionMarker>How it works</SectionMarker>
-              <h2 className={sectionHeadingClassName}>
-                Four steps. One signed document.
-              </h2>
-              <p className={sectionLeadClassName}>
-                Upload a PDF, set the signing order, place fields, and hit send.
-                Your signers don&apos;t even need an account.
-              </p>
-            </div>
+        {/* Three steps */}
+        <section
+          aria-labelledby="steps-title"
+          className="page-width pb-24 sm:pb-32"
+        >
+          <div className="flex flex-col items-center gap-3 text-center">
+            <h2 className={sectionTitle} id="steps-title">
+              Three steps. One signed document.
+            </h2>
+            <p className="max-w-[40ch] text-[1.0625rem] leading-7 text-(--secondary)">
+              Your signers don&apos;t need an account. You don&apos;t need a
+              template. Nobody needs a sales call.
+            </p>
+          </div>
 
-            <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {workflowSteps.map((step, index) => (
-                <li className="panel p-6" key={step.title}>
-                  <span
-                    aria-hidden="true"
-                    className="inline-flex size-10 items-center justify-center rounded-xl bg-(--accent-soft) text-[0.9375rem] font-extrabold text-(--accent-ink)"
-                  >
-                    {index + 1}
-                  </span>
-                  <h3 className="mt-4 text-lg font-extrabold leading-tight tracking-[-0.02em] text-(--fg)">
+          <ol className="mt-12 grid gap-x-5 gap-y-(--card-row-gap) md:grid-cols-3">
+            {steps.map((step) => (
+              <li
+                className="flex flex-col gap-4 rounded-(--radius-card) bg-(--paper) p-6 shadow-(--shadow-card) sm:p-7"
+                key={step.title}
+              >
+                <IconTile tone={step.tone}>
+                  <step.icon />
+                </IconTile>
+                <div className="flex flex-col gap-1.5">
+                  <h3 className="text-lg leading-7 font-semibold tracking-[-0.02em] text-(--fg)">
                     {step.title}
                   </h3>
-                  <p className="mt-2 text-[0.9375rem] leading-relaxed text-(--secondary)">
+                  <p className="text-[0.9375rem] leading-6 text-(--secondary)">
                     {step.body}
                   </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Price */}
+        <section
+          aria-labelledby="price-title"
+          className="page-width pb-24 sm:pb-32"
+        >
+          <div className="grid gap-8 rounded-(--radius-tray) bg-(--paper) p-7 shadow-(--shadow-card) sm:p-12 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-14">
+            <div className="flex flex-col items-start gap-4">
+              <h2 className={sectionTitle} id="price-title">
+                Free. Not a trial.
+              </h2>
+              <p className="flex items-baseline gap-2">
+                <span className="text-[3.5rem] leading-none font-semibold tracking-[-0.045em] tabular-nums">
+                  $0
+                </span>
+                <span className="text-[0.9375rem] text-(--secondary)">
+                  a month, for every envelope
+                </span>
+              </p>
+              <p className="max-w-[38ch] text-[0.9375rem] leading-6 text-(--secondary)">
+                No credit card and no per-envelope fees. The code is public, so
+                you can check all of it, or run it on your own servers.
+              </p>
+              <div className="pt-2">
+                <LandingSessionPrimaryAction />
+              </div>
+            </div>
+
+            <ul className="flex flex-col divide-y divide-(--divider) self-center">
+              {facts.map((fact) => (
+                <li
+                  className="flex items-center gap-3 py-3 text-[0.9375rem] text-(--fg)"
+                  key={fact}
+                >
+                  <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-(--success-soft) text-(--success)">
+                    <Check
+                      aria-hidden="true"
+                      className="size-3.5"
+                      strokeWidth={2.25}
+                    />
+                  </span>
+                  {fact}
                 </li>
               ))}
-            </ol>
+            </ul>
           </div>
         </section>
 
-        <section className="py-14 lg:py-20">
-          <div className="page-width">
-            <div className="mx-auto max-w-[40rem] text-center">
-              <SectionMarker>Security</SectionMarker>
-              <h2 className={sectionHeadingClassName}>
-                Your documents stay safe.
-              </h2>
-              <p className={sectionLeadClassName}>
-                Every PDF is encrypted, every action is logged, and every
-                signing link is cryptographically secured. The code is open
-                source so you can verify it yourself.
-              </p>
-            </div>
-
-            <div className="mx-auto mt-10 grid max-w-[60rem] gap-4 sm:grid-cols-2">
-              {securityPillars.map((pillar) => (
-                <SecurityPillarCard
-                  body={pillar.body}
-                  icon={pillar.icon}
-                  key={pillar.title}
-                  title={pillar.title}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-14 lg:py-20">
-          <div className="page-width">
-            <div className="mx-auto max-w-[40rem] text-center">
-              <SectionMarker>Pricing</SectionMarker>
-              <h2 className={sectionHeadingClassName}>
-                Free beats $120 a year.
-              </h2>
-              <p className={sectionLeadClassName}>
-                Everything below is included. Forever. For $0. See how that
-                stacks up against DocuSign.
-              </p>
-            </div>
-
-            <div className="mx-auto mt-10 max-w-[60rem]">
-              <ComparisonTable />
-            </div>
-
-            <div className="mt-8 flex flex-col items-center gap-3 text-center">
-              <LandingSessionPrimaryAction />
-              <p className="text-sm text-(--tertiary)">
-                Your signers never need to create an account.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-14 lg:py-20">
-          <div className="page-width">
-            <div className="mx-auto max-w-[48rem]">
-              <div className="text-center">
-                <SectionMarker>FAQ</SectionMarker>
-                <h2 className={sectionHeadingClassName}>Quick answers.</h2>
-              </div>
-              <div className="mt-8 space-y-3">
-                {faqItems.map((item) => (
-                  <article
-                    className="panel px-6 py-5 sm:px-7"
-                    key={item.question}
-                  >
-                    <h3 className="text-lg font-extrabold leading-snug tracking-[-0.02em] text-(--fg)">
-                      {item.question}
-                    </h3>
-                    <p className="mt-2 text-[0.9375rem] leading-relaxed text-(--secondary)">
-                      {item.answer}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="page-width pb-10 pt-6 lg:pb-14">
-          <div className="rounded-[2rem] bg-(--accent) px-6 py-14 text-center sm:px-10 lg:py-20">
-            <div className="mx-auto max-w-[44rem]">
-              <p className="text-sm font-semibold text-white/80">Start free</p>
-              <h2 className="mt-3 text-[clamp(2rem,4.5vw,3.25rem)] font-extrabold leading-[1.06] tracking-[-0.04em] text-white">
-                Send your next agreement. On us.
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-white/85">
-                No credit card. No per-envelope fees. Just upload and send.
-              </p>
-
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <LandingSessionPrimaryAction tone="inverse" />
-                <LandingSessionLoginAction tone="inverse" />
-              </div>
-
-              <p className="mt-7 text-sm text-white/75">
-                Free • no signer account required • up to 10 signers per
-                document
-              </p>
-            </div>
+        {/* Closing */}
+        <section
+          aria-labelledby="cta-title"
+          className="page-width flex flex-col items-center gap-6 pb-24 text-center sm:pb-32"
+        >
+          <h2 className={sectionTitle} id="cta-title">
+            Put your name on it.
+          </h2>
+          <p className="max-w-[36ch] text-[1.0625rem] leading-7 text-(--secondary)">
+            Your first envelope is a few minutes away.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <LandingSessionPrimaryAction />
+            <LandingSessionLoginAction />
           </div>
         </section>
       </main>
 
       <PublicLegalFooter />
     </div>
-  );
-}
-
-function SectionMarker({ children }: { children: string }) {
-  return (
-    <p className="mb-5 flex justify-center">
-      <span className="pill pill-accent px-3.5 py-1 text-[0.8125rem]">
-        {children}
-      </span>
-    </p>
-  );
-}
-
-function SecurityPillarCard({ body, icon: Icon, title }: SecurityPillar) {
-  return (
-    <div className="panel flex gap-4 p-6">
-      <span
-        aria-hidden="true"
-        className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-(--accent-soft) text-(--accent)"
-      >
-        <Icon className="size-5" strokeWidth={2} />
-      </span>
-      <div>
-        <h3 className="text-[1.0625rem] font-extrabold leading-tight tracking-[-0.02em] text-(--fg)">
-          {title}
-        </h3>
-        <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-(--secondary)">
-          {body}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function ComparisonTable() {
-  return (
-    <div className="panel overflow-hidden">
-      {/* Desktop table */}
-      <div className="hidden p-3 sm:block">
-        <table className="w-full border-separate border-spacing-0 text-left">
-          <thead>
-            <tr>
-              <th className="w-[36%] px-5 py-4 text-[0.8125rem] font-semibold text-(--tertiary)">
-                Feature
-              </th>
-              <th className="w-[32%] rounded-t-2xl bg-(--accent-softer) px-5 py-4 text-center">
-                <span className="inline-flex items-center gap-2 text-[1.0625rem] font-extrabold tracking-[-0.02em] text-(--fg)">
-                  <BrandMark className="size-6 rounded-[0.5rem]" />
-                  SignuDoc
-                </span>
-              </th>
-              <th className="w-[32%] px-5 py-4 text-center">
-                <span className="text-[1.0625rem] font-bold tracking-[-0.02em] text-(--tertiary)">
-                  DocuSign
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {comparisonRows.map((row, index) => (
-              <tr key={row.feature}>
-                <td className="border-t border-(--border) px-5 py-4 text-[0.9375rem] font-semibold text-(--fg)">
-                  {row.feature}
-                </td>
-                <td
-                  className={cn(
-                    "border-t border-[rgb(var(--accent-rgb)/0.12)] bg-(--accent-softer) px-5 py-4 text-center",
-                    index === comparisonRows.length - 1 && "rounded-b-2xl",
-                  )}
-                >
-                  <ComparisonValue advantage value={row.signudoc} />
-                </td>
-                <td className="border-t border-(--border) px-5 py-4 text-center text-(--secondary)">
-                  <ComparisonValue value={row.docusign} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile stacked layout */}
-      <div className="space-y-3 p-4 sm:hidden">
-        {comparisonRows.map((row) => (
-          <div className="well overflow-hidden" key={row.feature}>
-            <p className="px-4 pb-2 pt-3.5 text-[0.8125rem] font-semibold text-(--tertiary)">
-              {row.feature}
-            </p>
-            <ComparisonMobileRow
-              advantage
-              label="SignuDoc"
-              value={row.signudoc}
-            />
-            <ComparisonMobileRow label="DocuSign" value={row.docusign} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ComparisonMobileRow({
-  advantage = false,
-  label,
-  value,
-}: {
-  advantage?: boolean;
-  label: string;
-  value: string | boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-4 px-4 py-3",
-        advantage ? "bg-(--accent-softer)" : "text-(--secondary)",
-      )}
-    >
-      <span
-        className={cn(
-          "text-sm",
-          advantage ? "font-extrabold text-(--fg)" : "font-semibold",
-        )}
-      >
-        {label}
-      </span>
-      <span className="max-w-[58%] text-right">
-        <ComparisonValue advantage={advantage} value={value} />
-      </span>
-    </div>
-  );
-}
-
-function ComparisonValue({
-  advantage = false,
-  value,
-}: {
-  advantage?: boolean;
-  value: string | boolean;
-}) {
-  if (typeof value === "boolean") {
-    return value ? (
-      <span className="inline-flex size-7 items-center justify-center rounded-full bg-(--success-soft) text-(--success)">
-        <CheckIcon aria-hidden="true" className="size-4" strokeWidth={3} />
-        <span className="sr-only">Included</span>
-      </span>
-    ) : (
-      <span className="inline-flex size-7 items-center justify-center rounded-full bg-(--danger-soft) text-(--danger)">
-        <XIcon aria-hidden="true" className="size-4" strokeWidth={3} />
-        <span className="sr-only">Not included</span>
-      </span>
-    );
-  }
-
-  return (
-    <span
-      className={cn(
-        "text-[0.9375rem] leading-relaxed",
-        advantage && "font-extrabold text-(--accent-ink)",
-      )}
-    >
-      {value}
-    </span>
   );
 }

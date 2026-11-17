@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { cn } from "@/lib/cn";
 import {
   loadPdfJsModule,
   PDF_JS_STANDARD_FONT_DATA_URL,
 } from "@/lib/pdfjs-client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type PdfJsModule = Awaited<ReturnType<typeof loadPdfJsModule>>;
 type PdfDocumentProxy = Awaited<
@@ -21,6 +23,15 @@ type PdfPageCanvasProps = {
   pageNumber: number;
 };
 
+/**
+ * One PDF page, rendered to fill its `[data-field-viewport]` parent. Used
+ * by the builder and the signing view.
+ *
+ * Re-renders (a zoom step, a resize) draw into an offscreen canvas first
+ * and swap it in when done, so the page never blanks between sizes. The
+ * first render shows a paper skeleton; a page that cannot be drawn says so
+ * quietly in place.
+ */
 export function PdfPageCanvas({
   documentUrl,
   onRenderStateChange,
@@ -30,20 +41,15 @@ export function PdfPageCanvas({
   const [documentProxy, setDocumentProxy] = useState<PdfDocumentProxy | null>(
     null,
   );
-  const [viewportSize, setViewportSize] = useState({
-    height: 0,
-    width: 0,
-  });
+  const [viewportSize, setViewportSize] = useState({ height: 0, width: 0 });
   const [renderState, setRenderState] = useState<PdfPageRenderState>("loading");
+  // Whether the visible canvas holds this page yet. Re-renders at a new
+  // size keep the old pixels up instead of falling back to the skeleton.
+  const [paintedPage, setPaintedPage] = useState<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-
-    if (!canvas) {
-      return;
-    }
-
-    const viewportCandidate = canvas.closest("[data-field-viewport]");
+    const viewportCandidate = canvas?.closest("[data-field-viewport]");
 
     if (!(viewportCandidate instanceof HTMLElement)) {
       return;
@@ -62,10 +68,7 @@ export function PdfPageCanvas({
       setViewportSize((currentSize) =>
         currentSize.width === nextWidth && currentSize.height === nextHeight
           ? currentSize
-          : {
-              height: nextHeight,
-              width: nextWidth,
-            },
+          : { height: nextHeight, width: nextWidth },
       );
     }
 
@@ -74,20 +77,14 @@ export function PdfPageCanvas({
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", updateViewportSize);
 
-      return () => {
-        window.removeEventListener("resize", updateViewportSize);
-      };
+      return () => window.removeEventListener("resize", updateViewportSize);
     }
 
-    const resizeObserver = new ResizeObserver(() => {
-      updateViewportSize();
-    });
+    const resizeObserver = new ResizeObserver(updateViewportSize);
 
     resizeObserver.observe(viewportElement);
 
-    return () => {
-      resizeObserver.disconnect();
-    };
+    return () => resizeObserver.disconnect();
   }, []);
 
   useEffect(() => {
@@ -98,6 +95,7 @@ export function PdfPageCanvas({
     async function loadDocument() {
       setRenderState("loading");
       setDocumentProxy(null);
+      setPaintedPage(null);
 
       if (!documentUrl) {
         return;
@@ -131,7 +129,7 @@ export function PdfPageCanvas({
 
     return () => {
       isActive = false;
-      loadingTask?.destroy();
+      void loadingTask?.destroy();
       void activeDocument?.destroy();
     };
   }, [documentUrl]);
@@ -146,15 +144,18 @@ export function PdfPageCanvas({
       return;
     }
 
+    const pdf = documentProxy;
     let isActive = true;
     let activePage: PdfPageProxy | null = null;
     let renderTask: PdfRenderTask | null = null;
 
-    async function renderPage() {
-      setRenderState("loading");
+    async function renderPage(showSkeleton: boolean) {
+      if (showSkeleton) {
+        setRenderState("loading");
+      }
 
       try {
-        const page = await documentProxy.getPage(pageNumber);
+        const page = await pdf.getPage(pageNumber);
 
         if (!isActive) {
           page.cleanup();
@@ -170,27 +171,27 @@ export function PdfPageCanvas({
         );
         const viewport = page.getViewport({ scale });
         const outputScale = window.devicePixelRatio || 1;
-        const canvas = canvasRef.current;
+        const visible = canvasRef.current;
 
-        if (!canvas) {
+        if (!visible) {
           return;
         }
 
-        const context = canvas.getContext("2d");
+        // Draw offscreen, then swap: the page on screen stays put until
+        // the new pixels are ready.
+        const buffer = document.createElement("canvas");
+        const bufferContext = buffer.getContext("2d");
 
-        if (!context) {
+        if (!bufferContext) {
           throw new Error("Unable to render PDF canvas context.");
         }
 
-        canvas.width = Math.floor(viewport.width * outputScale);
-        canvas.height = Math.floor(viewport.height * outputScale);
-        canvas.style.width = `${viewport.width}px`;
-        canvas.style.height = `${viewport.height}px`;
-        context.setTransform(1, 0, 0, 1, 0, 0);
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        buffer.width = Math.floor(viewport.width * outputScale);
+        buffer.height = Math.floor(viewport.height * outputScale);
 
         renderTask = page.render({
-          canvasContext: context,
+          canvas: buffer,
+          canvasContext: bufferContext,
           transform:
             outputScale === 1
               ? undefined
@@ -204,6 +205,18 @@ export function PdfPageCanvas({
           return;
         }
 
+        const context = visible.getContext("2d");
+
+        if (!context) {
+          throw new Error("Unable to render PDF canvas context.");
+        }
+
+        visible.width = buffer.width;
+        visible.height = buffer.height;
+        visible.style.width = `${viewport.width}px`;
+        visible.style.height = `${viewport.height}px`;
+        context.drawImage(buffer, 0, 0);
+        setPaintedPage(pageNumber);
         setRenderState("ready");
       } catch (error) {
         if (
@@ -219,45 +232,68 @@ export function PdfPageCanvas({
       }
     }
 
-    void renderPage();
+    void renderPage(paintedPage !== pageNumber);
 
     return () => {
       isActive = false;
       renderTask?.cancel();
       activePage?.cleanup();
     };
+    // paintedPage is read to decide whether to show the skeleton, not as a
+    // reason to render again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentProxy, pageNumber, viewportSize.height, viewportSize.width]);
 
   useEffect(() => {
     onRenderStateChange?.(renderState);
   }, [onRenderStateChange, renderState]);
 
+  const showsPage = paintedPage === pageNumber;
+
   return (
     <div
+      aria-busy={renderState === "loading" || undefined}
       aria-label={`Rendered PDF page ${pageNumber}`}
-      className="absolute inset-0 flex items-center justify-center"
+      className="absolute inset-0 flex items-center justify-center bg-(--paper-raised)"
       role="img"
     >
       <canvas
-        className={`max-h-full max-w-full ${
-          renderState === "ready" ? "opacity-100" : "opacity-0"
-        }`}
+        className={cn(
+          "max-h-full max-w-full transition-opacity duration-(--dur-open) ease-(--ease-out)",
+          showsPage ? "opacity-100" : "opacity-0",
+        )}
         ref={canvasRef}
       />
-      {renderState !== "ready" ? (
-        <div className="absolute inset-0 z-1 flex items-center justify-center bg-white/92 px-6 text-center">
-          <div className="well max-w-[320px] px-5 py-4">
-            <p className="text-sm font-bold text-(--fg)">
-              {renderState === "error"
-                ? "We couldn't render this PDF page."
-                : "Rendering document page..."}
-            </p>
-            <p className="mt-1.5 text-sm leading-6 text-(--secondary)">
-              {renderState === "error"
-                ? "Reload the page or try this draft again in a moment."
-                : "Preparing the source PDF so placed fields stay aligned with the stored page size."}
-            </p>
-          </div>
+      {renderState === "error" ? (
+        <div className="absolute inset-0 z-1 flex flex-col items-start justify-end gap-1.5 bg-(--paper-raised) p-[8%]">
+          <span className="meta text-(--danger)">Page {pageNumber}</span>
+          <p className="text-sm font-medium text-(--fg)">
+            This page couldn&apos;t be shown.
+          </p>
+          <p className="max-w-[34ch] text-[0.8125rem] leading-5 text-(--secondary)">
+            Reload the page, or open the draft again in a moment.
+          </p>
+        </div>
+      ) : !showsPage ? (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-1 flex flex-col gap-[3%] p-[9%]"
+        >
+          <Skeleton className="h-[2.2%] w-[46%] rounded-xs" delay={150} />
+          <Skeleton
+            className="mt-[3%] h-[1.4%] w-full rounded-xs"
+            delay={150}
+          />
+          <Skeleton className="h-[1.4%] w-[94%] rounded-xs" delay={150} />
+          <Skeleton className="h-[1.4%] w-[88%] rounded-xs" delay={150} />
+          <Skeleton className="h-[1.4%] w-[62%] rounded-xs" delay={150} />
+          <Skeleton
+            className="mt-[4%] h-[1.4%] w-full rounded-xs"
+            delay={150}
+          />
+          <Skeleton className="h-[1.4%] w-[91%] rounded-xs" delay={150} />
+          <Skeleton className="h-[1.4%] w-[70%] rounded-xs" delay={150} />
+          <span className="meta mt-auto">Rendering page {pageNumber}</span>
         </div>
       ) : null}
     </div>

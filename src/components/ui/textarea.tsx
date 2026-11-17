@@ -1,16 +1,28 @@
+"use client";
+
 import * as React from "react";
 
 import { cn } from "@/lib/cn";
+import { useFieldControlProps } from "@/components/ui/field-context";
+import {
+  fieldControlClassName,
+  fieldReadOnlyClassName,
+} from "@/components/ui/input";
 
+/** A multi-line field: the Input look, growing with its content. */
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  const wired = useFieldControlProps(props);
+
   return (
     <textarea
-      data-slot="textarea"
       className={cn(
-        "flex field-sizing-content min-h-28 w-full rounded-xl border-[1.5px] border-[var(--border-strong)] bg-[var(--paper)] px-4 py-3 text-sm text-[var(--fg)] transition-[border-color,box-shadow] outline-none placeholder:text-[var(--placeholder)] hover:border-[var(--border-hover)] focus-visible:border-[var(--accent)] focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-[var(--surface)] disabled:text-[var(--secondary)] aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+        fieldControlClassName,
+        fieldReadOnlyClassName,
+        "flex field-sizing-content min-h-24 resize-y px-3.5 py-2.5 leading-6",
         className,
       )}
-      {...props}
+      data-slot="textarea"
+      {...wired}
     />
   );
 }

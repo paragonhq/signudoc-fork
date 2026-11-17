@@ -8,8 +8,22 @@ import {
   type FormEvent,
 } from "react";
 
+import { Lock, MailCheck } from "@/components/ui/icons";
+
+import {
+  AuthFormFoot,
+  AuthHeading,
+  AuthNotice,
+  IconTile,
+  OrDivider,
+  textActionClassName,
+} from "@/components/auth/auth-parts";
 import { SsoButton, type SsoOption } from "@/components/auth/sso-button";
-import { FieldShell, ShellButton } from "@/components/shared/form-shell";
+import { AutoHeight } from "@/components/public/auto-height";
+import { StepSwap } from "@/components/public/step-swap";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth/client";
 import { signUpSchema } from "@/lib/schemas/auth";
 
@@ -79,12 +93,14 @@ type SignupFormCardProps = {
   onFullNameChange: ChangeEventHandler<HTMLInputElement>;
   onPasswordChange: ChangeEventHandler<HTMLInputElement>;
   onResendVerification?: () => void | Promise<void>;
+  onStartOver: () => void;
   onSsoError: (message: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
   passwordSignIn: boolean;
   showSuccess: boolean;
   signupRule: string | null;
   sso: SsoOption | null;
+  successEmail: string | null;
   successMessage: string | null;
   values: SignupFormValues;
 };
@@ -99,141 +115,182 @@ function SignupFormCard({
   onFullNameChange,
   onPasswordChange,
   onResendVerification,
+  onStartOver,
   onSsoError,
   onSubmit,
   passwordSignIn,
   showSuccess,
   signupRule,
   sso,
+  successEmail,
   successMessage,
   values,
 }: SignupFormCardProps) {
   return (
-    <section className="panel w-full max-w-[460px] p-8 sm:p-10">
-      <div className="space-y-7">
-        <div className="space-y-2">
-          <p className="section-eyebrow">Create account</p>
-          <h1 className="text-[clamp(1.875rem,4.5vw,2.375rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-(--fg)">
-            Create your account
-          </h1>
-          {signupRule ? (
-            <p className="pt-1 text-sm leading-6 text-muted-foreground">
-              {signupRule}
-            </p>
-          ) : null}
-        </div>
-
-        {bannerMessage ? (
-          <p className="notice notice-danger" role="alert">
-            {bannerMessage}
-          </p>
-        ) : null}
-
+    <AutoHeight innerClassName="relative">
+      <StepSwap stepKey={showSuccess ? "sent" : "form"}>
         {showSuccess ? (
-          <div aria-live="polite" className="notice notice-success">
-            <p>{successMessage ?? defaultSuccessMessage}</p>
-          </div>
-        ) : null}
-
-        {sso ? (
-          <SsoButton
-            onError={onSsoError}
-            sso={sso}
-            variant={passwordSignIn ? "secondary" : "primary"}
-          />
-        ) : null}
-
-        {sso && passwordSignIn ? (
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.12em] text-(--secondary)">
-            or
-          </p>
-        ) : null}
-
-        {passwordSignIn ? (
-          <form className="space-y-5" noValidate onSubmit={onSubmit}>
-            <FieldShell
-              autoComplete="name"
-              disabled={formLocked}
-              error={errors.fullName}
-              label="Full name"
-              name="signup-full-name"
-              onChange={onFullNameChange}
-              placeholder="Jane Smith"
-              readOnly={formLocked}
-              value={values.fullName}
-            />
-            <FieldShell
-              autoComplete="email"
-              disabled={formLocked}
-              error={errors.email}
-              label="Email"
-              name="signup-email"
-              onChange={onEmailChange}
-              placeholder="jane@acmecorp.com"
-              readOnly={formLocked}
-              type="email"
-              value={values.email}
-            />
-            <FieldShell
-              autoComplete="new-password"
-              disabled={formLocked}
-              error={errors.password}
-              helper="Must be at least 15 characters"
-              label="Password"
-              name="signup-password"
-              onChange={onPasswordChange}
-              placeholder="Enter a password"
-              readOnly={formLocked}
-              type="password"
-              value={values.password}
-            />
-
-            {showSuccess ? (
-              <div className="flex flex-col gap-3">
-                <ShellButton className="w-full" href="/login" variant="primary">
-                  Go to log in
-                </ShellButton>
-                {onResendVerification ? (
-                  <ShellButton
-                    className="w-full"
-                    disabled={formLocked}
-                    loading={isResendingVerification}
-                    onClick={onResendVerification}
-                    type="button"
-                    variant="secondary"
-                  >
-                    {isResendingVerification
-                      ? "Sending..."
-                      : "Resend verification email"}
-                  </ShellButton>
+          <div className="flex flex-col gap-6">
+            <AuthHeading
+              icon={
+                <IconTile tone="accent">
+                  <MailCheck />
+                </IconTile>
+              }
+              title="Check your inbox"
+            >
+              <div aria-live="polite" className="flex flex-col gap-1">
+                <p className="text-[0.9375rem] leading-6 text-(--secondary)">
+                  {successMessage ?? defaultSuccessMessage}
+                </p>
+                {successEmail ? (
+                  <p className="text-[0.9375rem] leading-6 text-(--secondary)">
+                    We sent it to{" "}
+                    <span className="font-medium break-all text-(--fg)">
+                      {successEmail}
+                    </span>
+                    .
+                  </p>
                 ) : null}
               </div>
-            ) : (
-              <ShellButton
-                className="w-full"
-                disabled={formLocked}
-                loading={isSubmitting}
-                type="submit"
-                variant="primary"
-              >
-                {isSubmitting ? "Creating account..." : "Sign up"}
-              </ShellButton>
-            )}
-          </form>
-        ) : null}
+            </AuthHeading>
 
-        <div className="border-t border-(--border) pt-5 text-sm text-(--secondary)">
-          Already have an account?{" "}
-          <Link
-            className="font-bold text-(--accent-ink) underline-offset-4 hover:underline"
-            href="/login"
-          >
-            Log in
-          </Link>
-        </div>
-      </div>
-    </section>
+            <AuthNotice>{bannerMessage}</AuthNotice>
+
+            <div className="flex flex-col gap-2.5">
+              <Button asChild className="w-full" size="lg">
+                <Link href="/login">Go to log in</Link>
+              </Button>
+              {onResendVerification ? (
+                <Button
+                  className="w-full"
+                  loading={isResendingVerification}
+                  onClick={onResendVerification}
+                  size="lg"
+                  type="button"
+                  variant="outline"
+                >
+                  Resend verification email
+                </Button>
+              ) : null}
+            </div>
+            <div className="-mt-1 flex justify-center">
+              <button
+                className={textActionClassName}
+                disabled={formLocked}
+                onClick={onStartOver}
+                type="button"
+              >
+                Use a different email
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            <AuthHeading
+              description={
+                signupRule ??
+                "Send documents for signature and keep every signed copy. Signers never need an account."
+              }
+              title="Create your account"
+            />
+
+            <AuthNotice>{bannerMessage}</AuthNotice>
+
+            {sso ? (
+              <div className="flex flex-col gap-5">
+                <SsoButton
+                  onError={onSsoError}
+                  sso={sso}
+                  variant={passwordSignIn ? "secondary" : "primary"}
+                />
+                {passwordSignIn ? <OrDivider /> : null}
+              </div>
+            ) : null}
+
+            {passwordSignIn ? (
+              <form
+                className="flex flex-col gap-5"
+                noValidate
+                onSubmit={onSubmit}
+              >
+                <FormField
+                  disabled={formLocked}
+                  error={errors.fullName}
+                  label="Full name"
+                >
+                  <Input
+                    autoComplete="name"
+                    name="signup-full-name"
+                    onChange={onFullNameChange}
+                    placeholder="Jane Smith"
+                    value={values.fullName}
+                  />
+                </FormField>
+                <FormField
+                  disabled={formLocked}
+                  error={errors.email}
+                  label="Email"
+                >
+                  <Input
+                    autoComplete="email"
+                    inputMode="email"
+                    name="signup-email"
+                    onChange={onEmailChange}
+                    placeholder="jane@acmecorp.com"
+                    type="email"
+                    value={values.email}
+                  />
+                </FormField>
+                <FormField
+                  disabled={formLocked}
+                  error={errors.password}
+                  hint={passwordHint(values.password.length)}
+                  label="Password"
+                >
+                  <Input
+                    autoComplete="new-password"
+                    name="signup-password"
+                    onChange={onPasswordChange}
+                    type="password"
+                    value={values.password}
+                  />
+                </FormField>
+                <AuthFormFoot>
+                  <Button
+                    className="w-full"
+                    loading={isSubmitting}
+                    size="lg"
+                    type="submit"
+                  >
+                    Sign up
+                  </Button>
+                </AuthFormFoot>
+              </form>
+            ) : null}
+          </div>
+        )}
+      </StepSwap>
+    </AutoHeight>
   );
+}
+
+/**
+ * The password rule in words, counting down as the password grows, so
+ * nobody has to count characters or read a meter.
+ */
+export function passwordHint(length: number, minimum = 15) {
+  if (length === 0) {
+    return `At least ${minimum} characters. Let your password manager make one.`;
+  }
+
+  const left = minimum - length;
+
+  if (left <= 0) {
+    return "Long enough.";
+  }
+
+  return left === 1 ? "1 more character." : `${left} more characters.`;
 }
 
 export function SignupShell({
@@ -257,24 +314,22 @@ export function SignupShell({
 
 function SignupClosedCard() {
   return (
-    <section className="panel w-full max-w-[460px] p-8 sm:p-10">
-      <div className="space-y-7">
-        <div className="space-y-2">
-          <p className="section-eyebrow">Create account</p>
-          <h1 className="text-[clamp(1.875rem,4.5vw,2.375rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-(--fg)">
-            Sign-up is closed
-          </h1>
-          <p className="pt-1 text-sm leading-6 text-muted-foreground">
-            New accounts are not being accepted on this site. If you were sent a
-            document to sign, use the link in that email. You do not need an
-            account.
-          </p>
-        </div>
-        <ShellButton className="w-full" href="/login" variant="primary">
-          Go to log in
-        </ShellButton>
-      </div>
-    </section>
+    <div className="flex flex-col gap-6">
+      <AuthHeading
+        description="New accounts are not being accepted on this site. If you were sent a document to sign, use the link in that email. You do not need an account."
+        icon={
+          <IconTile>
+            <Lock />
+          </IconTile>
+        }
+        title="Sign-up is closed"
+      />
+      <AuthFormFoot>
+        <Button asChild className="w-full" size="lg">
+          <Link href="/login">Go to log in</Link>
+        </Button>
+      </AuthFormFoot>
+    </div>
   );
 }
 
@@ -453,12 +508,19 @@ function LiveSignupShell({
       onFullNameChange={handleChange("fullName")}
       onPasswordChange={handleChange("password")}
       onResendVerification={handleResendVerification}
+      onStartOver={() => {
+        setShowSuccess(false);
+        setSuccessMessage(null);
+        setBannerMessage(null);
+        setValues((current) => ({ ...current, email: "", password: "" }));
+      }}
       onSsoError={setBannerMessage}
       onSubmit={handleSubmit}
       passwordSignIn={passwordSignIn}
       showSuccess={showSuccess}
       signupRule={signupRule}
       sso={sso}
+      successEmail={successEmail}
       successMessage={successMessage}
       values={values}
     />

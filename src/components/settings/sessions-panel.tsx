@@ -1,63 +1,76 @@
 "use client";
 
 import { useState } from "react";
+import { LogOut } from "@/components/ui/icons";
 
-import { ShellButton } from "@/components/shared/form-shell";
+import {
+  GENERIC_ERROR_MESSAGE,
+  SettingRow,
+  SettingsAnchor,
+} from "@/components/settings/settings-ui";
+import { Button } from "@/components/ui/button";
+import { ConfirmTray } from "@/components/ui/confirm-tray";
 
 // Ends every session this account has, on every device, this one included.
 export function SessionsPanel() {
-  const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function signOutEverywhere() {
-    setIsBusy(true);
     setError(null);
 
+    let response: Response;
+
     try {
-      const response = await fetch("/api/auth/revoke-sessions", {
+      response = await fetch("/api/auth/revoke-sessions", {
         body: "{}",
         headers: { "content-type": "application/json" },
         method: "POST",
       });
-
-      if (!response.ok) {
-        setError("Something went wrong. Please try again.");
-        return;
-      }
-
-      window.location.assign("/login");
     } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsBusy(false);
+      setError(GENERIC_ERROR_MESSAGE);
+      throw new Error("sign out failed");
     }
+
+    if (!response.ok) {
+      setError(GENERIC_ERROR_MESSAGE);
+      throw new Error("sign out failed");
+    }
+
+    // This browser was signed out too: the only place left is the login.
+    window.location.assign("/login");
+    // Keep the tray busy while the browser leaves.
+    await new Promise(() => undefined);
   }
 
   return (
-    <div className="panel p-6 sm:p-8">
-      <div className="space-y-5">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Signed-in devices
-        </h2>
-        <p className="max-w-2xl text-sm leading-6 text-(--secondary)">
-          If you signed in on a computer that is not yours, or lost a device,
-          sign out everywhere. Every browser signed in to your account,
-          including this one, has to sign in again.
-        </p>
-        {error ? (
-          <p className="notice notice-danger" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <ShellButton
-          className="w-fit"
-          loading={isBusy}
-          onClick={() => void signOutEverywhere()}
-          variant="secondary"
-        >
-          {isBusy ? "Signing out..." : "Sign out everywhere"}
-        </ShellButton>
-      </div>
-    </div>
+    <SettingsAnchor id="devices">
+      <SettingRow
+        controlWidth="auto"
+        description="Signed in on a computer that is not yours, or lost a device? Sign out on every browser and phone, this one included."
+        kind="group"
+        label="Signed-in devices"
+      >
+        <ConfirmTray
+          confirmLabel="Sign out everywhere"
+          description="Every browser signed in to your account, including this one, has to sign in again."
+          error={error}
+          hold={false}
+          onConfirm={signOutEverywhere}
+          onOpenChange={(open) => {
+            if (!open) {
+              setError(null);
+            }
+          }}
+          title="Sign out on every device?"
+          tone="default"
+          trigger={
+            <Button className="max-md:w-full" variant="outline">
+              <LogOut aria-hidden="true" />
+              Sign out everywhere
+            </Button>
+          }
+        />
+      </SettingRow>
+    </SettingsAnchor>
   );
 }

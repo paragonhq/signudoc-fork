@@ -1,17 +1,31 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
-import { getSignerPalette } from "@/components/envelopes/signer-palette";
-import { ShellButton } from "@/components/shared/form-shell";
+import { duplicateSignerEmailMessage } from "@/lib/schemas/signer";
+import type { TemplateDetail, UseTemplateData } from "@/lib/templates";
+import { BackLink } from "@/components/envelopes/detail/detail-header";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusPanel } from "@/components/shared/status-panel";
-import { duplicateSignerEmailMessage } from "@/lib/schemas/signer";
-import type { UseTemplateData } from "@/lib/templates";
+import { DocumentPreview } from "@/components/templates/template-detail-shell";
+import { RoleChip, signsInOrder } from "@/components/templates/template-parts";
+import {
+  templateDocumentUrl,
+  useTemplatePdf,
+} from "@/components/templates/template-preview";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/cn";
+import { Spinner } from "@/components/ui/spinner";
+import { TextMorph } from "@/components/ui/text-morph";
 
 type UseTemplateShellProps = {
   /** Shown in place of the form when the template cannot be used. */
   errorMessage?: string;
+  /** The template's pages and fields, for the preview beside the form. */
+  preview?: TemplateDetail | null;
   template?: UseTemplateData;
 };
 
@@ -57,11 +71,25 @@ function findErrors(people: readonly Person[]): PersonErrors[] {
   });
 }
 
-/** Names a person for each role of a template and starts a draft from it. */
+/**
+ * Use a template, in two columns (pass 5): the document on the left, as it
+ * will go out, and one question on the right, "Who signs this time?". A
+ * row per role in signing order (its colour, when it signs, a name and an
+ * email), then the title, prefilled. Filling in a role brings its fields
+ * forward on the page (and turns to the first page they are on), so you
+ * can see what that person will be asked to do. Nothing is sent from
+ * here; the draft opens on the review step.
+ */
 export function UseTemplateShell({
   errorMessage,
+  preview = null,
   template,
 }: UseTemplateShellProps) {
+  const pdf = useTemplatePdf(
+    preview && template ? templateDocumentUrl(template.id) : null,
+  );
+  const [page, setPage] = useState(1);
+  const [activeRole, setActiveRole] = useState<number | null>(null);
   const [title, setTitle] = useState(template?.name ?? "");
   const [people, setPeople] = useState<Person[]>(() =>
     (template?.roles ?? []).map(() => ({ email: "", name: "" })),
@@ -72,8 +100,8 @@ export function UseTemplateShell({
 
   if (!template) {
     return (
-      <div className="space-y-5">
-        <PageHeader title="Use a template" />
+      <div className="flex flex-col gap-6">
+        <BackLink href="/templates" label="Templates" />
         <StatusPanel
           action={{ href: "/templates", label: "Back to templates" }}
           description={
@@ -92,6 +120,24 @@ export function UseTemplateShell({
     title.trim().length === 0 ? "Give the envelope a title" : undefined;
   const canSubmit =
     !titleError && errors.every((error) => !error.name && !error.email);
+  const roleCount = template.roles.length;
+
+  function focusRole(index: number) {
+    setActiveRole(index);
+
+    const own = preview?.fields.filter((field) => field.roleIndex === index);
+
+    if (!own?.length || own.some((field) => field.page === page)) {
+      return;
+    }
+
+    // Turn to where they sign, or else to their first field.
+    const target =
+      own.find((field) => field.type === "signature") ??
+      own.reduce((first, field) => (field.page < first.page ? field : first));
+
+    setPage(target.page);
+  }
 
   function updatePerson(index: number, patch: Partial<Person>) {
     setSubmitError(null);
@@ -106,7 +152,17 @@ export function UseTemplateShell({
     event.preventDefault();
     setShowErrors(true);
 
-    if (!template || !canSubmit || isSubmitting) {
+    if (!template || isSubmitting) {
+      return;
+    }
+
+    if (!canSubmit) {
+      // Take the person to the first thing that needs them.
+      const form = event.currentTarget;
+
+      requestAnimationFrame(() => {
+        form.querySelector<HTMLElement>("[aria-invalid='true']")?.focus();
+      });
       return;
     }
 
@@ -139,89 +195,87 @@ export function UseTemplateShell({
   }
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        description={`${template.name} · ${template.pageCountLabel} · ${template.fieldCountLabel}`}
-        title="Use a template"
-      />
+    <div className="section-stack">
+      <div className="flex flex-col gap-5">
+        <BackLink
+          href={`/templates/${encodeURIComponent(template.id)}`}
+          label={template.name}
+        />
+        <PageHeader
+          description={`${template.pageCountLabel} · ${template.fieldCountLabel} · ${String(roleCount)} ${roleCount === 1 ? "person signs" : "people sign"}`}
+          title="Use template"
+        />
+      </div>
 
-      <form
-        className="panel space-y-6 p-5 sm:p-8"
-        data-animate="enter"
-        data-animate-delay="1"
-        noValidate
-        onSubmit={handleSubmit}
+      <div
+        className={cn(
+          "grid items-start gap-6 lg:gap-10",
+          preview && "lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)]",
+        )}
       >
-        <label className="grid max-w-xl gap-1.5">
-          <span className="text-[0.8125rem] font-semibold text-(--secondary)">
-            Envelope title
-          </span>
-          <input
-            aria-invalid={showErrors && titleError ? true : undefined}
-            className="field-input"
-            disabled={isSubmitting}
-            maxLength={160}
-            onChange={(event) => {
-              setSubmitError(null);
-              setTitle(event.target.value);
-            }}
-            type="text"
-            value={title}
-          />
-          {showErrors && titleError ? (
-            <span
-              className="text-xs font-semibold text-(--danger)"
-              role="alert"
-            >
-              {titleError}
-            </span>
-          ) : null}
-        </label>
+        {preview ? (
+          <section
+            aria-label="Preview"
+            className="flex min-w-0 flex-col gap-4 max-lg:order-last lg:sticky lg:top-24"
+          >
+            <DocumentPreview
+              activeRole={activeRole}
+              fields={preview.fields}
+              onPageChange={setPage}
+              page={page}
+              pageCount={preview.pageCount}
+              pdf={pdf}
+              title={template.name}
+            />
+          </section>
+        ) : null}
 
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <h2 className="text-lg font-extrabold text-(--fg)">
-              Who is signing this time?
+        <form
+          className="flex min-w-0 flex-col rounded-(--radius-card) bg-(--paper) shadow-(--shadow-card)"
+          noValidate
+          onSubmit={handleSubmit}
+        >
+          <div className="flex flex-col gap-1 px-5 pt-5 sm:px-6 sm:pt-6">
+            <h2 className="text-base leading-6 font-semibold tracking-[-0.015em] text-(--fg)">
+              Who signs this time?
             </h2>
-            <p className="text-sm leading-6 text-(--secondary)">
-              They receive the document in this order. The fields are already
-              placed for each of them.
+            <p className="text-[0.8125rem] leading-5 text-pretty text-(--secondary)">
+              {roleCount === 1
+                ? "Their fields are already placed."
+                : "They get it in this order. Their fields are already placed."}
             </p>
           </div>
 
-          <ol className="space-y-3">
+          <ol className="flex flex-col px-5 sm:px-6">
             {template.roles.map((role, index) => {
-              const palette = getSignerPalette(index);
               const person = people[index] ?? { email: "", name: "" };
               const nameError = showErrors ? errors[index]?.name : undefined;
               const emailError = showErrors ? errors[index]?.email : undefined;
 
               return (
-                <li className="well p-4 sm:p-5" key={role.id}>
-                  <span
-                    className="pill"
-                    style={{
-                      backgroundColor: palette.tint,
-                      color: palette.color,
-                    }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="size-2 rounded-full"
-                      style={{ backgroundColor: palette.color }}
+                <li
+                  className="flex flex-col gap-3 border-(--divider) py-5 not-first:border-t"
+                  key={role.id}
+                  onFocus={() => focusRole(index)}
+                  onPointerEnter={() => focusRole(index)}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <RoleChip
+                      index={index}
+                      name={role.name}
+                      showOrder={false}
                     />
-                    {index + 1}. {role.name}
-                  </span>
-
-                  <div className="mt-3 grid gap-x-4 gap-y-3 md:grid-cols-2">
-                    <label className="grid auto-rows-min gap-1.5">
-                      <span className="text-[0.8125rem] font-semibold text-(--secondary)">
-                        Name
+                    {roleCount > 1 ? (
+                      <span className="text-[0.8125rem] leading-5 text-(--secondary)">
+                        {signsInOrder(index)}
                       </span>
-                      <input
-                        aria-invalid={nameError ? true : undefined}
+                    ) : null}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FormField error={nameError} label="Name">
+                      <Input
                         aria-label={`${role.name} name`}
-                        className="field-input"
+                        autoComplete="off"
                         disabled={isSubmitting}
                         maxLength={120}
                         onChange={(event) =>
@@ -231,25 +285,13 @@ export function UseTemplateShell({
                         type="text"
                         value={person.name}
                       />
-                      {nameError ? (
-                        <span
-                          className="text-xs font-semibold text-(--danger)"
-                          role="alert"
-                        >
-                          {nameError}
-                        </span>
-                      ) : null}
-                    </label>
-
-                    <label className="grid auto-rows-min gap-1.5">
-                      <span className="text-[0.8125rem] font-semibold text-(--secondary)">
-                        Email
-                      </span>
-                      <input
-                        aria-invalid={emailError ? true : undefined}
+                    </FormField>
+                    <FormField error={emailError} label="Email">
+                      <Input
                         aria-label={`${role.name} email`}
-                        className="field-input"
+                        autoComplete="off"
                         disabled={isSubmitting}
+                        inputMode="email"
                         maxLength={320}
                         onChange={(event) =>
                           updatePerson(index, { email: event.target.value })
@@ -258,47 +300,70 @@ export function UseTemplateShell({
                         type="email"
                         value={person.email}
                       />
-                      {emailError ? (
-                        <span
-                          className="text-xs font-semibold text-(--danger)"
-                          role="alert"
-                        >
-                          {emailError}
-                        </span>
-                      ) : null}
-                    </label>
+                    </FormField>
                   </div>
                 </li>
               );
             })}
           </ol>
-        </div>
 
-        <p className="text-sm leading-6 text-(--secondary)">
-          Nothing is sent yet. You will see the review step next, where you can
-          still change the fields, add people who get a copy, or add an extra
-          check before signing.
-        </p>
-
-        {submitError ? (
-          <div className="notice notice-danger" role="alert">
-            <p>{submitError}</p>
+          <div className="border-t border-(--divider) px-5 py-5 sm:px-6">
+            <FormField
+              error={showErrors ? titleError : undefined}
+              hint="Signers see this title in their email."
+              label="Envelope title"
+            >
+              <Input
+                disabled={isSubmitting}
+                maxLength={160}
+                onChange={(event) => {
+                  setSubmitError(null);
+                  setTitle(event.target.value);
+                }}
+                type="text"
+                value={title}
+              />
+            </FormField>
           </div>
-        ) : null}
 
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <ShellButton
-            disabled={isSubmitting}
-            href="/templates"
-            variant="secondary"
-          >
-            Cancel
-          </ShellButton>
-          <ShellButton loading={isSubmitting} type="submit">
-            {isSubmitting ? "Creating..." : "Create draft"}
-          </ShellButton>
-        </div>
-      </form>
+          {submitError ? (
+            <div className="px-5 pb-1 sm:px-6">
+              <p
+                className="rounded-(--radius-well) bg-(--danger-soft) px-3.5 py-2.5 text-[0.8125rem] leading-5 font-medium text-(--danger)"
+                role="alert"
+              >
+                {submitError}
+              </p>
+            </div>
+          ) : null}
+
+          <div className="flex flex-col gap-4 px-5 pt-4 pb-5 sm:flex-row sm:items-center sm:px-6 sm:pb-6">
+            <p className="text-[0.8125rem] leading-5 text-(--secondary) sm:mr-auto">
+              Nothing is sent yet. You review everything next.
+            </p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <Button
+                asChild
+                className="max-sm:h-12"
+                disabled={isSubmitting}
+                variant="ghost"
+              >
+                <Link href="/templates">Cancel</Link>
+              </Button>
+              <Button
+                aria-busy={isSubmitting || undefined}
+                className="max-sm:h-12"
+                type="submit"
+              >
+                {isSubmitting ? <Spinner /> : null}
+                <TextMorph>
+                  {isSubmitting ? "Creating draft…" : "Create draft"}
+                </TextMorph>
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

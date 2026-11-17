@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { connection } from "next/server";
 
-import { Brand } from "@/components/layout/brand";
 import { BrandingProvider } from "@/components/layout/branding-provider";
 import { PublicLegalFooter } from "@/components/layout/public-legal-links";
-import { PublicSessionMenu } from "@/components/layout/public-session-menu";
+import { PublicHeader } from "@/components/public/public-header";
+import { PublicToc } from "@/components/public/public-toc";
 import { buildBranding, type Branding } from "@/lib/branding";
 import { getBranding, resolveSettings } from "@/lib/settings";
 
@@ -56,6 +56,28 @@ export async function PublicDocumentShell({
   );
 }
 
+/*
+ * Reading layout (docs/redesign/calm.md): one 680px column on the Bond
+ * page, a clear title and one line under it, body text set for reading
+ * with whitespace (not rules) between sections. Long policies get a quiet
+ * "On this page" disclosure, and on very wide screens a contents rail in
+ * the left margin that leaves the column centred. Tool pages (verify, an
+ * expired download) use the same frame with their one card in the body;
+ * the prose styles only reach `section` children, never the tool.
+ */
+const bodyClassName = [
+  "flex flex-col gap-12 text-base leading-7 text-(--fg)",
+  "[&>section]:flex [&>section]:flex-col [&>section]:gap-3",
+  "[&>section_h2]:scroll-mt-24 [&>section_h2]:text-xl [&>section_h2]:leading-7 [&>section_h2]:font-semibold [&>section_h2]:tracking-[-0.02em] [&>section_h2]:text-(--fg)",
+  "[&>section_h3]:scroll-mt-24 [&>section_h3]:pt-2 [&>section_h3]:text-base [&>section_h3]:font-semibold [&>section_h3]:text-(--fg)",
+  "[&>section_p]:text-[rgb(var(--fg-rgb)/0.78)] [&>section_li]:text-[rgb(var(--fg-rgb)/0.78)]",
+  "[&>section_strong]:font-medium [&>section_strong]:text-(--fg)",
+  "[&>section_ul]:flex [&>section_ul]:flex-col [&>section_ul]:gap-2 [&>section_ul]:pl-5 [&>section_ul_li]:pl-1 [&>section_ul_li]:marker:text-(--dot-neutral)",
+  "[&>section_ol]:flex [&>section_ol]:flex-col [&>section_ol]:gap-2 [&>section_ol]:pl-5 [&>section_ol_li]:pl-1 [&>section_ol_li]:marker:text-(--secondary)",
+  "[&>section_a]:font-medium [&>section_a]:text-(--accent-ink) [&>section_a]:underline [&>section_a]:decoration-[rgb(var(--accent-rgb)/0.3)] [&>section_a]:underline-offset-4 [&>section_a:hover]:decoration-current",
+  "[&>section_code]:rounded-md [&>section_code]:bg-(--surface-strong) [&>section_code]:px-1.5 [&>section_code]:py-0.5 [&>section_code]:font-mono [&>section_code]:text-[0.875rem] [&>section_code]:text-(--fg)",
+].join(" ");
+
 function PublicDocumentPage({
   children,
   description,
@@ -63,35 +85,33 @@ function PublicDocumentPage({
   title,
 }: PublicDocumentShellProps) {
   return (
-    <div className="flex min-h-screen flex-col text-(--fg)">
-      <header>
-        <div className="page-width flex items-center justify-between gap-4 py-4">
-          <Brand href="/" />
-          <PublicSessionMenu />
-        </div>
-      </header>
+    <div className="flex min-h-dvh flex-col text-(--fg)">
+      <PublicHeader />
 
-      <main className="flex-1 pb-10 pt-2 sm:pt-4">
-        <div className="page-width">
-          <article
-            className="panel mx-auto max-w-[880px] overflow-hidden"
-            data-animate="enter"
-          >
-            <div className="px-6 pb-2 pt-9 sm:px-12 sm:pt-12">
+      <main className="flex-1 px-5 pt-10 pb-20 sm:px-10 sm:pt-16 sm:pb-28">
+        <div className="mx-auto grid max-w-[42.5rem] grid-cols-1 xl:max-w-none xl:grid-cols-[minmax(0,1fr)_minmax(0,42.5rem)_minmax(0,1fr)] xl:gap-x-16">
+          <aside className="hidden xl:block">
+            <PublicToc variant="rail" />
+          </aside>
+
+          <article className="min-w-0" data-animate="enter">
+            <header className="flex flex-col gap-3 pb-10">
+              <h1 className="text-[1.875rem] leading-[1.15] font-semibold tracking-[-0.035em] text-balance text-(--fg) sm:text-[2.5rem] sm:leading-[1.1]">
+                {title}
+              </h1>
+              <p className="text-[1.0625rem] leading-7 text-pretty text-(--secondary)">
+                {description}
+              </p>
               {lastUpdated ? (
-                <p className="section-eyebrow mb-3">
+                <p className="text-[0.8125rem] font-medium text-(--secondary)">
                   Last updated {lastUpdated}
                 </p>
               ) : null}
-              <h1 className="max-w-[20ch] text-[clamp(2rem,4.5vw,3rem)] font-extrabold leading-[1.06] tracking-[-0.035em] text-(--fg)">
-                {title}
-              </h1>
-              <p className="mt-4 max-w-[680px] text-base leading-7 text-(--secondary) sm:text-[1.0625rem]">
-                {description}
-              </p>
-            </div>
+            </header>
 
-            <div className="space-y-9 px-6 py-8 text-[0.9375rem] leading-7 text-(--secondary) sm:px-12 sm:pb-12 sm:pt-9">
+            <PublicToc variant="fold" />
+
+            <div className={bodyClassName} data-public-body>
               {children}
             </div>
           </article>

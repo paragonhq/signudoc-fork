@@ -1,10 +1,21 @@
 import { SIGNUDOC_NAME, type Branding } from "../branding.ts";
 import { getEnv, type EnvSource } from "../utils/env.ts";
 import { escapeHtml } from "../utils/html.ts";
+import {
+  emailFooter,
+  emailFooterLink,
+  emailLogo,
+  emailTheme,
+  emailWordmark,
+  renderEmailDocument,
+} from "./email-layout.ts";
 import { requireConfigValue } from "./service-config.ts";
 
 type EmailBodyContent = {
+  /** The message's own content, built with the helpers in email-layout.ts. */
   htmlBody: string;
+  /** What the inbox shows after the subject. Plain text. */
+  preheader?: string;
   textBody: string;
 };
 
@@ -42,33 +53,32 @@ function buildFooterLinks(branding: Branding, env: EnvSource): FooterLink[] {
 }
 
 /**
- * The install's logo for the top of an email, or nothing when it has none.
- * Email programs fetch it from this site, so it needs the site's address;
- * many hide pictures until asked, which is why the name is the alt text.
+ * The top of an email: the install's logo, or its name when it has none.
+ * Email programs fetch the logo from this site, so it needs the site's
+ * address; many hide pictures until asked, which is why the name is the
+ * alt text.
  */
-function buildLogoHeader(branding: Branding, env: EnvSource): string {
+function buildHeader(branding: Branding, env: EnvSource): string {
   const appUrl = getEnv(env).appUrl;
+  const theme = emailTheme(branding);
 
   if (!branding.logoUrl || !appUrl) {
-    return "";
+    return emailWordmark(branding.productName, theme);
   }
 
-  const source = new URL(branding.logoUrl, appUrl).toString();
-
-  return [
-    '<p style="margin:0 0 24px;">',
-    `<img src="${escapeHtml(source)}" alt="${escapeHtml(branding.productName)}" height="40" `,
-    'style="display:block;height:40px;width:auto;max-width:240px;border:0;" />',
-    "</p>",
-  ].join("");
+  return emailLogo({
+    alt: branding.productName,
+    src: new URL(branding.logoUrl, appUrl).toString(),
+  });
 }
 
 /**
- * Appends the footer every email to a person carries: the install's terms,
- * privacy and contact links, where it has them. On a neutral install the
- * footer also names the organization's support address and says the message
- * was sent with SignuDoc, and the organization's logo, when it has one,
- * goes at the top.
+ * Puts a message in the shared email layout (see email-layout.ts) and adds
+ * the footer every email to a person carries: the install's terms, privacy
+ * and contact links, where it has them. On a neutral install the footer
+ * also names the organization's support address and says the message was
+ * sent with SignuDoc. The organization's logo, when it has one, goes at
+ * the top; otherwise its name does.
  */
 export function withUserEmailLegalFooter(
   input: EmailBodyContent,
@@ -76,20 +86,26 @@ export function withUserEmailLegalFooter(
   env: EnvSource = process.env,
 ): EmailBodyContent {
   const links = buildFooterLinks(branding, env);
-  const logoHeader = buildLogoHeader(branding, env);
   const textLines: string[] = [];
   const htmlLines: string[] = [];
 
   for (const link of links) {
     textLines.push("", `${link.label}:`, link.url);
-    htmlLines.push(`<a href="${escapeHtml(link.url)}">${link.label}</a>`);
+  }
+
+  if (links.length > 0) {
+    htmlLines.push(
+      links
+        .map((link) => emailFooterLink(link.label, link.url))
+        .join("&nbsp;&nbsp;&middot;&nbsp;&nbsp;"),
+    );
   }
 
   if (!branding.hosted) {
     if (branding.supportAddress) {
       textLines.push("", `Questions? Contact ${branding.supportAddress}.`);
       htmlLines.push(
-        `Questions? Contact <a href="mailto:${escapeHtml(branding.supportAddress)}">${escapeHtml(branding.supportAddress)}</a>.`,
+        `Questions? Contact ${emailFooterLink(branding.supportAddress, `mailto:${branding.supportAddress}`)}.`,
       );
     }
 
@@ -101,21 +117,18 @@ export function withUserEmailLegalFooter(
     htmlLines.push(escapeHtml(sentBy));
   }
 
-  if (htmlLines.length === 0) {
-    return logoHeader
-      ? { htmlBody: `${logoHeader}${input.htmlBody}`, textBody: input.textBody }
-      : input;
-  }
-
-  const htmlFooter = [
-    '<hr style="margin:24px 0;border:none;border-top:1px solid #e2e2e2;" />',
-    `<p>${htmlLines.join("<br />")}</p>`,
-  ].join("");
-
   return {
-    htmlBody: `${logoHeader}${input.htmlBody}${htmlFooter}`,
+    htmlBody: renderEmailDocument({
+      contentHtml: input.htmlBody,
+      footerHtml: htmlLines.length > 0 ? emailFooter(htmlLines) : undefined,
+      headerHtml: buildHeader(branding, env),
+      preheader: input.preheader,
+    }),
     // Each entry starts with an empty line; one more newline puts that
     // empty line between the message and the footer.
-    textBody: `${input.textBody}\n${textLines.join("\n")}`,
+    textBody:
+      textLines.length > 0
+        ? `${input.textBody}\n${textLines.join("\n")}`
+        : input.textBody,
   };
 }

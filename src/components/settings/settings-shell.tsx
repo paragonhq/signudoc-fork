@@ -2,35 +2,49 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
+import { cn } from "@/lib/cn";
 import { useBranding } from "@/components/layout/branding-provider";
-import { FieldShell, ShellButton } from "@/components/shared/form-shell";
-import { PageHeader } from "@/components/shared/page-header";
 import { SessionsPanel } from "@/components/settings/sessions-panel";
-import { TwoFactorPanel } from "@/components/settings/two-factor-panel";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
+  CardNotice,
+  GENERIC_ERROR_MESSAGE,
+  Notice,
+  Reveal,
+  SaveBar,
+  SettingRow,
+  SettingRows,
+  SettingsAnchor,
+  SettingsGroup,
+  SettingsSection,
+} from "@/components/settings/settings-ui";
+import { TwoFactorPanel } from "@/components/settings/two-factor-panel";
+import { Button } from "@/components/ui/button";
+import { ConfirmTray } from "@/components/ui/confirm-tray";
+import { FormField } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toaster";
+import {
+  Tray,
+  TrayBody,
+  TrayClose,
+  TrayContent,
+  TrayDescription,
+  TrayFooter,
+  TrayHeader,
+  TrayTitle,
+  TrayTrigger,
+} from "@/components/ui/tray";
+
+// The person's own account: profile, password, two-step sign-in, devices
+// and closing the account. Shown to everyone.
 
 const CLOSURE_CONFIRMATION_PHRASE = "close my account";
-const GENERIC_ERROR_MESSAGE = "Something went wrong. Please try again.";
+const MIN_PASSWORD_LENGTH = 15;
 
 type SettingsShellProps = {
   initialProfile?: ProfileValues;
   twoFactor?: { enabled: boolean; required: boolean };
 };
-
-type FeedbackTone = "error" | "success";
-
-type FeedbackMessage = {
-  message: string;
-  tone: FeedbackTone;
-} | null;
 
 type ProfileValues = {
   email: string;
@@ -45,7 +59,7 @@ type PasswordValues = {
 type ProfileErrors = Partial<Record<keyof ProfileValues, string>>;
 type PasswordErrors = Partial<Record<keyof PasswordValues, string>>;
 
-type PendingAction = "closure" | "password" | "profile" | "reset" | null;
+type PendingAction = "password" | "profile" | "reset" | null;
 
 type ApiErrorPayload = {
   error?:
@@ -95,7 +109,7 @@ function validatePasswordValues(values: PasswordValues): PasswordErrors {
     errors.currentPassword = "Enter your current password";
   }
 
-  if (values.newPassword.trim().length < 15) {
+  if (values.newPassword.trim().length < MIN_PASSWORD_LENGTH) {
     errors.newPassword = "Password must be at least 15 characters";
   }
 
@@ -165,20 +179,36 @@ export function SettingsShell({
   initialProfile = defaultProfileValues,
   twoFactor = { enabled: false, required: false },
 }: SettingsShellProps) {
-  const closureCopy = useClosureCopy();
+  return (
+    <SettingsGroup label="Account">
+      <ProfileSection initialProfile={initialProfile} />
+      <SettingsSection id="sign-in" title="Sign-in">
+        <PasswordSection email={initialProfile.email} />
+        <TwoFactorPanel
+          enabled={twoFactor.enabled}
+          required={twoFactor.required}
+          variant="rows"
+        />
+        <SessionsPanel />
+      </SettingsSection>
+      <CloseAccountSection />
+    </SettingsGroup>
+  );
+}
+
+function ProfileSection({ initialProfile }: { initialProfile: ProfileValues }) {
   const [profileValues, setProfileValues] = useState(initialProfile);
   const [savedProfileValues, setSavedProfileValues] = useState(initialProfile);
   const [profileErrors, setProfileErrors] = useState<ProfileErrors>({});
-  const [passwordValues, setPasswordValues] = useState(defaultPasswordValues);
-  const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({});
-  const [feedback, setFeedback] = useState<FeedbackMessage>(null);
-  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
-  const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
-  const [closureConfirmation, setClosureConfirmation] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [emailPending, setEmailPending] = useState<string | null>(null);
 
-  const isBusy = pendingAction !== null;
-  const isClosureConfirmationValid =
-    closureConfirmation.trim().toLowerCase() === CLOSURE_CONFIRMATION_PHRASE;
+  const nameChanged = profileValues.fullName !== savedProfileValues.fullName;
+  const emailChanged =
+    profileValues.email.trim().toLowerCase() !==
+    savedProfileValues.email.trim().toLowerCase();
+  const changes = Number(nameChanged) + Number(emailChanged);
 
   function handleProfileChange(field: keyof ProfileValues) {
     return (event: ChangeEvent<HTMLInputElement>) => {
@@ -192,30 +222,20 @@ export function SettingsShell({
         ...currentErrors,
         [field]: undefined,
       }));
-      setFeedback(null);
+      setError(null);
     };
   }
 
-  function handlePasswordChange(field: keyof PasswordValues) {
-    return (event: ChangeEvent<HTMLInputElement>) => {
-      const nextValue = event.target.value;
-
-      setPasswordValues((currentValues) => ({
-        ...currentValues,
-        [field]: nextValue,
-      }));
-      setPasswordErrors((currentErrors) => ({
-        ...currentErrors,
-        [field]: undefined,
-      }));
-      setFeedback(null);
-    };
+  function discard() {
+    setProfileValues(savedProfileValues);
+    setProfileErrors({});
+    setError(null);
   }
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isBusy) {
+    if (pending) {
       return;
     }
 
@@ -225,24 +245,24 @@ export function SettingsShell({
     if (Object.keys(nextErrors).length > 0) {
       setProfileValues(trimmedValues);
       setProfileErrors(nextErrors);
-      setFeedback(null);
+      setError(null);
       return;
     }
 
     setProfileValues(trimmedValues);
     setProfileErrors({});
-    setFeedback(null);
-    setPendingAction("profile");
+    setError(null);
+    setPending(true);
 
     try {
-      const nameChanged =
+      const willChangeName =
         trimmedValues.fullName !== savedProfileValues.fullName;
-      const emailChanged =
+      const willChangeEmail =
         trimmedValues.email.trim().toLowerCase() !==
         savedProfileValues.email.trim().toLowerCase();
       let nextSavedProfile = savedProfileValues;
 
-      if (nameChanged) {
+      if (willChangeName) {
         const response = await fetch("/api/account/profile", {
           body: JSON.stringify({
             email: savedProfileValues.email,
@@ -271,14 +291,12 @@ export function SettingsShell({
                 ? fieldErrors.fullName
                 : undefined,
           });
-          setFeedback({
-            message:
-              typeof fieldErrors.email === "string" ||
+          setError(
+            typeof fieldErrors.email === "string" ||
               typeof fieldErrors.fullName === "string"
-                ? "Please correct the highlighted fields."
-                : errorMessage,
-            tone: "error",
-          });
+              ? "Please correct the highlighted fields."
+              : errorMessage,
+          );
           return;
         }
 
@@ -289,7 +307,7 @@ export function SettingsShell({
         setSavedProfileValues(nextSavedProfile);
       }
 
-      if (emailChanged) {
+      if (willChangeEmail) {
         const response = await fetch("/api/auth/change-email", {
           body: JSON.stringify({
             callbackURL: `${window.location.origin}/settings`,
@@ -317,41 +335,142 @@ export function SettingsShell({
             email: trimmedValues.email,
             fullName: nextSavedProfile.fullName,
           });
-          setFeedback({
-            message:
-              isDuplicateEmailMessage(errorMessage) ||
+          setError(
+            isDuplicateEmailMessage(errorMessage) ||
               isNoOpEmailChangeMessage(errorMessage)
-                ? "Please correct the highlighted fields."
-                : errorMessage,
-            tone: "error",
-          });
+              ? "Please correct the highlighted fields."
+              : errorMessage,
+          );
           return;
         }
 
         setProfileValues(nextSavedProfile);
         setProfileErrors({});
-        setFeedback({
-          message: nameChanged
-            ? "Profile updated. If the email change can proceed, you'll receive the next steps by email."
-            : "If the email change can proceed, you'll receive the next steps by email.",
-          tone: "success",
+        setEmailPending(trimmedValues.email);
+        toast("Check your inbox", {
+          description:
+            "If the email change can proceed, you'll receive the next steps by email.",
         });
         return;
       }
 
       setProfileValues(nextSavedProfile);
       setProfileErrors({});
-      setFeedback({
-        message: "Profile updated.",
-        tone: "success",
-      });
     } catch {
-      setFeedback({
-        message: GENERIC_ERROR_MESSAGE,
-        tone: "error",
-      });
+      setError(GENERIC_ERROR_MESSAGE);
     } finally {
-      setPendingAction(null);
+      setPending(false);
+    }
+  }
+
+  return (
+    <form noValidate onSubmit={handleProfileSubmit}>
+      <SettingsSection
+        description="How you appear to the people you send documents to."
+        id="profile"
+        title="Profile"
+      >
+        <Reveal show={error !== null}>
+          <CardNotice>
+            <Notice role="alert" tone="danger">
+              {error}
+            </Notice>
+          </CardNotice>
+        </Reveal>
+        <SettingRows>
+          <SettingRow
+            description="Signers see it in their invitation and on the signing page."
+            disabled={pending}
+            error={profileErrors.fullName}
+            label="Full name"
+          >
+            <Input
+              autoComplete="name"
+              name="fullName"
+              onChange={handleProfileChange("fullName")}
+              value={profileValues.fullName}
+            />
+          </SettingRow>
+          <SettingRow
+            description="A new address is confirmed by email before it changes."
+            disabled={pending}
+            error={profileErrors.email}
+            label="Email"
+          >
+            <Input
+              autoComplete="email"
+              inputMode="email"
+              name="email"
+              onChange={handleProfileChange("email")}
+              type="email"
+              value={profileValues.email}
+            />
+          </SettingRow>
+        </SettingRows>
+        <Reveal show={emailPending !== null}>
+          <CardNotice>
+            <Notice role="status" tone="accent">
+              We sent the next steps for{" "}
+              <span className="font-medium text-(--fg)">{emailPending}</span> to
+              your current inbox. Your email stays the same until you confirm
+              both.
+            </Notice>
+          </CardNotice>
+        </Reveal>
+      </SettingsSection>
+      <SaveBar
+        changes={changes}
+        dirty={changes > 0}
+        onDiscard={discard}
+        saveLabel="Save changes"
+        savedMessage="Profile updated."
+        saving={pending}
+      />
+    </form>
+  );
+}
+
+/**
+ * The password is one row; changing it happens in a tray, so the two
+ * password fields are only on screen while someone is using them.
+ */
+function PasswordSection({ email }: { email: string }) {
+  const [open, setOpen] = useState(false);
+  const [passwordValues, setPasswordValues] = useState(defaultPasswordValues);
+  const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({});
+  const [error, setError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+
+  const isBusy = pendingAction !== null;
+  const newLength = passwordValues.newPassword.trim().length;
+
+  function handlePasswordChange(field: keyof PasswordValues) {
+    return (event: ChangeEvent<HTMLInputElement>) => {
+      const nextValue = event.target.value;
+
+      setPasswordValues((currentValues) => ({
+        ...currentValues,
+        [field]: nextValue,
+      }));
+      setPasswordErrors((currentErrors) => ({
+        ...currentErrors,
+        [field]: undefined,
+      }));
+      setError(null);
+    };
+  }
+
+  function changeOpen(next: boolean) {
+    if (isBusy) {
+      return;
+    }
+
+    setOpen(next);
+
+    if (!next) {
+      setPasswordValues(defaultPasswordValues);
+      setPasswordErrors({});
+      setError(null);
     }
   }
 
@@ -366,12 +485,12 @@ export function SettingsShell({
 
     if (Object.keys(nextErrors).length > 0) {
       setPasswordErrors(nextErrors);
-      setFeedback(null);
+      setError(null);
       return;
     }
 
     setPasswordErrors({});
-    setFeedback(null);
+    setError(null);
     setPendingAction("password");
 
     try {
@@ -400,29 +519,24 @@ export function SettingsShell({
               ? "Choose a password that hasn't appeared in a breach"
               : undefined,
         });
-        setFeedback({
-          message:
-            isInvalidPasswordMessage(errorMessage) ||
+        setError(
+          isInvalidPasswordMessage(errorMessage) ||
             isPasswordTooShortMessage(errorMessage) ||
             isCompromisedPasswordMessage(errorMessage)
-              ? "Please correct the highlighted fields."
-              : errorMessage,
-          tone: "error",
-        });
+            ? null
+            : errorMessage,
+        );
         return;
       }
 
       setPasswordValues(defaultPasswordValues);
       setPasswordErrors({});
-      setFeedback({
-        message: "Password updated.",
-        tone: "success",
+      setOpen(false);
+      toast.success("Password updated.", {
+        description: "Your other devices were signed out.",
       });
     } catch {
-      setFeedback({
-        message: GENERIC_ERROR_MESSAGE,
-        tone: "error",
-      });
+      setError(GENERIC_ERROR_MESSAGE);
     } finally {
       setPendingAction(null);
     }
@@ -433,31 +547,20 @@ export function SettingsShell({
       return;
     }
 
-    const trimmedProfileValues = trimProfileValues(profileValues);
-    const nextErrors = validateProfileValues(trimmedProfileValues);
+    const trimmedEmail = email.trim();
 
-    if (nextErrors.email) {
-      setProfileValues(trimmedProfileValues);
-      setProfileErrors((currentErrors) => ({
-        ...currentErrors,
-        email: nextErrors.email,
-      }));
-      setFeedback(null);
+    if (!trimmedEmail.includes("@")) {
+      setError("Add a valid email address to your profile first.");
       return;
     }
 
-    setProfileValues(trimmedProfileValues);
-    setProfileErrors((currentErrors) => ({
-      ...currentErrors,
-      email: undefined,
-    }));
-    setFeedback(null);
+    setError(null);
     setPendingAction("reset");
 
     try {
       const response = await fetch("/api/auth/request-password-reset", {
         body: JSON.stringify({
-          email: trimmedProfileValues.email,
+          email: trimmedEmail,
           redirectTo: `${window.location.origin}/login`,
         }),
         headers: {
@@ -468,271 +571,141 @@ export function SettingsShell({
       const payload = await readApiPayload(response);
 
       if (!response.ok) {
-        setFeedback({
-          message: extractApiErrorMessage(payload),
-          tone: "error",
-        });
+        setError(extractApiErrorMessage(payload));
         return;
       }
 
-      setFeedback({
-        message: "Password reset link sent.",
-        tone: "success",
+      setOpen(false);
+      toast.success("Password reset link sent.", {
+        description: `Check ${trimmedEmail}.`,
       });
     } catch {
-      setFeedback({
-        message: GENERIC_ERROR_MESSAGE,
-        tone: "error",
-      });
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
-  function openClosureDialog() {
-    if (isBusy) {
-      return;
-    }
-
-    setClosureConfirmation("");
-    setFeedback(null);
-    setIsClosureDialogOpen(true);
-  }
-
-  function closeClosureDialog() {
-    if (pendingAction === "closure") {
-      return;
-    }
-
-    setClosureConfirmation("");
-    setIsClosureDialogOpen(false);
-  }
-
-  async function handleClosureSubmit() {
-    if (pendingAction === "closure" || !isClosureConfirmationValid) {
-      return;
-    }
-
-    setFeedback(null);
-    setPendingAction("closure");
-
-    try {
-      const response = await fetch("/api/account/closure-request", {
-        body: JSON.stringify({
-          confirmation: CLOSURE_CONFIRMATION_PHRASE,
-        }),
-        headers: {
-          "content-type": "application/json",
-        },
-        method: "POST",
-      });
-      const payload = await readApiPayload(response);
-
-      if (!response.ok) {
-        setFeedback({
-          message: extractApiErrorMessage(payload),
-          tone: "error",
-        });
-        return;
-      }
-
-      setClosureConfirmation("");
-      setIsClosureDialogOpen(false);
-      setFeedback({
-        message:
-          "We've received your request. Download any documents you want to keep within 30 days.",
-        tone: "success",
-      });
-    } catch {
-      setFeedback({
-        message: GENERIC_ERROR_MESSAGE,
-        tone: "error",
-      });
+      setError(GENERIC_ERROR_MESSAGE);
     } finally {
       setPendingAction(null);
     }
   }
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        description="Manage your sender profile, password, two-step sign-in and account lifecycle."
-        title="Settings"
-      />
-
-      {feedback ? <SettingsFeedback feedback={feedback} /> : null}
-
-      <section data-animate="enter" data-animate-delay="1">
-        <div className="space-y-5">
-          <div className="panel space-y-5 p-6 sm:p-8">
-            <SectionHeading title="Profile" />
-
-            <form className="space-y-5" onSubmit={handleProfileSubmit}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FieldShell
+    <SettingsAnchor id="password">
+      <SettingRow
+        controlWidth="auto"
+        description="Changing it signs you out on every other device."
+        kind="group"
+        label="Password"
+      >
+        <Tray dismissible={!isBusy} onOpenChange={changeOpen} open={open}>
+          <TrayTrigger asChild>
+            <Button className="max-md:w-full" variant="outline">
+              Change password
+            </Button>
+          </TrayTrigger>
+          <TrayContent showCloseButton={!isBusy} size="sm">
+            <form
+              className="flex min-h-0 flex-col"
+              noValidate
+              onSubmit={handlePasswordSubmit}
+            >
+              <TrayHeader>
+                <TrayTitle>Change password</TrayTitle>
+                <TrayDescription>
+                  Your other devices are signed out when it changes.
+                </TrayDescription>
+              </TrayHeader>
+              <TrayBody className="flex flex-col gap-4 pt-4">
+                {error ? (
+                  <Notice role="alert" tone="danger">
+                    {error}
+                  </Notice>
+                ) : null}
+                <FormField
                   disabled={isBusy}
-                  error={profileErrors.fullName}
-                  label="Full name"
-                  name="fullName"
-                  onChange={handleProfileChange("fullName")}
-                  readOnly={false}
-                  value={profileValues.fullName}
-                />
-                <FieldShell
-                  disabled={isBusy}
-                  error={profileErrors.email}
-                  label="Email"
-                  name="email"
-                  onChange={handleProfileChange("email")}
-                  readOnly={false}
-                  type="email"
-                  value={profileValues.email}
-                />
-              </div>
-              <p className="text-sm leading-6 text-(--secondary)">
-                Email changes are verified through your current inbox first,
-                then the new inbox.
-              </p>
-
-              <ShellButton
-                className="w-fit"
-                loading={pendingAction === "profile"}
-                type="submit"
-              >
-                {pendingAction === "profile" ? "Saving..." : "Save changes"}
-              </ShellButton>
-            </form>
-          </div>
-
-          <div className="panel p-6 sm:p-8">
-            <div className="space-y-5">
-              <SectionHeading title="Password" />
-
-              <form className="space-y-5" onSubmit={handlePasswordSubmit}>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FieldShell
-                    disabled={isBusy}
-                    error={passwordErrors.currentPassword}
-                    label="Current password"
+                  error={passwordErrors.currentPassword}
+                  label="Current password"
+                >
+                  <Input
+                    autoComplete="current-password"
+                    autoFocus
                     name="currentPassword"
                     onChange={handlePasswordChange("currentPassword")}
-                    placeholder="••••••••••"
-                    readOnly={false}
                     type="password"
                     value={passwordValues.currentPassword}
                   />
-                  <FieldShell
-                    disabled={isBusy}
-                    error={passwordErrors.newPassword}
-                    helper="Must be at least 15 characters"
-                    label="New password"
+                </FormField>
+                <FormField
+                  disabled={isBusy}
+                  error={passwordErrors.newPassword}
+                  hint="At least 15 characters. A short sentence is easy to remember and hard to guess."
+                  label="New password"
+                >
+                  <Input
+                    autoComplete="new-password"
                     name="newPassword"
                     onChange={handlePasswordChange("newPassword")}
-                    placeholder="•••••••••••••••"
-                    readOnly={false}
                     type="password"
                     value={passwordValues.newPassword}
                   />
-                </div>
-
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <ShellButton
-                    className="w-fit"
-                    loading={pendingAction === "password"}
-                    type="submit"
-                  >
-                    {pendingAction === "password"
-                      ? "Updating..."
-                      : "Update password"}
-                  </ShellButton>
-                  <ShellButton
+                </FormField>
+                <PasswordLengthMeter length={newLength} />
+                <p className="text-[0.8125rem] leading-5 text-(--secondary)">
+                  Forgot it?{" "}
+                  <button
+                    className="rounded-sm font-medium text-(--accent-ink) underline decoration-[rgb(var(--accent-rgb)/0.35)] underline-offset-4 outline-none hover:decoration-(--accent-ink) focus-visible:shadow-(--focus-ring) disabled:opacity-50"
                     disabled={isBusy}
-                    loading={pendingAction === "reset"}
-                    onClick={handleResetPasswordLink}
-                    variant="secondary"
+                    onClick={() => void handleResetPasswordLink()}
+                    type="button"
                   >
                     {pendingAction === "reset"
-                      ? "Sending..."
+                      ? "Sending a reset link…"
                       : "Email me a reset link"}
-                  </ShellButton>
-                </div>
-              </form>
-            </div>
-          </div>
+                  </button>
+                </p>
+              </TrayBody>
+              <TrayFooter>
+                <TrayClose asChild>
+                  <Button disabled={isBusy} type="button" variant="outline">
+                    Cancel
+                  </Button>
+                </TrayClose>
+                <Button loading={pendingAction === "password"} type="submit">
+                  Update password
+                </Button>
+              </TrayFooter>
+            </form>
+          </TrayContent>
+        </Tray>
+      </SettingRow>
+    </SettingsAnchor>
+  );
+}
 
-          <TwoFactorPanel
-            enabled={twoFactor.enabled}
-            required={twoFactor.required}
-          />
+/** Fills toward the 15-character minimum; settles in success once met. */
+function PasswordLengthMeter({ length }: { length: number }) {
+  const ratio = Math.min(1, length / MIN_PASSWORD_LENGTH);
+  const met = length >= MIN_PASSWORD_LENGTH;
 
-          <SessionsPanel />
-
-          <div className="panel p-6 sm:p-8">
-            <div className="space-y-5">
-              <SectionHeading title="Danger zone" />
-              <p className="max-w-2xl text-sm leading-6 text-(--secondary)">
-                {closureCopy}
-              </p>
-              <ShellButton
-                className="w-fit border-[rgba(180,35,24,0.35)] text-(--danger) hover:border-(--danger) hover:bg-(--danger-soft) hover:text-(--danger)"
-                disabled={isBusy}
-                onClick={openClosureDialog}
-                variant="secondary"
-              >
-                Request account closure
-              </ShellButton>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {isClosureDialogOpen ? (
-        <AccountClosureDialog
-          confirmationValue={closureConfirmation}
-          isReady={isClosureConfirmationValid}
-          isSubmitting={pendingAction === "closure"}
-          onCancel={closeClosureDialog}
-          onChange={setClosureConfirmation}
-          onConfirm={handleClosureSubmit}
+  return (
+    <div aria-hidden="true" className="-mt-1 flex items-center gap-2.5">
+      <span className="relative h-1 flex-1 overflow-hidden rounded-full bg-(--surface-strong)">
+        <span
+          className="absolute inset-y-0 left-0 w-full origin-left rounded-full transition-[scale,background-color] duration-(--dur-move) ease-(--ease-out)"
+          style={{
+            backgroundColor: met ? "var(--success)" : "var(--accent)",
+            scale: `${String(ratio)} 1`,
+          }}
         />
-      ) : null}
+      </span>
+      <span
+        className={cn(
+          "text-xs font-medium tabular-nums",
+          met ? "text-(--success)" : "text-(--secondary)",
+        )}
+      >
+        {Math.min(length, 99)}/{MIN_PASSWORD_LENGTH}
+      </span>
     </div>
   );
 }
-
-function SectionHeading({ title }: Readonly<{ title: string }>) {
-  return (
-    <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-      {title}
-    </h2>
-  );
-}
-
-function SettingsFeedback({
-  feedback,
-}: Readonly<{
-  feedback: Exclude<FeedbackMessage, null>;
-}>) {
-  return (
-    <section
-      className={`notice ${
-        feedback.tone === "success" ? "notice-success" : "notice-danger"
-      }`}
-      role={feedback.tone === "error" ? "alert" : "status"}
-    >
-      <p>{feedback.message}</p>
-    </section>
-  );
-}
-
-type AccountClosureDialogProps = {
-  confirmationValue: string;
-  isReady: boolean;
-  isSubmitting: boolean;
-  onCancel: () => void;
-  onChange: (value: string) => void;
-  onConfirm: () => void;
-};
 
 function useClosureCopy(): string {
   const { hosted, productName } = useBranding();
@@ -742,70 +715,77 @@ function useClosureCopy(): string {
     : `Before closing your account, download any documents you want to keep. After 30 days your drafts, unfinished envelopes and templates are deleted. Finished documents and their audit trails stay with ${productName}: they move to an administrator, because they are the organization's records.`;
 }
 
-function AccountClosureDialog({
-  confirmationValue,
-  isReady,
-  isSubmitting,
-  onCancel,
-  onChange,
-  onConfirm,
-}: AccountClosureDialogProps) {
+function CloseAccountSection() {
   const closureCopy = useClosureCopy();
+  const [closureError, setClosureError] = useState<string | null>(null);
+  const [requested, setRequested] = useState(false);
+
+  async function requestClosure() {
+    setClosureError(null);
+
+    let response: Response;
+
+    try {
+      response = await fetch("/api/account/closure-request", {
+        body: JSON.stringify({
+          confirmation: CLOSURE_CONFIRMATION_PHRASE,
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      });
+    } catch {
+      setClosureError(GENERIC_ERROR_MESSAGE);
+      throw new Error("closure request failed");
+    }
+
+    if (!response.ok) {
+      setClosureError(extractApiErrorMessage(await readApiPayload(response)));
+      throw new Error("closure request failed");
+    }
+
+    setRequested(true);
+    toast("Closure requested", {
+      description: "Download any documents you want to keep within 30 days.",
+    });
+  }
 
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open && !isSubmitting) {
-          onCancel();
+    <SettingsSection hideTitle id="close-account" title="Close account">
+      <SettingRow
+        controlWidth="auto"
+        description={
+          requested
+            ? "Requested. Download any documents you want to keep within 30 days."
+            : "Removes your account and, after 30 days, your documents from this site."
         }
-      }}
-    >
-      <DialogContent className="max-w-lg sm:p-8" showCloseButton={false}>
-        <div className="space-y-5">
-          <DialogHeader className="space-y-3">
-            <DialogTitle>Request account closure?</DialogTitle>
-            <DialogDescription className="text-sm leading-6 text-(--secondary)">
-              {closureCopy}
-            </DialogDescription>
-          </DialogHeader>
-
-          <Field className="gap-2 text-sm">
-            <FieldLabel
-              className="text-[0.8125rem] font-semibold text-(--secondary)"
-              htmlFor="close-account-confirmation"
+        kind="group"
+        label="Close account"
+      >
+        <ConfirmTray
+          confirmLabel="Request closure"
+          confirmationText={CLOSURE_CONFIRMATION_PHRASE}
+          description={closureCopy}
+          error={closureError}
+          onConfirm={requestClosure}
+          onOpenChange={(open) => {
+            if (!open) {
+              setClosureError(null);
+            }
+          }}
+          title="Request account closure?"
+          trigger={
+            <Button
+              className="max-md:w-full"
+              disabled={requested}
+              variant="destructive-ghost"
             >
-              Type &quot;close my account&quot; to confirm:
-            </FieldLabel>
-            <Input
-              aria-label='Type "close my account" to confirm:'
-              disabled={isSubmitting}
-              id="close-account-confirmation"
-              onChange={(event) => onChange(event.target.value)}
-              type="text"
-              value={confirmationValue}
-            />
-          </Field>
-
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <ShellButton
-              disabled={isSubmitting}
-              onClick={onCancel}
-              variant="secondary"
-            >
-              Cancel
-            </ShellButton>
-            <ShellButton
-              disabled={!isReady}
-              loading={isSubmitting}
-              onClick={onConfirm}
-              variant="danger"
-            >
-              {isSubmitting ? "Requesting..." : "Request closure"}
-            </ShellButton>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+              Request account closure
+            </Button>
+          }
+        />
+      </SettingRow>
+    </SettingsSection>
   );
 }

@@ -1,12 +1,22 @@
 "use client";
 
 import * as React from "react";
+import { XIcon } from "@/components/ui/icons";
 import { Dialog as DialogPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
-import { XIcon } from "lucide-react";
+import { IconButton } from "@/components/ui/icon-button";
 
+/*
+ * The older dialog API, kept so existing screens work, restyled to the Tray
+ * look: centred with the tray entrance on desktop, a bottom sheet that
+ * slides up with the drawer curve on phones (CSS only, no drag, so a
+ * signature pad inside it is never mistaken for a swipe).
+ *
+ * New work uses Tray (ui/tray.tsx): same parts, plus a real drag-to-dismiss
+ * drawer on phones, a danger tone and height that animates between steps.
+ */
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -37,11 +47,11 @@ function DialogOverlay({
 }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
-      data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-[rgba(28,29,43,0.32)] duration-100 supports-backdrop-filter:backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "overlay-surface fixed inset-0 isolate z-50 bg-(--overlay)",
         className,
       )}
+      data-slot="dialog-overlay"
       {...props}
     />
   );
@@ -59,24 +69,29 @@ function DialogContent({
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
-        data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-5 rounded-3xl bg-[var(--paper-raised)] p-6 text-sm shadow-[0_32px_80px_rgba(28,29,43,0.22)] duration-100 outline-none sm:max-w-md sm:p-8 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "tray-surface fixed z-50 grid gap-5 overflow-y-auto overscroll-contain rounded-(--radius-tray) bg-(--paper) p-6 text-sm text-(--fg) shadow-(--shadow-tray) outline-none",
+          // Phone: a tray floating 8px in from the edges.
+          "inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] mx-auto max-h-[92dvh] w-auto",
+          // Desktop: centred, without a translate (so text stays crisp).
+          "sm:inset-0 sm:m-auto sm:h-fit sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100%-2rem)] sm:max-w-[27.5rem]",
           className,
         )}
+        data-sheet=""
+        data-slot="dialog-content"
         {...props}
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close data-slot="dialog-close" asChild>
-            <Button
-              variant="ghost"
-              className="absolute right-4 top-4"
-              size="icon-sm"
+          <DialogPrimitive.Close asChild data-slot="dialog-close">
+            <IconButton
+              aria-label="Close"
+              className="absolute top-4 right-4 bg-(--surface) hover:bg-(--surface-strong)"
+              size="sm"
+              tooltip={false}
             >
               <XIcon />
-              <span className="sr-only">Close</span>
-            </Button>
+            </IconButton>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
@@ -87,8 +102,8 @@ function DialogContent({
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
+      className={cn("flex flex-col gap-1.5", className)}
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
       {...props}
     />
   );
@@ -104,11 +119,11 @@ function DialogFooter({
 }) {
   return (
     <div
-      data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end",
+        "flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end",
         className,
       )}
+      data-slot="dialog-footer"
       {...props}
     >
       {children}
@@ -127,11 +142,11 @@ function DialogTitle({
 }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      data-slot="dialog-title"
       className={cn(
-        "pr-8 text-[1.375rem] leading-tight font-extrabold tracking-[-0.02em] text-[var(--fg)]",
+        "pr-8 text-lg leading-6 font-semibold tracking-[-0.02em] text-balance text-(--fg)",
         className,
       )}
+      data-slot="dialog-title"
       {...props}
     />
   );
@@ -143,11 +158,11 @@ function DialogDescription({
 }: React.ComponentProps<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      data-slot="dialog-description"
       className={cn(
-        "text-sm leading-6 text-[var(--secondary)] *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-sm leading-6 text-pretty text-(--secondary) *:[a]:text-(--accent-ink) *:[a]:underline *:[a]:underline-offset-4",
         className,
       )}
+      data-slot="dialog-description"
       {...props}
     />
   );

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { AppIcon } from "@/components/brand/marks";
 import { useBranding } from "@/components/layout/branding-provider";
 import { cn } from "@/lib/cn";
 
@@ -47,7 +48,7 @@ export function Brand({
       {!compact ? (
         <span
           className={cn(
-            "max-w-[52vw] truncate text-[1.125rem] font-extrabold tracking-[-0.02em] sm:max-w-[22rem] sm:text-[1.1875rem]",
+            "max-w-[52vw] truncate text-base font-semibold tracking-[-0.02em] sm:max-w-[22rem]",
             labelClassName,
           )}
         >
@@ -85,28 +86,64 @@ export function BrandLogo({
   );
 }
 
-/** The signature stroke on a tile in the accent color. Decorative: the link carries the name. */
+/** The app icon S, in the accent. Decorative: the link carries the name. */
 export function BrandMark({ className = "" }: { className?: string }) {
+  return <AppIcon className={cn("size-7", className)} />;
+}
+
+/**
+ * The workspace brand in the app shell (docs/redesign/calm.md): the app
+ * icon S and the organization's name, quietly. An install with its own
+ * logo shows the logo instead. The link carries the product name for
+ * assistive tech either way. (`tone` is accepted for older callers.)
+ */
+export function PlateBrand({
+  className = "",
+  href = "/",
+  showName = true,
+  tone: _tone,
+}: {
+  className?: string;
+  href?: string;
+  /** Show the name beside the icon (off in tight headers). */
+  showName?: boolean;
+  /** Accepted for older callers; the shell is light everywhere now. */
+  tone?: "carbon" | "paper";
+}) {
+  const { logoUrl, productName } = useBranding();
+
+  void _tone;
+
+  if (logoUrl) {
+    return (
+      <Link
+        aria-label={productName}
+        className={cn(
+          "inline-flex min-w-0 items-center rounded-lg outline-none focus-visible:shadow-(--focus-ring)",
+          className,
+        )}
+        href={href}
+      >
+        <BrandLogo className="h-7" src={logoUrl} />
+      </Link>
+    );
+  }
+
   return (
-    <span
-      aria-hidden="true"
+    <Link
+      aria-label={productName}
       className={cn(
-        "inline-flex size-7 shrink-0 items-center justify-center rounded-[0.5625rem] bg-(--accent)",
+        "inline-flex min-w-0 items-center gap-2.5 rounded-lg outline-none focus-visible:shadow-(--focus-ring)",
         className,
       )}
+      href={href}
     >
-      <svg
-        fill="none"
-        height="16"
-        stroke="#fff"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2.4"
-        viewBox="0 0 24 24"
-        width="16"
-      >
-        <path d="M4 16c3 0 4-8 7-8s2 7 5 7 2-3 4-3" />
-      </svg>
-    </span>
+      <AppIcon className="size-7 rounded-[0.5rem]" />
+      {showName ? (
+        <span className="min-w-0 truncate text-[0.9375rem] font-semibold tracking-[-0.015em] text-(--fg)">
+          {productName}
+        </span>
+      ) : null}
+    </Link>
   );
 }

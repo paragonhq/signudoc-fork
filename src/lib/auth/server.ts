@@ -16,6 +16,14 @@ import {
   type TransactionalEmailMessage,
 } from "../services/email.ts";
 import { withUserEmailLegalFooter } from "../services/email-legal-footer.ts";
+import {
+  emailButton,
+  emailDetails,
+  emailHeading,
+  emailNote,
+  emailParagraph,
+  emailTheme,
+} from "../services/email-layout.ts";
 import { consumeRateLimit } from "../security/rate-limit.ts";
 import { getClientIpHeaderNames } from "../security/request.ts";
 import {
@@ -35,7 +43,6 @@ import {
   resolveDeploymentOrigins,
   type EnvSource,
 } from "../utils/env.ts";
-import { escapeHtml } from "../utils/html.ts";
 import { isRunningSetup } from "./setup-context.ts";
 import { signInEvents } from "./sign-in-events.ts";
 import {
@@ -109,14 +116,21 @@ function buildEmailVerificationMessage(input: {
     "If you didn't request this, you can ignore this email.",
   ].join("\n");
   const htmlBody = [
-    `<p>Hi ${escapeHtml(input.name)},</p>`,
-    `<p>Verify your email address to finish setting up your ${escapeHtml(productName)} sender account.</p>`,
-    `<p><a href="${escapeHtml(input.url)}">Verify your email</a></p>`,
-    "<p>If you didn't request this, you can ignore this email.</p>",
+    emailHeading("Confirm your email"),
+    emailParagraph(
+      `Hi ${input.name}, confirm this address to finish setting up your ${productName} account. Then you can start sending documents for signature.`,
+    ),
+    emailButton({
+      label: "Verify email",
+      theme: emailTheme(input.branding),
+      url: input.url,
+    }),
+    emailNote("If you didn’t create an account, you can ignore this email."),
   ].join("");
   const legalFooter = withUserEmailLegalFooter(
     {
       htmlBody,
+      preheader: `One step left: confirm your email to finish setting up ${productName}.`,
       textBody,
     },
     input.branding,
@@ -146,14 +160,24 @@ function buildChangeEmailConfirmationMessage(input: {
     "If you didn't request this, you can ignore this email.",
   ].join("\n");
   const htmlBody = [
-    `<p>Hi ${escapeHtml(input.name)},</p>`,
-    `<p>Confirm that you want to change your ${escapeHtml(productName)} sender email to ${escapeHtml(input.newEmail)}.</p>`,
-    `<p><a href="${escapeHtml(input.url)}">Confirm this email change</a></p>`,
-    "<p>If you didn't request this, you can ignore this email.</p>",
+    emailHeading("Confirm your new email"),
+    emailParagraph(
+      `Hi ${input.name}, you asked to change the email you use with ${productName}.`,
+    ),
+    emailDetails([{ label: "New email", value: input.newEmail }]),
+    emailButton({
+      label: "Confirm change",
+      theme: emailTheme(input.branding),
+      url: input.url,
+    }),
+    emailNote(
+      "If you didn’t ask for this, you can ignore this email. Nothing changes until the link is used.",
+    ),
   ].join("");
   const legalFooter = withUserEmailLegalFooter(
     {
       htmlBody,
+      preheader: `Confirm ${input.newEmail} as your new ${productName} email.`,
       textBody,
     },
     input.branding,
@@ -182,14 +206,23 @@ function buildPasswordResetMessage(input: {
     "If you didn't request this reset, you can ignore this email.",
   ].join("\n");
   const htmlBody = [
-    `<p>Hi ${escapeHtml(input.name)},</p>`,
-    `<p>Use the link below to reset your ${escapeHtml(productName)} password.</p>`,
-    `<p><a href="${escapeHtml(input.url)}">Reset your password</a></p>`,
-    "<p>If you didn't request this reset, you can ignore this email.</p>",
+    emailHeading("Reset your password"),
+    emailParagraph(
+      `Hi ${input.name}, we got a request to reset your ${productName} password. Choose a new one with the button below.`,
+    ),
+    emailButton({
+      label: "Choose a new password",
+      theme: emailTheme(input.branding),
+      url: input.url,
+    }),
+    emailNote(
+      "If you didn’t ask for this, you can ignore this email. Your password stays the same.",
+    ),
   ].join("");
   const legalFooter = withUserEmailLegalFooter(
     {
       htmlBody,
+      preheader: `Choose a new password for ${productName}.`,
       textBody,
     },
     input.branding,

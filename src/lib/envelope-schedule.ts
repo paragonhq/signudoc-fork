@@ -8,6 +8,13 @@ import { formatDeadline } from "./envelope-deadline.ts";
 import { sendAutomaticEnvelopeReminder } from "./reminders.ts";
 import { recordAuditEvent } from "./services/audit.ts";
 import { createEmailService, type EmailService } from "./services/email.ts";
+import {
+  emailButton,
+  emailDocumentCard,
+  emailHeading,
+  emailParagraph,
+  renderPlainEmail,
+} from "./services/email-layout.ts";
 import { AUTOMATIC_REMINDER_SLACK_SECONDS } from "./services/reminders.ts";
 import { resolveAppUrl } from "./utils/env.ts";
 
@@ -170,13 +177,31 @@ function buildExpiryNotice(envelope: ExpiredEnvelopeRow) {
       ? ` It was still waiting on ${envelope.signerName} (${envelope.signerEmail}).`
       : "";
 
+  const greetingName = envelope.ownerName?.trim() || envelope.ownerEmail;
+  const deadline = formatDeadline(envelope.expiresAt);
+
   return {
+    htmlBody: renderPlainEmail({
+      contentHtml: [
+        emailHeading("A document expired before everyone signed"),
+        emailParagraph(
+          `Hi ${greetingName}, the deadline passed on ${deadline}.${waitingOn} Nobody can sign it now.`,
+        ),
+        emailDocumentCard({ lines: ["Expired"], title: envelope.title }),
+        emailParagraph(
+          "To give signers more time, open the envelope and set a new deadline. The signing link that was already sent will work again. If the document is no longer needed, void it.",
+        ),
+        link ? emailButton({ label: "Open envelope", url: link }) : "",
+      ].join(""),
+      footerText: "An automatic notice about a document you sent.",
+      preheader: `The deadline for “${envelope.title}” passed. You can set a new one.`,
+    }),
     subject: `"${envelope.title}" expired before everyone signed`,
     template: "expiry_notice" as const,
     textBody: [
-      `Hello ${envelope.ownerName?.trim() || envelope.ownerEmail},`,
+      `Hello ${greetingName},`,
       "",
-      `The deadline for "${envelope.title}" passed on ${formatDeadline(envelope.expiresAt)}.${waitingOn} Nobody can sign it now.`,
+      `The deadline for "${envelope.title}" passed on ${deadline}.${waitingOn} Nobody can sign it now.`,
       "",
       "To give signers more time, open the envelope and set a new deadline. The signing link that was already sent will work again. If the document is no longer needed, void it.",
       ...(link ? ["", link] : []),

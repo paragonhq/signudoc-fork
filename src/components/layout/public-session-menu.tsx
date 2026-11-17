@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { CircleUserRound, LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut } from "@/components/ui/icons";
+
+import { Avatar } from "@/components/ui/avatar";
 
 import {
   DropdownMenu,
@@ -35,8 +37,6 @@ export function PublicSessionMenu({
     return <>{children}</>;
   }
 
-  const initials = getInitials(session.user.name);
-
   async function handleSignOut() {
     if (isSigningOut) {
       return;
@@ -57,12 +57,12 @@ export function PublicSessionMenu({
         <button
           aria-label="Open account menu"
           className={cn(
-            "inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-[#ffd9c2] text-[0.8125rem] font-bold text-[#7a3412] transition hover:ring-4 hover:ring-[rgba(28,29,43,0.06)]",
+            "inline-flex size-10 shrink-0 items-center justify-center rounded-full outline-none transition-[box-shadow,scale] duration-(--dur-hover) ease-(--ease-out) hover:shadow-[0_0_0_4px_var(--hover)] focus-visible:shadow-(--focus-ring) active:scale-[0.96] data-[state=open]:shadow-[0_0_0_4px_var(--press)]",
             buttonClassName,
           )}
           type="button"
         >
-          {initials ? initials : <CircleUserRound className="size-4" />}
+          <Avatar name={session.user.name || session.user.email} size="md" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -70,10 +70,10 @@ export function PublicSessionMenu({
         className={cn("w-60", contentClassName)}
       >
         <DropdownMenuLabel className="px-3 py-2">
-          <p className="truncate text-sm font-bold text-(--fg)">
+          <p className="truncate text-sm font-semibold text-(--fg)">
             {session.user.name}
           </p>
-          <p className="mt-0.5 truncate text-xs font-normal text-(--tertiary)">
+          <p className="mt-0.5 truncate text-[0.8125rem] font-normal text-(--secondary)">
             {session.user.email}
           </p>
         </DropdownMenuLabel>
@@ -93,21 +93,9 @@ export function PublicSessionMenu({
           variant="destructive"
         >
           <LogOut className="size-4" />
-          {isSigningOut ? "Signing out..." : "Log out"}
+          {isSigningOut ? "Signing out…" : "Log out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-function getInitials(name: string) {
-  const trimmedName = name.trim();
-
-  if (!trimmedName) {
-    return "";
-  }
-
-  const [first = "", second = ""] = trimmedName.split(/\s+/, 2);
-
-  return `${first[0] ?? ""}${second[0] ?? first[1] ?? ""}`.toUpperCase();
 }

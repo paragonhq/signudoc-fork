@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowUpRight } from "@/components/ui/icons";
 
+import { AppIcon } from "@/components/brand/marks";
 import { useBranding } from "@/components/layout/branding-provider";
 import { SIGNUDOC_NAME, SIGNUDOC_URL } from "@/lib/branding";
 import { PUBLIC_COPYRIGHT_YEAR, publicFooterLinks } from "@/lib/legal";
@@ -9,7 +11,10 @@ import { cn } from "@/lib/cn";
 import { PERMITTED_USE_PATH } from "@/lib/permitted-uses";
 
 type PublicLegalFooterProps = {
+  /** Centre everything in one column (the auth and setup pages). */
+  centered?: boolean;
   className?: string;
+  /** Replaces the inner width wrapper (page-width by default). */
   contentClassName?: string;
   labelVariant?: "long" | "short";
   linkClassName?: string;
@@ -21,16 +26,24 @@ type FooterLink = {
   label: string;
 };
 
+const defaultLinkClassName =
+  "inline-flex min-h-8 items-center gap-1 rounded-md text-[0.8125rem] font-medium text-(--secondary) outline-none transition-colors duration-(--dur-hover) ease-(--ease-out) hover:text-(--fg) focus-visible:shadow-(--focus-ring) pointer-coarse:min-h-10";
+
+/**
+ * The footer under every page outside the app (docs/redesign/calm.md): the
+ * install's legal links, the copyright line and, on self-hosted installs,
+ * the "Powered by" credit with the app icon. Small and quiet, on the page
+ * itself: no rule, no band.
+ */
 export function PublicLegalFooter({
+  centered = false,
   className = "",
-  contentClassName = "",
+  contentClassName,
   labelVariant = "short",
   linkClassName,
 }: PublicLegalFooterProps) {
   const branding = useBranding();
-  const resolvedLinkClassName =
-    linkClassName ??
-    "text-[0.8125rem] font-medium text-(--tertiary) transition-colors hover:text-(--accent-ink)";
+  const resolvedLinkClassName = linkClassName ?? defaultLinkClassName;
   // The hosted service links to its own pages. Any other install links to
   // whatever terms and privacy policy its organization has published.
   const links: FooterLink[] = branding.hosted
@@ -73,51 +86,70 @@ export function PublicLegalFooter({
 
   return (
     <footer className={cn("relative z-10", className)}>
-      <div className={cn("page-width py-7", contentClassName)}>
-        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-[0.8125rem] text-(--tertiary)">
-            © {PUBLIC_COPYRIGHT_YEAR} {branding.productName}
-          </p>
+      <div className={cn(contentClassName ?? "page-width")}>
+        <div
+          className={cn(
+            "flex flex-col gap-3 py-6",
+            centered
+              ? "items-center text-center sm:flex-row sm:justify-center sm:gap-6"
+              : "sm:flex-row sm:items-center sm:justify-between sm:gap-6",
+          )}
+        >
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-x-4 gap-y-1",
+              centered && "justify-center",
+            )}
+          >
+            {branding.hosted ? null : (
+              <a
+                className={cn(resolvedLinkClassName, "gap-2")}
+                href={SIGNUDOC_URL}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <AppIcon className="size-4 rounded-[0.3rem]" />
+                <span>Powered by {SIGNUDOC_NAME}</span>
+              </a>
+            )}
+            <p className="text-[0.8125rem] text-(--secondary)">
+              © {PUBLIC_COPYRIGHT_YEAR} {branding.productName}
+            </p>
+          </div>
 
           {links.length > 0 ? (
-            <nav
-              aria-label="Footer"
-              className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
-            >
-              {links.map((link) =>
-                link.external ? (
-                  <a
-                    className={resolvedLinkClassName}
-                    href={link.href}
-                    key={link.href}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    {link.label}
-                  </a>
-                ) : (
-                  <Link
-                    className={resolvedLinkClassName}
-                    href={link.href}
-                    key={link.href}
-                  >
-                    {link.label}
-                  </Link>
-                ),
-              )}
+            <nav aria-label="Footer">
+              <ul
+                className={cn(
+                  "flex flex-wrap items-center gap-x-4 gap-y-1",
+                  centered && "justify-center",
+                )}
+              >
+                {links.map((link) => (
+                  <li key={link.href}>
+                    {link.external ? (
+                      <a
+                        className={resolvedLinkClassName}
+                        href={link.href}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {link.label}
+                        <ArrowUpRight
+                          aria-hidden="true"
+                          className="size-3 stroke-[1.75]"
+                        />
+                      </a>
+                    ) : (
+                      <Link className={resolvedLinkClassName} href={link.href}>
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </nav>
           ) : null}
-
-          {branding.hosted ? null : (
-            <a
-              className={resolvedLinkClassName}
-              href={SIGNUDOC_URL}
-              rel="noreferrer"
-              target="_blank"
-            >
-              Powered by {SIGNUDOC_NAME}
-            </a>
-          )}
         </div>
       </div>
     </footer>

@@ -6,18 +6,29 @@ import { Toggle as TogglePrimitive } from "radix-ui";
 
 import { cn } from "@/lib/cn";
 
+/**
+ * A pressed/unpressed button: bold, italic, "show grid". For one choice out
+ * of several, use Segmented instead.
+ */
 const toggleVariants = cva(
-  "group/toggle inline-flex items-center justify-center gap-1 rounded-lg text-sm font-medium whitespace-nowrap transition-all outline-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-muted data-[state=on]:bg-muted dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  [
+    "group/toggle inline-flex items-center justify-center gap-1.5 rounded-full text-[0.8125rem] font-medium whitespace-nowrap text-(--secondary) outline-none",
+    "transition-[background-color,color,box-shadow,scale] duration-(--dur-hover) ease-(--ease-out)",
+    "hover:bg-(--hover) hover:text-(--fg) active:scale-[0.97] focus-visible:shadow-(--focus-ring)",
+    "disabled:pointer-events-none disabled:opacity-45",
+    "data-[state=on]:bg-(--accent-soft) data-[state=on]:text-(--accent-ink) data-[state=on]:hover:bg-(--accent-soft-hover) data-[state=on]:hover:text-(--accent-ink)",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  ].join(" "),
   {
     variants: {
       variant: {
         default: "bg-transparent",
-        outline: "border border-input bg-transparent hover:bg-muted",
+        outline: "bg-(--paper) shadow-(--ring-soft)",
       },
       size: {
-        default: "h-8 min-w-8 px-2",
-        sm: "h-7 min-w-7 rounded-[min(var(--radius-md),12px)] px-1.5 text-[0.8rem]",
-        lg: "h-9 min-w-9 px-2.5",
+        default: "h-(--control-h) min-w-(--control-h) px-2.5",
+        sm: "h-(--control-h-sm) min-w-(--control-h-sm) px-2",
+        lg: "h-11 min-w-11 px-3",
       },
     },
     defaultVariants: {
@@ -36,8 +47,8 @@ function Toggle({
   VariantProps<typeof toggleVariants>) {
   return (
     <TogglePrimitive.Root
-      data-slot="toggle"
       className={cn(toggleVariants({ variant, size, className }))}
+      data-slot="toggle"
       {...props}
     />
   );

@@ -19,9 +19,7 @@ export default async function ContactPage() {
       lastUpdated="March 23, 2026"
       title="Contact"
     >
-      <div className="mx-auto w-full max-w-[52rem]">
-        <ContactForm />
-      </div>
+      <ContactForm />
     </PublicDocumentShell>
   );
 }

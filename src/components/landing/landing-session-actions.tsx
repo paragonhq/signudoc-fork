@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight } from "@/components/ui/icons";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/cn";
 
 type LandingSessionActionProps = {
   className?: string;
-  /** "inverse" is for a button that sits on the violet closing panel. */
+  /** "inverse" is for a button that sits on the violet closing slab. */
   tone?: "default" | "inverse";
 };
 
+/** "Start free", or "Go to dashboard" for someone already signed in. */
 export function LandingSessionPrimaryAction({
   className,
   tone = "default",
@@ -20,24 +22,24 @@ export function LandingSessionPrimaryAction({
   const authenticated = !!session;
 
   return (
-    <Link
-      className={cn(
-        tone === "inverse"
-          ? cn(
-              buttonVariants({ size: "lg", variant: "outline" }),
-              "border-transparent bg-white text-(--accent-ink) hover:border-transparent hover:bg-(--accent-soft)",
-            )
-          : buttonVariants({ size: "lg" }),
-        className,
-      )}
-      href={authenticated ? "/dashboard" : "/signup"}
-      prefetch
+    <Button
+      asChild
+      className={cn("group/cta", className)}
+      size="lg"
+      variant={tone === "inverse" ? "inverse" : "default"}
     >
-      {authenticated ? "Go to dashboard" : "Start free"}
-    </Link>
+      <Link href={authenticated ? "/dashboard" : "/signup"} prefetch>
+        {authenticated ? "Go to dashboard" : "Start free"}
+        <ArrowRight
+          aria-hidden="true"
+          className="transition-transform duration-(--dur-hover) ease-(--ease-out) group-hover/cta:translate-x-0.5"
+        />
+      </Link>
+    </Button>
   );
 }
 
+/** "Log in", only for visitors who are not signed in. */
 export function LandingSessionLoginAction({
   className,
   tone = "default",
@@ -49,17 +51,15 @@ export function LandingSessionLoginAction({
   }
 
   return (
-    <Link
-      className={cn(
-        buttonVariants({ size: "lg", variant: "outline" }),
-        tone === "inverse" &&
-          "border-white/45 bg-transparent text-white hover:border-white hover:bg-white/10",
-        className,
-      )}
-      href="/login"
-      prefetch
+    <Button
+      asChild
+      className={className}
+      size="lg"
+      variant={tone === "inverse" ? "inverse" : "outline"}
     >
-      Log in
-    </Link>
+      <Link href="/login" prefetch>
+        Log in
+      </Link>
+    </Button>
   );
 }

@@ -41,9 +41,7 @@ export default async function SignerPrivacyPage() {
       title="Privacy notice for signers"
     >
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Who is responsible
-        </h2>
+        <h2>Who is responsible</h2>
         <p>
           {organization} is responsible for your information (the
           &ldquo;controller&rdquo;).{" "}
@@ -62,9 +60,7 @@ export default async function SignerPrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          What is collected
-        </h2>
+        <h2>What is collected</h2>
         <ul className="list-disc space-y-2 pl-6">
           <li>Your name and email address, given by the sender.</li>
           <li>
@@ -81,9 +77,7 @@ export default async function SignerPrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Why, and on what basis
-        </h2>
+        <h2>Why, and on what basis</h2>
         <p>
           To let you review and sign the document, to deliver copies, and to
           keep evidence of who signed what and when. The basis is taking steps
@@ -95,9 +89,7 @@ export default async function SignerPrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Who else handles it
-        </h2>
+        <h2>Who else handles it</h2>
         <p>
           The other parties to the document see your name, email and signature.
           The services that run this site process it for {organization}: the
@@ -110,9 +102,7 @@ export default async function SignerPrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          How long it is kept
-        </h2>
+        <h2>How long it is kept</h2>
         <p>
           {retention} Unsent drafts are deleted after{" "}
           {String(STALE_DRAFT_RETENTION_DAYS)} days without changes.
@@ -120,9 +110,7 @@ export default async function SignerPrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Your rights
-        </h2>
+        <h2>Your rights</h2>
         <p>
           You can ask {organization} for a copy of your information, to correct
           it, to restrict or object to its use, or to erase it. A signed record

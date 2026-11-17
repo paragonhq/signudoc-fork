@@ -62,6 +62,17 @@ import {
   type EmailService,
 } from "./services/email.ts";
 import { withUserEmailLegalFooter } from "./services/email-legal-footer.ts";
+import {
+  emailButton,
+  emailCode,
+  emailDetails,
+  emailDocumentCard,
+  emailHeading,
+  emailNote,
+  emailParagraph,
+  emailSecondaryLink,
+  emailTheme,
+} from "./services/email-layout.ts";
 import { hashOpaqueToken } from "./services/opaque-tokens.ts";
 import {
   finalizeEnvelope,
@@ -90,7 +101,6 @@ import {
   type FieldType,
 } from "./types/domain.ts";
 import { getEnv } from "./utils/env.ts";
-import { escapeHtml } from "./utils/html.ts";
 import {
   isEnvelopeExpired,
   nextSignerLinkExpiresAt,
@@ -364,15 +374,23 @@ function buildCompletionSenderEmail(input: {
     "Review the completed envelope:",
     completedUrl,
   ].join("\n");
+  const theme = emailTheme(input.branding);
   const htmlBody = [
-    `<p>Hi ${escapeHtml(input.senderName)},</p>`,
-    `<p>&ldquo;${escapeHtml(input.envelopeTitle)}&rdquo; has been fully signed in ${escapeHtml(input.branding.productName)}.</p>`,
-    "<p>The final signed PDF and certificate are ready in your dashboard.</p>",
-    `<p><a href="${escapeHtml(completedUrl)}">Review the completed envelope</a></p>`,
+    emailHeading("Everyone has signed"),
+    emailParagraph(
+      `Hi ${input.senderName}, every signer has finished. The signed PDF and its certificate are ready.`,
+    ),
+    emailDocumentCard({
+      lines: ["Completed"],
+      theme,
+      title: input.envelopeTitle,
+    }),
+    emailButton({ label: "View document", theme, url: completedUrl }),
   ].join("");
   const legalFooter = withUserEmailLegalFooter(
     {
       htmlBody,
+      preheader: `“${input.envelopeTitle}” is fully signed. The signed PDF is ready.`,
       textBody,
     },
     input.branding,
@@ -411,17 +429,33 @@ function buildDeclineNotificationEmail(input: {
     "Review the envelope:",
     envelopeUrl,
   ].join("\n");
+  const theme = emailTheme(input.branding);
+  const declineReason = input.declineReason?.trim();
   const htmlBody = [
-    `<p>Hi ${escapeHtml(input.senderName)},</p>`,
-    `<p>${escapeHtml(input.signerName)} (${escapeHtml(input.signerEmail)}) declined &ldquo;${escapeHtml(input.envelopeTitle)}&rdquo; in ${escapeHtml(input.branding.productName)}.</p>`,
-    reasonLine
-      ? `<p><strong>Reason provided:</strong> ${escapeHtml(input.declineReason!.trim())}</p>`
-      : "",
-    `<p><a href="${escapeHtml(envelopeUrl)}">Review the envelope</a></p>`,
+    emailHeading(`${input.signerName} declined to sign`),
+    emailParagraph(
+      `Hi ${input.senderName}, ${input.signerName} won’t be signing this document, so it has stopped here.`,
+    ),
+    emailDocumentCard({
+      lines: ["Declined"],
+      theme,
+      title: input.envelopeTitle,
+    }),
+    emailDetails([
+      {
+        label: "Declined by",
+        value: `${input.signerName} (${input.signerEmail})`,
+      },
+      ...(declineReason
+        ? [{ label: "Their reason", value: declineReason }]
+        : []),
+    ]),
+    emailButton({ label: "Review the envelope", theme, url: envelopeUrl }),
   ].join("");
   const legalFooter = withUserEmailLegalFooter(
     {
       htmlBody,
+      preheader: `${input.signerName} declined “${input.envelopeTitle}”.`,
       textBody,
     },
     input.branding,
@@ -465,21 +499,48 @@ function buildCompletionSignerEmail(input: {
     `Signed PDF: ${input.signedDownloadUrl}`,
     `Redacted certificate: ${input.evidenceDownloadUrl}`,
   ].join("\n");
+  const theme = emailTheme(input.branding);
   const htmlBody = [
-    `<p>Hi ${escapeHtml(input.signerName)},</p>`,
-    `<p>&ldquo;${escapeHtml(input.envelopeTitle)}&rdquo; from ${escapeHtml(input.senderName)} has been fully signed in ${escapeHtml(input.branding.productName)}.</p>`,
-    input.copyOnly
-      ? `<p>${escapeHtml(input.senderName)} asked for you to receive a copy.</p>`
-      : "",
-    input.attached
-      ? "<p>The completed document and its certificate are attached. Keep them: they are your copy of the agreement.</p>"
-      : "<p>The completed document and its certificate are ready.</p>",
-    `<p>Download links are available for ${RECIPIENT_DOWNLOAD_LINK_TTL_DAYS} days. An expired link offers to send a new one.</p>`,
-    `<p><a href="${escapeHtml(input.signedDownloadUrl)}">Download signed PDF</a><br /><a href="${escapeHtml(input.evidenceDownloadUrl)}">Download redacted certificate</a></p>`,
+    emailHeading(
+      input.copyOnly
+        ? "Your copy of a signed document"
+        : "Your document is complete",
+    ),
+    emailParagraph(
+      input.copyOnly
+        ? `Hi ${input.signerName}, ${input.senderName} asked for you to receive a copy of this document now that everyone has signed it.`
+        : `Hi ${input.signerName}, thanks for signing. Everyone else has signed too, so the document is complete.`,
+    ),
+    emailDocumentCard({
+      lines: [`From ${input.senderName}`, "Completed"],
+      theme,
+      title: input.envelopeTitle,
+    }),
+    emailParagraph(
+      input.attached
+        ? "The signed PDF and its certificate are attached. Keep them: they are your copy of the agreement."
+        : "The signed PDF and its certificate are ready to download. Keep them: they are your copy of the agreement.",
+    ),
+    emailButton({
+      label: "Download signed PDF",
+      theme,
+      url: input.signedDownloadUrl,
+    }),
+    emailSecondaryLink({
+      label: "Download redacted certificate",
+      theme,
+      url: input.evidenceDownloadUrl,
+    }),
+    emailNote(
+      `Download links work for ${RECIPIENT_DOWNLOAD_LINK_TTL_DAYS} days. An expired link offers to send you a new one.`,
+    ),
   ].join("");
   const legalFooter = withUserEmailLegalFooter(
     {
       htmlBody,
+      preheader: input.attached
+        ? `“${input.envelopeTitle}” is fully signed. Your copy is attached.`
+        : `“${input.envelopeTitle}” is fully signed. Your copy is ready.`,
       textBody,
     },
     input.branding,
@@ -1414,12 +1475,23 @@ export async function sendSignerEmailCode(
     `It works for ${String(minutes)} minutes. If you did not just open a signing link, ignore this email.`,
   ].join("\n");
   const htmlBody = [
-    `<p>Hi ${escapeHtml(context.signer.name)},</p>`,
-    `<p>Your code to open &ldquo;${escapeHtml(context.envelope.title)}&rdquo; in ${escapeHtml(branding.productName)} is:</p>`,
-    `<p style="font-size:24px;font-weight:700;letter-spacing:4px">${issued.code}</p>`,
-    `<p>It works for ${String(minutes)} minutes. If you did not just open a signing link, ignore this email.</p>`,
+    emailHeading("Your signing code"),
+    emailParagraph(
+      `Hi ${context.signer.name}, enter this code to open “${context.envelope.title}”.`,
+    ),
+    emailCode(issued.code),
+    emailNote(
+      `It works for ${String(minutes)} minutes. If you didn’t just open a signing link, you can ignore this email.`,
+    ),
   ].join("");
-  const body = withUserEmailLegalFooter({ htmlBody, textBody }, branding);
+  const body = withUserEmailLegalFooter(
+    {
+      htmlBody,
+      preheader: `Your code to open “${context.envelope.title}”. It works for ${String(minutes)} minutes.`,
+      textBody,
+    },
+    branding,
+  );
   let delivery: Awaited<ReturnType<EmailService["send"]>>;
 
   try {

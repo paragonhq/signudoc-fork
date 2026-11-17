@@ -7,8 +7,15 @@ import { getBranding } from "./settings.ts";
 import { recordEmailSent } from "./services/audit.ts";
 import { createEmailService, type EmailService } from "./services/email.ts";
 import { withUserEmailLegalFooter } from "./services/email-legal-footer.ts";
+import {
+  emailButton,
+  emailDocumentCard,
+  emailHeading,
+  emailParagraph,
+  emailSecondaryLink,
+  emailTheme,
+} from "./services/email-layout.ts";
 import { RECIPIENT_DOWNLOAD_LINK_TTL_SECONDS } from "./types/domain.ts";
-import { escapeHtml } from "./utils/html.ts";
 
 const TTL_DAYS = RECIPIENT_DOWNLOAD_LINK_TTL_SECONDS / (24 * 60 * 60);
 
@@ -36,17 +43,40 @@ export async function sendFreshDownloadLinks(
         "",
         "Download and keep the files: they are your copy of the record.",
       ].join("\n");
+      const theme = emailTheme(branding);
       const htmlBody = [
-        `<p>Hi ${escapeHtml(signer.name)},</p>`,
-        `<p>Here are new download links for &ldquo;${escapeHtml(envelope.title)}&rdquo; in ${escapeHtml(branding.productName)}. They work for ${String(TTL_DAYS)} days.</p>`,
-        "<p>",
+        emailHeading("Your new download links"),
+        emailParagraph(
+          `Hi ${signer.name}, here are fresh links for your copy. Download the files and keep them: they are your copy of the record.`,
+        ),
+        emailDocumentCard({
+          lines: [`Links work for ${String(TTL_DAYS)} days`],
+          theme,
+          title: envelope.title,
+        }),
         signedUrl
-          ? `<a href="${escapeHtml(signedUrl)}">Download signed PDF</a><br />`
+          ? emailButton({ label: "Download signed PDF", theme, url: signedUrl })
           : "",
-        `<a href="${escapeHtml(evidenceUrl)}">Download certificate</a></p>`,
-        "<p>Download and keep the files: they are your copy of the record.</p>",
+        signedUrl
+          ? emailSecondaryLink({
+              label: "Download certificate",
+              theme,
+              url: evidenceUrl,
+            })
+          : emailButton({
+              label: "Download certificate",
+              theme,
+              url: evidenceUrl,
+            }),
       ].join("");
-      const body = withUserEmailLegalFooter({ htmlBody, textBody }, branding);
+      const body = withUserEmailLegalFooter(
+        {
+          htmlBody,
+          preheader: `Fresh links for “${envelope.title}”. They work for ${String(TTL_DAYS)} days.`,
+          textBody,
+        },
+        branding,
+      );
       const delivery = await emailService.send({
         htmlBody: body.htmlBody,
         subject,

@@ -19,6 +19,13 @@ import {
 } from "./retention.ts";
 import { resolvePublicSupportAddress } from "./public-contact.ts";
 import { createEmailService } from "./services/email.ts";
+import {
+  emailDetails,
+  emailHeading,
+  emailNote,
+  emailParagraph,
+  renderPlainEmail,
+} from "./services/email-layout.ts";
 import { recordSystemAuditEvent } from "./services/system-audit.ts";
 import { getBranding } from "./settings.ts";
 import { type EnvSource } from "./utils/env.ts";
@@ -217,7 +224,6 @@ async function formatEnvelopeCounts(
   );
 }
 
-
 function formatRetentionDeadline(timestamp: number): string {
   return new Date(timestamp * 1000).toISOString().replace(".000Z", " UTC");
 }
@@ -264,8 +270,37 @@ export async function requestAccountClosure(
       const emailService = createEmailService({ env });
       const supportAddress = await resolvePublicSupportAddress(env);
       const { productName } = await getBranding(env);
+      const envelopeCounts = await formatEnvelopeCounts(userId, database);
 
       await emailService.send({
+        htmlBody: renderPlainEmail({
+          contentHtml: [
+            emailHeading(`${account.name} asked to close their account`),
+            emailParagraph(
+              `A sender requested account closure from the ${productName} settings page, through the guarded danger-zone flow.`,
+            ),
+            emailDetails([
+              { label: "Sender", value: `${account.name} <${account.email}>` },
+              { label: "User ID", value: userId },
+              { label: "Submitted", value: submittedAt },
+              {
+                label: "Export window",
+                value: `${ACCOUNT_CLOSURE_EXPORT_WINDOW_DAYS} days, ends ${exportExpiresAt}`,
+              },
+              { label: "Purge eligible", value: purgeAfterAt },
+              {
+                label: "Envelopes",
+                value: envelopeCounts
+                  .map((line) => line.replace(/^- /, ""))
+                  .join("\n"),
+              },
+            ]),
+            emailNote("Reply to this email to reach the sender."),
+          ].join(""),
+          footerText: `Sent by ${productName} to its support address.`,
+          preheader: `${account.name} requested account closure.`,
+          productName,
+        }),
         replyTo: account.email,
         subject: `Account closure request — ${account.name}`,
         template: "account_closure_request",
@@ -280,7 +315,7 @@ export async function requestAccountClosure(
           `Automatic purge eligible at: ${purgeAfterAt}`,
           "",
           "Envelope counts:",
-          ...(await formatEnvelopeCounts(userId, database)),
+          ...envelopeCounts,
           "",
           "This request came through the guarded in-app danger-zone flow.",
         ].join("\n"),

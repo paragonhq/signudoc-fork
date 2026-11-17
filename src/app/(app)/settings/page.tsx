@@ -1,4 +1,5 @@
 import { OrganizationSettings } from "@/components/settings/organization-settings";
+import { SettingsLayout } from "@/components/settings/settings-layout";
 import { SettingsShell } from "@/components/settings/settings-shell";
 import { UpdatesPanel } from "@/components/settings/updates-panel";
 import { isAdminUser } from "@/lib/auth/admin";
@@ -16,9 +17,18 @@ export default async function SettingsPage() {
   const session = await getAuthSession();
   const isAdmin = session ? await isAdminUser(session.user.id) : false;
   const settings = await getSettings();
+  // Read fresh, not from the short-lived cache, so the form never shows a
+  // value that was just replaced.
+  const organizationSettings = isAdmin
+    ? toOrganizationSettingsView(resolveSettings(await readStoredSettings()))
+    : null;
 
   return (
-    <div className="space-y-8">
+    <SettingsLayout
+      email={session?.user.email ?? ""}
+      hosted={organizationSettings?.hosted ?? false}
+      isAdmin={isAdmin}
+    >
       <SettingsShell
         initialProfile={{
           email: session?.user.email ?? "",
@@ -29,16 +39,10 @@ export default async function SettingsPage() {
           required: settings.requireTwoFactor,
         }}
       />
-      {isAdmin ? (
-        <OrganizationSettings
-          // Read fresh, not from the short-lived cache, so the form never
-          // shows a value that was just replaced.
-          initialSettings={toOrganizationSettingsView(
-            resolveSettings(await readStoredSettings()),
-          )}
-        />
+      {organizationSettings ? (
+        <OrganizationSettings initialSettings={organizationSettings} />
       ) : null}
       {isAdmin ? <UpdatesPanel initialStatus={getUpdateStatus(null)} /> : null}
-    </div>
+    </SettingsLayout>
   );
 }

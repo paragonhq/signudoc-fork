@@ -6,6 +6,10 @@ import { getClientIpAddress } from "@/lib/security/request";
 import type { SigningVerificationState } from "@/lib/schemas/signing";
 import { verifiedMethodsFromCookies } from "@/lib/signer-checks";
 import {
+  getSigningRouteAhead,
+  type SigningRouteAhead,
+} from "@/lib/signing-receipt";
+import {
   SigningAccessError,
   SigningVerificationRequiredError,
   getSigningPayloadForToken,
@@ -33,6 +37,7 @@ export default async function SignPage({
   let record: Awaited<ReturnType<typeof getSigningPayloadForToken>> | null =
     null;
   let verification: SigningVerificationState | null = null;
+  let routeAhead: SigningRouteAhead | null = null;
 
   try {
     const requestHeaders = await headers();
@@ -49,6 +54,10 @@ export default async function SignPage({
         (name) => cookieStore.get(name)?.value,
       ),
     });
+    // Who signs next, for the done page: read now, while the link works.
+    routeAhead = await getSigningRouteAhead(token, { database: getDb() }).catch(
+      () => null,
+    );
   } catch (error) {
     if (error instanceof SigningVerificationRequiredError) {
       verification = error.details;
@@ -64,6 +73,7 @@ export default async function SignPage({
       initialState={initialState}
       key={token}
       record={record ?? undefined}
+      routeAhead={routeAhead}
       signatureProblem={signatureProblem}
       token={token}
       verification={verification ?? undefined}

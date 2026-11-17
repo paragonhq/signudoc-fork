@@ -29,8 +29,15 @@ import { buildTemplatePdfKey } from "./services/storage-keys.ts";
 import {
   createStorageService,
   StorageObjectNotFoundError,
+  type StorageObjectStream,
   type StorageService,
 } from "./services/storage.ts";
+import {
+  assertThumbnailImage,
+  buildThumbnailEtag,
+  matchesEtag,
+  THUMBNAIL_CONTENT_TYPE,
+} from "./services/thumbnails.ts";
 
 // A template is a document, the fields placed on it and its signing order,
 // kept so the same thing can be sent again. It names no one: each place in
@@ -560,4 +567,728 @@ export async function deleteTemplate(
     templateId,
     userId,
   ]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Template studio (pass 5): the library, the template page, its        */
+/* pictures, renaming, and making a template from scratch. Everything    */
+/* below is additive: the functions above behave as they always did.    */
+/* ------------------------------------------------------------------ */
+
+/** What each kind of field is called in a summary, singular and plural. */
+const FIELD_KIND_WORDS: Record<string, readonly [string, string]> = {
+  checkbox: ["checkbox", "checkboxes"],
+  date: ["date", "dates"],
+  dropdown: ["dropdown", "dropdowns"],
+  initials: ["initials", "initials"],
+  number: ["number", "numbers"],
+  radio: ["choice", "choices"],
+  signature: ["signature", "signatures"],
+  text: ["text field", "text fields"],
+};
+
+/** The order kinds are named in: what people look for first. */
+const FIELD_KIND_ORDER = [
+  "signature",
+  "initials",
+  "date",
+  "text",
+  "number",
+  "checkbox",
+  "dropdown",
+  "radio",
+];
+
+export type TemplateFieldPreview = {
+  height: number;
+  page: number;
+  /** Index of the role in signing order. */
+  roleIndex: number;
+  type: string;
+  width: number;
+  x: number;
+  y: number;
+};
+
+export type TemplateRoleSummary = {
+  fieldCount: number;
+  id: string;
+  name: string;
+  /** "2 signatures · 1 date", or "No fields yet". */
+  summary: string;
+};
+
+/** What the template page and the "use" preview need. */
+export type TemplateDetail = {
+  createdAt: number;
+  createdAtLabel: string;
+  fieldCount: number;
+  fieldCountLabel: string;
+  fields: TemplateFieldPreview[];
+  fileName: string;
+  id: string;
+  name: string;
+  pageCount: number;
+  pageCountLabel: string;
+  roles: TemplateRoleSummary[];
+};
+
+/** One template in the library grid, with numbers to sort by. */
+export type TemplateLibraryItem = TemplateListItem & {
+  createdAt: number;
+  fieldCount: number;
+  pageCount: number;
+};
+
+function readFieldPreviews(
+  fields: unknown,
+  roleIds: readonly string[],
+): TemplateFieldPreview[] {
+  if (!Array.isArray(fields)) {
+    return [];
+  }
+
+  const roleIndexById = new Map(roleIds.map((id, index) => [id, index]));
+
+  return fields.flatMap((field: unknown) => {
+    if (typeof field !== "object" || field === null) {
+      return [];
+    }
+
+    const record = field as Record<string, unknown>;
+    const numbers = [record.x, record.y, record.width, record.height];
+    const roleIndex =
+      typeof record.signerId === "string"
+        ? roleIndexById.get(record.signerId)
+        : undefined;
+
+    if (
+      roleIndex === undefined ||
+      typeof record.page !== "number" ||
+      numbers.some((value) => typeof value !== "number")
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        height: record.height as number,
+        page: record.page,
+        roleIndex,
+        type: String(record.type ?? ""),
+        width: record.width as number,
+        x: record.x as number,
+        y: record.y as number,
+      },
+    ];
+  });
+}
+
+function readRoles(roles: unknown): { id: string; name: string }[] {
+  if (!Array.isArray(roles)) {
+    return [];
+  }
+
+  return roles.flatMap((role: unknown) =>
+    typeof role === "object" &&
+    role !== null &&
+    "name" in role &&
+    typeof role.name === "string" &&
+    "id" in role &&
+    typeof role.id === "string"
+      ? [{ id: role.id, name: role.name }]
+      : [],
+  );
+}
+
+/** "2 signatures · 1 date" for one role's fields. Radio groups count once. */
+export function summarizeFieldKinds(
+  fields: readonly { groupId?: string; type: string }[],
+): string {
+  const counts = new Map<string, number>();
+  const seenGroups = new Set<string>();
+
+  for (const field of fields) {
+    if (field.type === "radio" && field.groupId) {
+      if (seenGroups.has(field.groupId)) {
+        continue;
+      }
+
+      seenGroups.add(field.groupId);
+    }
+
+    counts.set(field.type, (counts.get(field.type) ?? 0) + 1);
+  }
+
+  const parts = [...counts.entries()]
+    .sort(
+      ([left], [right]) =>
+        ((FIELD_KIND_ORDER.indexOf(left) + 99) % 99) -
+        ((FIELD_KIND_ORDER.indexOf(right) + 99) % 99),
+    )
+    .map(([type, count]) => {
+      const words = FIELD_KIND_WORDS[type] ?? ["field", "fields"];
+
+      return `${String(count)} ${count === 1 ? words[0] : words[1]}`;
+    });
+
+  return parts.length > 0 ? parts.join(" · ") : "No fields yet";
+}
+
+/** The library: every template with what the grid shows and sorts by. */
+export async function listTemplateLibraryForUser(
+  userId: string,
+  database: DbExecutor = getDb(),
+): Promise<TemplateLibraryItem[]> {
+  const rows = await queryMany<TemplateRow>(
+    database,
+    `
+      SELECT ${TEMPLATE_COLUMNS}
+      FROM templates
+      WHERE user_id = $1
+      ORDER BY created_at DESC, id ASC
+    `,
+    [userId],
+  );
+
+  return rows.map((row) => {
+    const fieldCount = countFields(row.fields);
+
+    return {
+      createdAt: Number(row.createdAt),
+      createdAtLabel: dateFormatter.format(new Date(row.createdAt * 1000)),
+      fieldCount,
+      fieldCountLabel: countLabel(fieldCount, "field"),
+      id: row.id,
+      name: row.name,
+      pageCount: row.pageCount,
+      pageCountLabel: countLabel(row.pageCount, "page"),
+      roleNames: readRoleNames(row.roles),
+    };
+  });
+}
+
+/** Everything the template page shows. Null when it is not this user's. */
+export async function getTemplateDetailForUser(
+  userId: string,
+  templateId: string,
+  database: DbExecutor = getDb(),
+): Promise<TemplateDetail | null> {
+  const row = await getTemplateRow(userId, templateId, database);
+
+  if (!row) {
+    return null;
+  }
+
+  const roles = readRoles(row.roles);
+  const rawFields = Array.isArray(row.fields)
+    ? (row.fields as unknown[]).flatMap((field) =>
+        typeof field === "object" && field !== null
+          ? [field as Record<string, unknown>]
+          : [],
+      )
+    : [];
+  const fieldCount = countFields(row.fields);
+
+  return {
+    createdAt: Number(row.createdAt),
+    createdAtLabel: dateFormatter.format(new Date(row.createdAt * 1000)),
+    fieldCount,
+    fieldCountLabel: countLabel(fieldCount, "field"),
+    fields: readFieldPreviews(
+      row.fields,
+      roles.map((role) => role.id),
+    ),
+    fileName: row.sourcePdfFilename,
+    id: row.id,
+    name: row.name,
+    pageCount: row.pageCount,
+    pageCountLabel: countLabel(row.pageCount, "page"),
+    roles: roles.map((role) => {
+      const own = rawFields
+        .filter((field) => field.signerId === role.id)
+        .map((field) => ({
+          groupId:
+            typeof field.groupId === "string" ? field.groupId : undefined,
+          type: String(field.type ?? ""),
+        }));
+
+      return {
+        fieldCount: countAnswerableFields(own, () => true),
+        id: role.id,
+        name: role.name,
+        summary: summarizeFieldKinds(own),
+      };
+    }),
+  };
+}
+
+/** Renames a template. The name follows the same rules as when saved. */
+export async function renameTemplate(
+  userId: string,
+  templateId: string,
+  input: unknown,
+  database: DbExecutor = getDb(),
+): Promise<SavedTemplate> {
+  const { name } = saveTemplateSchema.pick({ name: true }).parse(input);
+  const result = await database.query(
+    `
+      UPDATE templates
+      SET name = $3, updated_at = $4
+      WHERE id = $1 AND user_id = $2
+    `,
+    [templateId, userId, name, Math.floor(Date.now() / 1000)],
+  );
+
+  if (result.rowCount !== 1) {
+    throw new TemplateError("Template not found.", 404);
+  }
+
+  return { id: templateId, name };
+}
+
+export type TemplateDocument = {
+  body: Uint8Array;
+  contentLength: number;
+  fileName: string;
+};
+
+/** The template's PDF, for its owner only. */
+export async function getTemplateDocumentForUser(
+  userId: string,
+  templateId: string,
+  {
+    database = getDb(),
+    storageService = createStorageService(),
+  }: TemplateOptions = {},
+): Promise<TemplateDocument> {
+  const template = await getTemplateRow(userId, templateId, database);
+
+  if (!template) {
+    throw new TemplateError("Template not found.", 404);
+  }
+
+  try {
+    const object = await storageService.getObject(template.sourcePdfKey);
+
+    return {
+      body: object.body,
+      contentLength: object.contentLength ?? object.body.length,
+      fileName: template.sourcePdfFilename,
+    };
+  } catch (error) {
+    if (error instanceof StorageObjectNotFoundError) {
+      throw new TemplateError("This template's document is unavailable.", 404);
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Where a template's first-page picture lives: beside its document, so
+ * whatever removes the template's folder finds it without a column.
+ */
+export function buildTemplateThumbnailKey(input: {
+  sourcePdfKey: string;
+  templateId: string;
+  userId: string;
+}): string {
+  const normalized = input.sourcePdfKey.trim().replaceAll("\\", "/");
+  const folder = normalized.includes("/")
+    ? normalized.slice(0, normalized.lastIndexOf("/"))
+    : "";
+  const folderName = folder.slice(folder.lastIndexOf("/") + 1);
+
+  if (folder && folderName === input.templateId) {
+    return `${folder}/thumbnail.jpg`;
+  }
+
+  return buildTemplatePdfKey({
+    templateId: input.templateId,
+    userId: input.userId,
+  }).replace(/original\.pdf$/, "thumbnail.jpg");
+}
+
+/** The ETag a browser quotes back for a template's picture. */
+export function buildTemplateThumbnailEtag(templateId: string): string {
+  return buildThumbnailEtag(`template-${templateId}`);
+}
+
+export type TemplateThumbnail =
+  | { etag: string; isNotModified: true }
+  | { etag: string; isNotModified: false; picture: StorageObjectStream };
+
+/** Streams the stored first-page picture, or 404 when there is none yet. */
+export async function getTemplateThumbnailForUser(
+  userId: string,
+  templateId: string,
+  {
+    database = getDb(),
+    ifNoneMatch,
+    storageService = createStorageService(),
+  }: TemplateOptions & { ifNoneMatch?: string | null } = {},
+): Promise<TemplateThumbnail> {
+  const template = await getTemplateRow(userId, templateId, database);
+
+  if (!template) {
+    throw new TemplateError("Template not found.", 404);
+  }
+
+  const etag = buildTemplateThumbnailEtag(template.id);
+
+  if (matchesEtag(ifNoneMatch, etag)) {
+    return { etag, isNotModified: true };
+  }
+
+  try {
+    const picture = await storageService.getObjectStream(
+      buildTemplateThumbnailKey({
+        sourcePdfKey: template.sourcePdfKey,
+        templateId: template.id,
+        userId,
+      }),
+    );
+
+    return { etag, isNotModified: false, picture };
+  } catch (error) {
+    if (error instanceof StorageObjectNotFoundError) {
+      throw new TemplateError("This template has no picture yet.", 404);
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Keeps the picture of the first page that the owner's browser drew. The
+ * bytes are checked as for envelopes (services/thumbnails.ts), and the
+ * first picture stays: the document never changes.
+ */
+export async function saveTemplateThumbnailForUser(
+  userId: string,
+  templateId: string,
+  body: Uint8Array,
+  {
+    database = getDb(),
+    storageService = createStorageService(),
+  }: TemplateOptions = {},
+): Promise<void> {
+  assertThumbnailImage(body);
+
+  const template = await getTemplateRow(userId, templateId, database);
+
+  if (!template) {
+    throw new TemplateError("Template not found.", 404);
+  }
+
+  const key = buildTemplateThumbnailKey({
+    sourcePdfKey: template.sourcePdfKey,
+    templateId: template.id,
+    userId,
+  });
+
+  await storageService.putObject({
+    body,
+    contentType: THUMBNAIL_CONTENT_TYPE,
+    keepExisting: true,
+    key,
+  });
+
+  // Deleted while the picture was written: nothing would remove it later.
+  if (!(await getTemplateRow(userId, templateId, database))) {
+    await storageService.deleteObject(key).catch(() => undefined);
+
+    throw new TemplateError("Template not found.", 404);
+  }
+}
+
+/** Removes a deleted template's picture, if it had one. Never throws. */
+export async function deleteTemplateThumbnail(
+  input: { sourcePdfKey: string; templateId: string; userId: string },
+  storageService: StorageService = createStorageService(),
+): Promise<void> {
+  await storageService
+    .deleteObject(buildTemplateThumbnailKey(input))
+    .catch(() => undefined);
+}
+
+/**
+ * Deletes a template and its picture. `deleteTemplate` keeps its old
+ * behaviour; this adds the picture, best effort, once the template is gone.
+ */
+export async function deleteTemplateWithThumbnail(
+  userId: string,
+  templateId: string,
+  {
+    database = getDb(),
+    storageService = createStorageService(),
+  }: TemplateOptions = {},
+): Promise<void> {
+  const template = await queryOne<{ sourcePdfKey: string }>(
+    database,
+    `SELECT source_pdf_key AS "sourcePdfKey" FROM templates WHERE id = $1 AND user_id = $2`,
+    [templateId, userId],
+  );
+
+  await deleteTemplate(userId, templateId, { database, storageService });
+
+  if (template) {
+    await deleteTemplateThumbnail(
+      { sourcePdfKey: template.sourcePdfKey, templateId, userId },
+      storageService,
+    );
+  }
+}
+
+/* Making a template from scratch --------------------------------------- */
+
+// A template from scratch borrows the envelope machinery: the PDF becomes a
+// scratch draft whose signers stand in for the roles, the ordinary builder
+// places the fields, and saveEnvelopeAsTemplate keeps the result. The
+// stand-ins have addresses no mail can reach, so a scratch draft is easy
+// to recognise and can never be sent to anyone by mistake.
+
+const SCRATCH_EMAIL_DOMAIN = "template-role.invalid";
+
+export function buildRoleStandInEmail(index: number): string {
+  return `role-${String(index + 1)}@${SCRATCH_EMAIL_DOMAIN}`;
+}
+
+export function isRoleStandInEmail(email: string): boolean {
+  return email.toLowerCase().endsWith(`@${SCRATCH_EMAIL_DOMAIN}`);
+}
+
+const scratchRoleNamesSchema = saveTemplateSchema.shape.roleNames.unwrap();
+
+/**
+ * Turns a fresh draft into a template's scratch draft: one stand-in signer
+ * per role, named after the role, in signing order.
+ */
+export async function startTemplateDraft(
+  userId: string,
+  envelopeId: string,
+  input: unknown,
+  database: DbPool = getDb(),
+): Promise<{ envelopeId: string; roleNames: string[] }> {
+  const roleNames = scratchRoleNamesSchema.parse(
+    typeof input === "object" && input !== null && "roleNames" in input
+      ? input.roleNames
+      : undefined,
+  );
+  const seen = new Set<string>();
+
+  for (const name of roleNames) {
+    const key = name.trim().toLowerCase();
+
+    if (seen.has(key)) {
+      throw new TemplateError(
+        "Give each signer in the template a different name.",
+        400,
+      );
+    }
+
+    seen.add(key);
+  }
+
+  const envelope = await getPrepareEnvelopeDataForUser(userId, envelopeId, {
+    database,
+  });
+
+  if (!envelope) {
+    throw new TemplateError("Envelope not found.", 404);
+  }
+
+  if (envelope.status !== "draft") {
+    throw new TemplateError("Only a draft can become a template.", 409);
+  }
+
+  if (
+    envelope.signers.some((signer) => !isRoleStandInEmail(signer.email)) &&
+    envelope.signers.length > 0
+  ) {
+    throw new TemplateError(
+      "This draft already has signers, so it cannot be used for a new template.",
+      409,
+    );
+  }
+
+  await replaceDraftEnvelopeSigners(
+    userId,
+    envelopeId,
+    {
+      signers: roleNames.map((name, index) => ({
+        email: buildRoleStandInEmail(index),
+        name: name.trim(),
+        signOrder: index + 1,
+      })),
+    },
+    database,
+  );
+
+  return { envelopeId, roleNames: roleNames.map((name) => name.trim()) };
+}
+
+export type TemplateDraftSummary = {
+  envelopeId: string;
+  fieldCount: number;
+  /** Where the fields are, by role, for the preview. */
+  fields: TemplateFieldPreview[];
+  pageCount: number;
+  roles: TemplateRoleSummary[];
+  title: string;
+};
+
+/** A scratch draft as the "save template" step shows it, or null. */
+export async function getTemplateDraftForUser(
+  userId: string,
+  envelopeId: string,
+  database: DbPool = getDb(),
+): Promise<TemplateDraftSummary | null> {
+  const envelope = await getPrepareEnvelopeDataForUser(userId, envelopeId, {
+    database,
+  });
+
+  if (
+    !envelope ||
+    envelope.status !== "draft" ||
+    envelope.signers.length === 0 ||
+    envelope.signers.some((signer) => !isRoleStandInEmail(signer.email))
+  ) {
+    return null;
+  }
+
+  const signers = [...envelope.signers].sort(
+    (left, right) => left.order - right.order,
+  );
+  const roleIndexBySignerId = new Map(
+    signers.map((signer, index) => [signer.id, index] as const),
+  );
+
+  return {
+    envelopeId,
+    fields: envelope.fields.flatMap((field) => {
+      const roleIndex = roleIndexBySignerId.get(field.signerId);
+
+      return roleIndex === undefined
+        ? []
+        : [
+            {
+              height: field.height,
+              page: field.page,
+              roleIndex,
+              type: field.type,
+              width: field.width,
+              x: field.x,
+              y: field.y,
+            },
+          ];
+    }),
+    fieldCount: countAnswerableFields(
+      envelope.fields.map((field) => ({
+        groupId: field.groupId ?? undefined,
+        type: field.type,
+      })),
+      () => true,
+    ),
+    pageCount: envelope.pageCount,
+    roles: signers.map((signer) => {
+      const own = envelope.fields
+        .filter((field) => field.signerId === signer.id)
+        .map((field) => ({
+          groupId: field.groupId ?? undefined,
+          type: field.type,
+        }));
+
+      return {
+        fieldCount: countAnswerableFields(own, () => true),
+        id: signer.id,
+        name: signer.name,
+        summary: summarizeFieldKinds(own),
+      };
+    }),
+    title: envelope.title,
+  };
+}
+
+/**
+ * Keeps a scratch draft as a template, named by the person, with its
+ * stand-ins' names as the roles, then removes the scratch draft.
+ */
+export async function saveTemplateFromDraft(
+  userId: string,
+  envelopeId: string,
+  input: unknown,
+  {
+    database = getDb(),
+    storageService = createStorageService(),
+  }: TemplateOptions = {},
+): Promise<SavedTemplate> {
+  const { name } = saveTemplateSchema.pick({ name: true }).parse(input);
+  const draft = await getTemplateDraftForUser(userId, envelopeId, database);
+
+  if (!draft) {
+    throw new TemplateError("This template draft is no longer here.", 404);
+  }
+
+  if (draft.fieldCount === 0) {
+    throw new TemplateError(
+      "Place at least one field before saving the template.",
+      400,
+    );
+  }
+
+  const saved = await saveEnvelopeAsTemplate(
+    userId,
+    envelopeId,
+    { name, roleNames: draft.roles.map((role) => role.name) },
+    { database, storageService },
+  );
+
+  // The template has its own copy of the document now.
+  await deleteDraftEnvelope(userId, envelopeId, {
+    database,
+    storageService,
+  }).catch((error) => {
+    console.error(
+      `Failed to remove the scratch draft ${envelopeId} after saving a template:`,
+      error,
+    );
+  });
+
+  return saved;
+}
+
+/** Throws away a scratch draft the person no longer wants. */
+export async function discardTemplateDraft(
+  userId: string,
+  envelopeId: string,
+  {
+    database = getDb(),
+    storageService = createStorageService(),
+  }: TemplateOptions = {},
+): Promise<void> {
+  const draft = await getTemplateDraftForUser(userId, envelopeId, database);
+
+  if (!draft) {
+    throw new TemplateError("This template draft is no longer here.", 404);
+  }
+
+  await deleteDraftEnvelope(userId, envelopeId, { database, storageService });
+}
+
+/**
+ * Remembers, for one browser, which draft is a template being made, so the
+ * workspace can bring the person back to "Save template" when the builder
+ * finishes. Holds only an envelope id the server checks again before use.
+ */
+export const TEMPLATE_DRAFT_COOKIE = "signudoc_template_draft";
+
+const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+
+/** The cookie's value when it is a plausible id, otherwise null. */
+export function readTemplateDraftCookie(
+  value: string | undefined | null,
+): string | null {
+  return value && ID_PATTERN.test(value) ? value : null;
 }

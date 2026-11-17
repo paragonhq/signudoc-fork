@@ -1,17 +1,25 @@
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Shaped like the login card: a title, two fields and the button.
 export default function AuthLoading() {
   return (
     <section
-      aria-label="Loading authentication page"
-      className="panel w-full max-w-[440px] p-8 sm:p-10"
+      aria-busy="true"
+      aria-label="Loading"
+      className="flex flex-col gap-6"
     >
-      <div className="space-y-3">
-        <div className="h-3 w-24 animate-pulse rounded-full bg-[#eeeff4]" />
-        <div className="h-8 w-48 animate-pulse rounded-full bg-[#eeeff4]" />
-      </div>
-      <div className="mt-8 space-y-5">
-        <div className="h-[4.5rem] animate-pulse rounded-2xl bg-(--surface)" />
-        <div className="h-[4.5rem] animate-pulse rounded-2xl bg-(--surface)" />
-        <div className="h-12 animate-pulse rounded-[0.875rem] bg-[#eeeff4]" />
+      <Skeleton className="h-7 w-28" delay={150} />
+      <div className="flex flex-col gap-5">
+        {[0, 1].map((index) => (
+          <div className="flex flex-col gap-2" key={index}>
+            <Skeleton className="h-4 w-20" delay={150} variant="line" />
+            <Skeleton
+              className="h-(--field-h) w-full rounded-(--radius-well)"
+              delay={150}
+            />
+          </div>
+        ))}
+        <Skeleton className="mt-1 h-12 w-full rounded-full" delay={150} />
       </div>
     </section>
   );

@@ -23,7 +23,10 @@ import {
   recordEmailSent,
 } from "./services/audit.ts";
 import { createEmailService, type EmailService } from "./services/email.ts";
-import { buildDeadlineLine } from "./services/signing-invitation-email.ts";
+import {
+  buildDeadlineLine,
+  buildSigningRequestHtml,
+} from "./services/signing-invitation-email.ts";
 import { withUserEmailLegalFooter } from "./services/email-legal-footer.ts";
 import {
   formatReminderAvailableAt,
@@ -34,7 +37,6 @@ import {
   issueSigningLink,
   type IssuedSigningLink,
 } from "./services/signing-links.ts";
-import { escapeHtml } from "./utils/html.ts";
 
 type ReminderEnvelopeRow = {
   expiresAt: number | null;
@@ -228,20 +230,26 @@ function buildReminderEmail(input: {
     input.signingUrl,
     ...(deadlineLine ? ["", deadlineLine] : []),
     "",
-    `You do not need a ${input.branding.productName} account to sign.`,
-    "If you receive a newer invitation or reminder link, use the newest one.",
+    "Takes about a minute. No account needed.",
+    "If you get a newer invitation or reminder for this document, use the link in the newest one.",
   ].join("\n");
-  const htmlBody = [
-    `<p>Hi ${escapeHtml(input.signerName)},</p>`,
-    `<p>${escapeHtml(introLine)}</p>`,
-    `<p><a href="${escapeHtml(input.signingUrl)}">Review and sign the document</a></p>`,
-    deadlineLine ? `<p>${escapeHtml(deadlineLine)}</p>` : "",
-    `<p>You do not need a ${escapeHtml(input.branding.productName)} account to sign.</p>`,
-    "<p>If you receive a newer invitation or reminder link, use the newest one.</p>",
-  ].join("");
+  const htmlBody = buildSigningRequestHtml({
+    branding: input.branding,
+    envelopeTitle: input.envelopeTitle,
+    expiresAt: input.expiresAt,
+    heading: automatic
+      ? `${input.senderName} is still waiting for your signature`
+      : `A reminder from ${input.senderName}`,
+    intro: automatic
+      ? `Hi ${input.signerName}, this document still needs your signature. Open it to review and sign where it’s marked.`
+      : `Hi ${input.signerName}, ${input.senderName} asked us to remind you about this document. Open it to review and sign where it’s marked.`,
+    senderName: input.senderName,
+    signingUrl: input.signingUrl,
+  });
   const legalFooter = withUserEmailLegalFooter(
     {
       htmlBody,
+      preheader: `“${input.envelopeTitle}” still needs your signature. It takes about a minute.`,
       textBody,
     },
     input.branding,

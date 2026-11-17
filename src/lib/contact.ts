@@ -1,9 +1,15 @@
 import { contactFormSchema, type ContactFormInput } from "./schemas/contact.ts";
 import { resolvePublicSupportAddress } from "./public-contact.ts";
 import { createEmailService } from "./services/email.ts";
+import {
+  emailDetails,
+  emailHeading,
+  emailParagraph,
+  emailQuote,
+  renderPlainEmail,
+} from "./services/email-layout.ts";
 import { ServiceConfigurationError } from "./services/service-config.ts";
 import { type EnvSource } from "./utils/env.ts";
-import { escapeHtml } from "./utils/html.ts";
 
 type ContactFieldName = "email" | "message" | "name";
 
@@ -105,19 +111,27 @@ export async function submitPublicContactMessage(
 
   const supportAddress = await resolvePublicSupportAddress(env);
   const submittedAt = formatSubmittedAt();
-  const escapedMessageHtml = escapeHtml(parsedInput.message).replaceAll(
-    "\n",
-    "<br />",
-  );
 
   try {
     const emailService = createEmailService({ env });
     const deliveryResult = await emailService.send({
-      htmlBody: [
-        "<p>A new public contact request was submitted through SignuDoc.</p>",
-        `<p><strong>Name:</strong> ${escapeHtml(parsedInput.name)}<br /><strong>Email:</strong> ${escapeHtml(parsedInput.email)}<br /><strong>Submitted at:</strong> ${escapeHtml(submittedAt)}</p>`,
-        `<p><strong>Message:</strong><br />${escapedMessageHtml}</p>`,
-      ].join(""),
+      htmlBody: renderPlainEmail({
+        contentHtml: [
+          emailHeading(`New message from ${parsedInput.name}`),
+          emailParagraph(
+            "Someone wrote in through the public contact form. Reply to this email to answer them.",
+          ),
+          emailDetails([
+            { label: "Name", value: parsedInput.name },
+            { label: "Email", value: parsedInput.email },
+            { label: "Submitted", value: submittedAt },
+          ]),
+          emailQuote(parsedInput.message),
+        ].join(""),
+        footerText: "Sent from the SignuDoc contact form.",
+        preheader: parsedInput.message.slice(0, 120),
+        productName: "SignuDoc",
+      }),
       replyTo: parsedInput.email,
       subject: `[Contact] ${parsedInput.name}`,
       template: "contact_form",

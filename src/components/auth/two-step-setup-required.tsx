@@ -1,11 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { ShieldCheck } from "@/components/ui/icons";
 
+import { AuthHeading, IconTile } from "@/components/auth/auth-parts";
 import { useBranding } from "@/components/layout/branding-provider";
 import { TwoFactorPanel } from "@/components/settings/two-factor-panel";
-import { ShellButton } from "@/components/shared/form-shell";
+import { Button } from "@/components/ui/button";
 
+/*
+ * Where someone lands when the install requires two-step sign-in and they
+ * have not set it up. One job: turn it on. A short heading says why, the
+ * settings panel itself does the work (so the flow is the one they will
+ * see again in Settings), and a quiet way out sits underneath.
+ */
 export function TwoStepSetupRequired({ email }: { email: string }) {
   const { productName } = useBranding();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -25,29 +33,38 @@ export function TwoStepSetupRequired({ email }: { email: string }) {
   }
 
   return (
-    <div className="w-full max-w-[720px] space-y-5">
-      <section className="panel space-y-3 p-8 sm:p-10">
-        <p className="section-eyebrow">One more step</p>
-        <h1 className="text-[clamp(1.875rem,4.5vw,2.375rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-(--fg)">
-          Set up two-step sign-in
-        </h1>
-        <p className="text-sm leading-6 text-(--secondary)">
-          Your organization requires two-step sign-in on {productName}. Set it
-          up for {email} to continue. It takes about a minute with an
-          authenticator app on your phone.
-        </p>
-      </section>
+    <div className="flex flex-col gap-8">
+      <AuthHeading
+        className="items-center text-center"
+        description={
+          <>
+            {productName} asks everyone to use a second step. Set it up for{" "}
+            <span className="font-medium break-all text-(--fg)">{email}</span>{" "}
+            to continue. It takes about a minute with an authenticator app.
+          </>
+        }
+        icon={
+          <IconTile size="lg" tone="accent">
+            <ShieldCheck />
+          </IconTile>
+        }
+        title="Set up two-step sign-in"
+      />
 
       <TwoFactorPanel enabled={false} required />
 
-      <ShellButton
-        className="w-fit"
-        loading={isSigningOut}
-        onClick={() => void signOut()}
-        variant="ghost"
-      >
-        Sign out
-      </ShellButton>
+      <p className="flex flex-wrap items-center justify-center gap-x-1 text-sm text-(--secondary)">
+        Not you, or not now?
+        <Button
+          className="-ml-1"
+          loading={isSigningOut}
+          onClick={() => void signOut()}
+          size="sm"
+          variant="link"
+        >
+          Sign out
+        </Button>
+      </p>
     </div>
   );
 }

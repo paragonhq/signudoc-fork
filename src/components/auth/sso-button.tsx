@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Building2 } from "@/components/ui/icons";
 
-import { ShellButton } from "@/components/shared/form-shell";
+import { Button } from "@/components/ui/button";
 
 // "Continue with <provider>": hands the visitor to the organization's
 // identity provider (lib/auth/sso.ts). Better Auth sends them back to
@@ -81,14 +82,16 @@ export function SsoButton({
   }
 
   return (
-    <ShellButton
+    <Button
       className="w-full"
       loading={isBusy}
       onClick={() => void start()}
+      size="lg"
       type="button"
-      variant={variant}
+      variant={variant === "primary" ? "default" : "outline"}
     >
+      <Building2 aria-hidden="true" />
       {label ?? `Continue with ${sso.name}`}
-    </ShellButton>
+    </Button>
   );
 }

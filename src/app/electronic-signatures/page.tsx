@@ -41,23 +41,17 @@ export default async function ElectronicSignaturesPage() {
       title="What this is for"
     >
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          {WHAT_IT_IS.heading}
-        </h2>
+        <h2>{WHAT_IT_IS.heading}</h2>
         <List items={WHAT_IT_IS.items} />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          {WHAT_IT_IS_NOT.heading}
-        </h2>
+        <h2>{WHAT_IT_IS_NOT.heading}</h2>
         <List items={WHAT_IT_IS_NOT.items} />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Do not send these documents (United States)
-        </h2>
+        <h2>Do not send these documents (United States)</h2>
         <p>
           The federal ESIGN Act (15 U.S.C. 7003) and the Uniform Electronic
           Transactions Act adopted by the states leave these out, so an
@@ -67,9 +61,7 @@ export default async function ElectronicSignaturesPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Take care with these (European Union)
-        </h2>
+        <h2>Take care with these (European Union)</h2>
         <p>
           eIDAS lets member states decide which documents need a stronger form.
           Commonly these do:
@@ -78,9 +70,7 @@ export default async function ElectronicSignaturesPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Who decides
-        </h2>
+        <h2>Who decides</h2>
         <p>
           {productName} runs this site and decides what it may be used for.
           Before each send, the sender confirms the document is not one of the

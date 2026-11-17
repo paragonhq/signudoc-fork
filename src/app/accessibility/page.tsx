@@ -23,9 +23,7 @@ export default async function AccessibilityPage() {
       title="Accessibility Statement"
     >
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Commitment
-        </h2>
+        <h2>Commitment</h2>
         <p>
           We want SignuDoc to be usable by as many people as possible, including
           people who rely on keyboard navigation, screen readers, zoom, or other
@@ -41,9 +39,7 @@ export default async function AccessibilityPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          What currently works best
-        </h2>
+        <h2>What currently works best</h2>
         <ul className="list-disc space-y-2 pl-6">
           <li>
             Account creation, log in, dashboard, settings, and most non-canvas
@@ -63,9 +59,7 @@ export default async function AccessibilityPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Known limitations
-        </h2>
+        <h2>Known limitations</h2>
         <ul className="list-disc space-y-2 pl-6">
           <li>
             The PDF preview is rendered on a canvas and is therefore not a fully
@@ -86,9 +80,7 @@ export default async function AccessibilityPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Alternative assistance
-        </h2>
+        <h2>Alternative assistance</h2>
         <p>
           If you need help creating, sending, reviewing, or signing a document,
           email{" "}
@@ -110,9 +102,7 @@ export default async function AccessibilityPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Standards and ongoing work
-        </h2>
+        <h2>Standards and ongoing work</h2>
         <p>
           We use WCAG 2.2 Level AA as a practical reference point when planning
           improvements, but we do not claim that every part of SignuDoc fully
@@ -127,9 +117,7 @@ export default async function AccessibilityPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          Feedback
-        </h2>
+        <h2>Feedback</h2>
         <p>
           Accessibility feedback helps us prioritize the right fixes. If you
           find a barrier, email{" "}

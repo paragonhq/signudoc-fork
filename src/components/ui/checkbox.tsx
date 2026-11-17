@@ -4,26 +4,50 @@ import * as React from "react";
 import { Checkbox as CheckboxPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/cn";
-import { CheckIcon } from "lucide-react";
+import { useFieldControlProps } from "@/components/ui/field-context";
 
+/**
+ * A checkbox: 18px box, 8px-ish corners, accent fill. The tick draws on and
+ * pops with --ease-pop; indeterminate shows a dash. The hit area grows to
+ * 44px on touch without growing the box (.checkbox in globals.css).
+ * Pair it with a label via ChoiceField, or a <Label htmlFor>.
+ */
 function Checkbox({
   className,
   ...props
 }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+  const wired = useFieldControlProps(props);
+
   return (
     <CheckboxPrimitive.Root
+      className={cn("checkbox peer", className)}
       data-slot="checkbox"
-      className={cn(
-        "peer relative flex size-5 shrink-0 items-center justify-center rounded-md border-[1.5px] border-[var(--border-strong)] bg-card transition-colors outline-none group-has-disabled/field:opacity-50 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
-        className,
-      )}
-      {...props}
+      {...wired}
     >
       <CheckboxPrimitive.Indicator
+        className="checkbox-mark"
         data-slot="checkbox-indicator"
-        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
+        forceMount
       >
-        <CheckIcon />
+        <svg aria-hidden="true" fill="none" viewBox="0 0 12 12">
+          <path
+            className="checkbox-tick"
+            d="M2.5 6.25 4.9 8.6 9.5 3.6"
+            pathLength={1}
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.75"
+          />
+          <path
+            className="checkbox-dash"
+            d="M3 6h6"
+            pathLength={1}
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth="1.75"
+          />
+        </svg>
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

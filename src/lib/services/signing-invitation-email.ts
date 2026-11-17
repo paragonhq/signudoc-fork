@@ -1,6 +1,13 @@
 import { type Branding } from "../branding.ts";
 import { formatDeadline } from "../envelope-deadline.ts";
-import { escapeHtml } from "../utils/html.ts";
+import {
+  emailButton,
+  emailDocumentCard,
+  emailHeading,
+  emailNote,
+  emailParagraph,
+  emailTheme,
+} from "./email-layout.ts";
 import { withUserEmailLegalFooter } from "./email-legal-footer.ts";
 import { type TransactionalEmailMessage } from "./email.ts";
 
@@ -24,6 +31,45 @@ export function buildDeadlineLine(
     : null;
 }
 
+/** "Sign by January 15, 2027 at 8:00 AM UTC", or nothing without a deadline. */
+function buildSignByLine(expiresAt: number | null | undefined): string | null {
+  return typeof expiresAt === "number"
+    ? `Sign by ${formatDeadline(expiresAt)}`
+    : null;
+}
+
+/**
+ * The body of a message that asks someone to sign: the invitation and both
+ * kinds of reminder share it, so they read as one conversation.
+ */
+export function buildSigningRequestHtml(input: {
+  branding: Branding;
+  envelopeTitle: string;
+  expiresAt?: number | null;
+  heading: string;
+  intro: string;
+  senderName: string;
+  signingUrl: string;
+}): string {
+  const theme = emailTheme(input.branding);
+  const signBy = buildSignByLine(input.expiresAt);
+
+  return [
+    emailHeading(input.heading),
+    emailParagraph(input.intro),
+    emailDocumentCard({
+      lines: [`From ${input.senderName}`, ...(signBy ? [signBy] : [])],
+      theme,
+      title: input.envelopeTitle,
+    }),
+    emailButton({ label: "Review and sign", theme, url: input.signingUrl }),
+    emailNote("Takes about a minute. No account needed."),
+    emailNote(
+      "If you get a newer invitation or reminder for this document, use the link in the newest one.",
+    ),
+  ].join("");
+}
+
 export function buildSigningInvitationEmail(
   input: SigningInvitationEmailInput,
 ): TransactionalEmailMessage {
@@ -39,20 +85,22 @@ export function buildSigningInvitationEmail(
     input.signingUrl,
     ...(deadlineLine ? ["", deadlineLine] : []),
     "",
-    `You do not need a ${productName} account to sign.`,
-    "If you receive a newer invitation or reminder link, use the newest one.",
+    "Takes about a minute. No account needed.",
+    "If you get a newer invitation or reminder for this document, use the link in the newest one.",
   ].join("\n");
-  const htmlBody = [
-    `<p>Hi ${escapeHtml(input.signerName)},</p>`,
-    `<p>${escapeHtml(input.senderName)} sent you &ldquo;${escapeHtml(input.envelopeTitle)}&rdquo; through ${escapeHtml(productName)}.</p>`,
-    `<p><a href="${escapeHtml(input.signingUrl)}">Review and sign the document</a></p>`,
-    deadlineLine ? `<p>${escapeHtml(deadlineLine)}</p>` : "",
-    `<p>You do not need a ${escapeHtml(productName)} account to sign.</p>`,
-    "<p>If you receive a newer invitation or reminder link, use the newest one.</p>",
-  ].join("");
+  const htmlBody = buildSigningRequestHtml({
+    branding: input.branding,
+    envelopeTitle: input.envelopeTitle,
+    expiresAt: input.expiresAt,
+    heading: `${input.senderName} sent you a document to sign`,
+    intro: `Hi ${input.signerName}, open the document to review it and sign where it’s marked.`,
+    senderName: input.senderName,
+    signingUrl: input.signingUrl,
+  });
   const legalFooter = withUserEmailLegalFooter(
     {
       htmlBody,
+      preheader: `Review and sign “${input.envelopeTitle}”. It takes about a minute.`,
       textBody,
     },
     input.branding,

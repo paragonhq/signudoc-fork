@@ -1,7 +1,11 @@
 "use client";
 
-import { ShellButton } from "@/components/shared/form-shell";
+import Link from "next/link";
+import { MailQuestionMark } from "@/components/ui/icons";
+
+import { AppIcon } from "@/components/brand/marks";
 import { resolveShellState } from "@/components/shared/shell-state";
+import { Button } from "@/components/ui/button";
 
 export const notFoundShellStates = ["default", "authenticated"] as const;
 
@@ -17,6 +21,10 @@ export function resolveNotFoundShellState(
   return resolveShellState(value, notFoundShellStates, "default");
 }
 
+/*
+ * 404 (docs/redesign/calm.md): a friendly icon tile, "No envelope here",
+ * one sentence and one way home. Nothing else.
+ */
 export function NotFoundShell({
   initialState = "default",
 }: NotFoundShellProps) {
@@ -26,27 +34,42 @@ export function NotFoundShell({
   const ctaLabel = authenticated ? "Go to Dashboard" : "Go to Home";
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <section
-        className="panel w-full max-w-[560px] px-6 py-14 text-center sm:px-12 sm:py-16"
-        data-animate="enter"
-      >
-        <p className="text-[4.5rem] font-extrabold leading-none tracking-[-0.05em] text-(--accent)">
-          404
-        </p>
-        <h1 className="mt-4 text-[clamp(1.875rem,5vw,2.5rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-(--fg)">
-          Page not found
-        </h1>
-        <p className="mx-auto mt-3 max-w-md text-base leading-7 text-(--secondary)">
-          The page you&apos;re looking for doesn&apos;t exist or has been moved.
-        </p>
+    <div className="flex min-h-dvh flex-col">
+      <header className="flex h-16 items-center px-5 sm:px-8">
+        <Link
+          aria-label="SignuDoc home"
+          className="rounded-lg outline-none transition-opacity duration-(--dur-hover) ease-(--ease-out) hover:opacity-80 focus-visible:shadow-(--focus-ring)"
+          href="/"
+        >
+          <AppIcon className="size-8 rounded-[0.5rem]" />
+        </Link>
+      </header>
 
-        <div className="mt-8 flex justify-center">
-          <ShellButton className="px-6" href={ctaHref}>
-            {ctaLabel}
-          </ShellButton>
+      <main className="flex flex-1 items-center justify-center px-5 pb-24">
+        <div
+          className="flex max-w-[26rem] flex-col items-center gap-6 text-center"
+          data-animate="enter"
+        >
+          <span
+            aria-hidden="true"
+            className="inline-flex size-16 items-center justify-center rounded-[1.25rem] bg-(--paper) text-(--secondary) shadow-(--shadow-card-flat)"
+          >
+            <MailQuestionMark className="size-7 stroke-[1.75]" />
+          </span>
+          <div className="flex flex-col gap-2">
+            <h1 className="text-[1.75rem] leading-9 font-semibold tracking-[-0.03em] text-(--fg)">
+              No envelope here
+            </h1>
+            <p className="text-[0.9375rem] leading-6 text-pretty text-(--secondary)">
+              The link may be old or mistyped, or what it pointed to was
+              removed. If someone sent it to you, ask them for a fresh one.
+            </p>
+          </div>
+          <Button asChild size="lg">
+            <Link href={ctaHref}>{ctaLabel}</Link>
+          </Button>
         </div>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }

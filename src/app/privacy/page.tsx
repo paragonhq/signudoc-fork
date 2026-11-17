@@ -23,9 +23,7 @@ export default async function PrivacyPage() {
       title="Privacy Policy"
     >
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          1. Scope and service design
-        </h2>
+        <h2>1. Scope and service design</h2>
         <p>
           SignuDoc is a U.S.-focused electronic-signature service designed for
           ordinary business agreements and similar commercial workflows. This
@@ -41,9 +39,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          2. Information we collect
-        </h2>
+        <h2>2. Information we collect</h2>
         <p>We may collect the following categories of information:</p>
         <ul className="list-disc space-y-2 pl-6">
           <li>
@@ -81,9 +77,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          3. Where the information comes from
-        </h2>
+        <h2>3. Where the information comes from</h2>
         <p>We collect information directly from you when you:</p>
         <ul className="list-disc space-y-2 pl-6">
           <li>create or use an account;</li>
@@ -100,9 +94,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          4. How we use information
-        </h2>
+        <h2>4. How we use information</h2>
         <p>We may use information to:</p>
         <ul className="list-disc space-y-2 pl-6">
           <li>create and manage accounts;</li>
@@ -122,9 +114,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          5. How we share information
-        </h2>
+        <h2>5. How we share information</h2>
         <p>
           We may share information with service providers that help us operate
           SignuDoc, such as providers for authentication, cloud storage, email
@@ -145,9 +135,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          6. Retention
-        </h2>
+        <h2>6. Retention</h2>
         <p>
           Unsent draft envelopes and their uploaded source documents may be
           deleted after a period of inactivity, such as 30 days without sender
@@ -169,9 +157,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          7. Security
-        </h2>
+        <h2>7. Security</h2>
         <p>
           SignuDoc uses administrative, technical, and physical safeguards that
           are designed to protect personal information, including authenticated
@@ -182,9 +168,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          8. Your privacy rights
-        </h2>
+        <h2>8. Your privacy rights</h2>
         <p>
           Depending on where you live and the nature of your relationship with
           SignuDoc, you may have rights to:
@@ -213,9 +197,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          9. How to exercise your rights
-        </h2>
+        <h2>9. How to exercise your rights</h2>
         <p>
           To request access, correction, deletion, or account closure, email{" "}
           <Link
@@ -242,9 +224,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          10. Cookies and local storage
-        </h2>
+        <h2>10. Cookies and local storage</h2>
         <p>
           SignuDoc uses cookies and similar technologies primarily for
           authentication, session continuity, security, and basic application
@@ -257,9 +237,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          11. Children and international use
-        </h2>
+        <h2>11. Children and international use</h2>
         <p>
           SignuDoc is not directed to children under 13, and we do not knowingly
           collect personal information from children through the service. If you
@@ -275,9 +253,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          12. Changes and contact
-        </h2>
+        <h2>12. Changes and contact</h2>
         <p>
           We may update this Privacy Policy from time to time by posting a
           revised version on this page. Material changes will apply when posted

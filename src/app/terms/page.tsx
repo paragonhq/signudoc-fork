@@ -23,9 +23,7 @@ export default async function TermsPage() {
       title="Terms of Service"
     >
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          1. Overview
-        </h2>
+        <h2>1. Overview</h2>
         <p>
           By creating an account, uploading a document, sending an envelope, or
           signing through SignuDoc, you agree to these Terms. If you use
@@ -46,9 +44,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          2. Eligibility and authority
-        </h2>
+        <h2>2. Eligibility and authority</h2>
         <p>
           You may use SignuDoc only if you can form a binding contract under
           applicable law and only for lawful business or organizational
@@ -64,9 +60,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          3. Permitted use and excluded documents
-        </h2>
+        <h2>3. Permitted use and excluded documents</h2>
         <p>
           SignuDoc is intended for ordinary business agreements and comparable
           commercial records, such as NDAs, statements of work, vendor
@@ -121,9 +115,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          4. Sender responsibilities
-        </h2>
+        <h2>4. Sender responsibilities</h2>
         <p>
           Senders are responsible for the content they upload, the routing order
           they configure, the fields they place, the recipients they invite, and
@@ -140,9 +132,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          5. Electronic signatures and records
-        </h2>
+        <h2>5. Electronic signatures and records</h2>
         <p>
           For documents within SignuDoc&apos;s permitted scope, SignuDoc is
           designed to support standard electronic signatures and records used in
@@ -160,9 +150,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          6. Account security and acceptable use
-        </h2>
+        <h2>6. Account security and acceptable use</h2>
         <p>
           You are responsible for safeguarding your credentials, restricting
           access to your account, and promptly notifying SignuDoc if you suspect
@@ -179,9 +167,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          7. Service changes, availability, and records
-        </h2>
+        <h2>7. Service changes, availability, and records</h2>
         <p>
           SignuDoc may change, improve, suspend, or discontinue features at any
           time. We may introduce limits on document size, signer count, storage,
@@ -198,9 +184,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          8. Intellectual property and your content
-        </h2>
+        <h2>8. Intellectual property and your content</h2>
         <p>
           As between you and SignuDoc, you retain ownership of the documents and
           data you upload, subject to the rights needed for SignuDoc and its
@@ -216,9 +200,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          9. Suspension, termination, and account closure
-        </h2>
+        <h2>9. Suspension, termination, and account closure</h2>
         <p>
           You may stop using the service at any time. SignuDoc may suspend or
           terminate access if we reasonably believe that you violated these
@@ -243,9 +225,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          10. Disclaimers
-        </h2>
+        <h2>10. Disclaimers</h2>
         <p>
           SignuDoc is provided on an &quot;as is&quot; and &quot;as
           available&quot; basis to the maximum extent permitted by law. SignuDoc
@@ -265,9 +245,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          11. Limitation of liability
-        </h2>
+        <h2>11. Limitation of liability</h2>
         <p>
           To the maximum extent permitted by law, SignuDoc and its affiliates,
           service providers, licensors, and personnel will not be liable for any
@@ -285,9 +263,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          12. Indemnification
-        </h2>
+        <h2>12. Indemnification</h2>
         <p>
           You will defend, indemnify, and hold harmless SignuDoc and its
           affiliates, service providers, licensors, and personnel from and
@@ -299,9 +275,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          13. Governing law and changes
-        </h2>
+        <h2>13. Governing law and changes</h2>
         <p>
           Except where applicable law requires otherwise, these Terms are
           governed by applicable U.S. federal law and the law of the state in
@@ -318,9 +292,7 @@ export default async function TermsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-(--fg)">
-          14. Contact
-        </h2>
+        <h2>14. Contact</h2>
         <p>
           Questions about these Terms may be sent to{" "}
           <Link

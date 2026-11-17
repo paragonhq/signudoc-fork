@@ -15,6 +15,13 @@ import {
   type StorageService,
 } from "./services/storage.ts";
 import { createEmailService, type EmailService } from "./services/email.ts";
+import {
+  emailButton,
+  emailDocumentCard,
+  emailHeading,
+  emailParagraph,
+  renderPlainEmail,
+} from "./services/email-layout.ts";
 import { recordSystemAuditEvent } from "./services/system-audit.ts";
 import { readStoredSettings } from "./settings.ts";
 import { type EnvSource, isHostedMode, resolveAppUrl } from "./utils/env.ts";
@@ -784,8 +791,16 @@ async function listFinishedEnvelopesToHandle(
   );
 }
 
+const dayFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+  year: "numeric",
+});
+
+/** "December 1, 2026": a date in words, in UTC like the job that deletes. */
 function formatDay(timestamp: number): string {
-  return new Date(timestamp * 1000).toISOString().slice(0, 10);
+  return dayFormatter.format(new Date(timestamp * 1000));
 }
 
 async function warnBeforeRetentionDeletion(
@@ -798,14 +813,34 @@ async function warnBeforeRetentionDeletion(
   const appUrl = resolveAppUrl();
   const link = appUrl ? `${appUrl}/envelopes/${envelope.id}` : null;
 
+  const deleteDay = formatDay(deleteOn);
+
   await emailService.send(
     {
-      subject: `"${envelope.title}" will be deleted on ${formatDay(deleteOn)}`,
+      htmlBody: renderPlainEmail({
+        contentHtml: [
+          emailHeading("A finished document will be deleted soon"),
+          emailParagraph(
+            `Hello ${envelope.ownerName}, your organization keeps finished documents for a set time. This one and its audit trail will be deleted on or after ${deleteDay}.`,
+          ),
+          emailDocumentCard({
+            lines: [`Deleted on or after ${deleteDay}`],
+            title: envelope.title,
+          }),
+          emailParagraph(
+            "Download the signed PDF and the certificate now if you need to keep them.",
+          ),
+          link ? emailButton({ label: "Open document", url: link }) : "",
+        ].join(""),
+        footerText: "An automatic notice about a document you sent.",
+        preheader: `Download “${envelope.title}” before ${deleteDay} if you need to keep it.`,
+      }),
+      subject: `"${envelope.title}" will be deleted on ${deleteDay}`,
       template: "retention_notice",
       textBody: [
         `Hello ${envelope.ownerName},`,
         "",
-        `Your organization keeps finished documents for a set time. "${envelope.title}" and its audit trail will be deleted on or after ${formatDay(deleteOn)}.`,
+        `Your organization keeps finished documents for a set time. "${envelope.title}" and its audit trail will be deleted on or after ${deleteDay}.`,
         "",
         "Download the signed PDF and the certificate now if you need to keep them.",
         ...(link ? ["", link] : []),

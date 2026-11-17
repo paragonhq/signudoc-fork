@@ -1,6 +1,9 @@
 "use client";
 
+import { RotateCcw } from "@/components/ui/icons";
+
 import { StatusPanel } from "@/components/shared/status-panel";
+import { Button } from "@/components/ui/button";
 
 export default function AuthError({
   reset,
@@ -9,21 +12,16 @@ export default function AuthError({
   reset: () => void;
 }) {
   return (
-    <div className="w-full max-w-[520px]">
-      <StatusPanel
-        description="This page hit an unexpected error. Please try again."
-        footer={
-          <button
-            className="btn-quiet min-h-11 px-5"
-            onClick={reset}
-            type="button"
-          >
-            Try again
-          </button>
-        }
-        title="Something went wrong."
-        tone="error"
-      />
-    </div>
+    <StatusPanel
+      description="This page hit an unexpected error. Try again, and if it keeps happening, reload the page."
+      footer={
+        <Button onClick={reset} variant="outline">
+          <RotateCcw aria-hidden="true" />
+          Try again
+        </Button>
+      }
+      title="Something went wrong."
+      tone="error"
+    />
   );
 }

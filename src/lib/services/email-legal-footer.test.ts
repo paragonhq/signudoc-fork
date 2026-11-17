@@ -40,7 +40,7 @@ test("the hosted service links to its own terms, privacy and contact pages", () 
   );
   assert.match(
     result.htmlBody,
-    /<a href="https:\/\/sign\.acme\.com\/terms">Terms of Service<\/a>/,
+    /<a href="https:\/\/sign\.acme\.com\/terms"[^>]*>Terms of Service<\/a>/,
   );
   assert.doesNotMatch(result.textBody, /Sent by|Sent using/);
 });
@@ -91,7 +91,7 @@ test("a neutral install links to the organization's own pages and support addres
   );
   assert.match(
     result.htmlBody,
-    /<a href="mailto:help@acme\.com">help@acme\.com<\/a>/,
+    /<a href="mailto:help@acme\.com"[^>]*>help@acme\.com<\/a>/,
   );
 });
 
@@ -139,12 +139,13 @@ test("an install with a logo puts it at the top of the HTML part only", () => {
     env,
   );
 
-  assert.ok(
-    result.htmlBody.startsWith(
-      '<p style="margin:0 0 24px;"><img src="https://sign.acme.com/api/brand/logo?v=0123456789abcdef" alt="Acme &quot;Signing&quot; &amp; Co"',
-    ),
+  const logo = result.htmlBody.indexOf(
+    '<img src="https://sign.acme.com/api/brand/logo?v=0123456789abcdef" alt="Acme &quot;Signing&quot; &amp; Co"',
   );
-  assert.ok(result.htmlBody.includes("<p>Hello</p>"));
+
+  // The logo sits above the message, which is kept as it was given.
+  assert.ok(logo > 0);
+  assert.ok(logo < result.htmlBody.indexOf("<p>Hello</p>"));
   assert.doesNotMatch(result.textBody, /logo/);
 });
 
@@ -156,4 +157,27 @@ test("without the site's address there is nowhere to fetch a logo from", () => {
   );
 
   assert.doesNotMatch(result.htmlBody, /<img/);
+});
+
+test("the message goes in a complete document with its preview line escaped", () => {
+  const result = withUserEmailLegalFooter(
+    { ...body, preheader: 'Sign "Lease" <now> & go' },
+    neutral,
+    env,
+  );
+
+  assert.ok(result.htmlBody.startsWith("<!DOCTYPE html>"));
+  assert.ok(
+    result.htmlBody.includes("Sign &quot;Lease&quot; &lt;now&gt; &amp; go"),
+  );
+  assert.doesNotMatch(result.htmlBody, /<now>/);
+  // Without a logo the organization's name heads the message, escaped.
+  assert.ok(
+    withUserEmailLegalFooter(
+      body,
+      { ...neutral, productName: "Harbour & <Finch>" },
+      env,
+    ).htmlBody.includes("Harbour &amp; &lt;Finch&gt;"),
+  );
+  assert.doesNotMatch(result.textBody, /Sign "Lease"/);
 });

@@ -5,9 +5,9 @@ import {
   type EmailService,
 } from "./services/email.ts";
 import { withUserEmailLegalFooter } from "./services/email-legal-footer.ts";
+import { emailHeading, emailParagraph } from "./services/email-layout.ts";
 import { getBranding, getSettings, markEmailReady } from "./settings.ts";
 import { type EnvSource } from "./utils/env.ts";
-import { escapeHtml } from "./utils/html.ts";
 
 export type TestEmailResult =
   { sent: true; to: string } | { sent: false; message: string };
@@ -39,11 +39,17 @@ export async function sendTestEmail({
       `This is a test message from ${productName}. If you are reading it, email is working.`,
     ].join("\n");
     const htmlBody = [
-      `<p>Hi ${escapeHtml(name)},</p>`,
-      `<p>This is a test message from ${escapeHtml(productName)}. If you are reading it, email is working.</p>`,
+      emailHeading("Email is working"),
+      emailParagraph(
+        `Hi ${name}, this is a test message from ${productName}. If you are reading it, signers will get their invitations, reminders and copies too.`,
+      ),
     ].join("");
     const content = withUserEmailLegalFooter(
-      { htmlBody, textBody },
+      {
+        htmlBody,
+        preheader: `${productName} can send email. Nothing else to do.`,
+        textBody,
+      },
       branding,
       env,
     );

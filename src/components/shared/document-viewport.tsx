@@ -1,6 +1,9 @@
 "use client";
 
+import { MinusIcon, PlusIcon } from "@/components/ui/icons";
 import { type PointerEvent as ReactPointerEvent } from "react";
+
+import { cn } from "@/lib/cn";
 
 export type DocumentPanGesture = {
   hasMoved: boolean;
@@ -147,12 +150,24 @@ export function endDocumentPanGesture(input: {
   return true;
 }
 
+export const MIN_DOCUMENT_ZOOM = MIN_DOCUMENT_ZOOM_LEVEL;
+export const MAX_DOCUMENT_ZOOM = MAX_DOCUMENT_ZOOM_LEVEL;
+
+const zoomButtonClassName =
+  "inline-flex size-8 items-center justify-center rounded-full text-(--secondary) outline-none transition-[background-color,color,scale] duration-(--dur-hover) ease-(--ease-out) hover:bg-(--hover) hover:text-(--fg) active:scale-[0.94] active:duration-(--dur-press) focus-visible:shadow-(--focus-ring) disabled:pointer-events-none disabled:text-(--placeholder) pointer-coarse:size-10";
+
+/**
+ * Zoom out, the zoom level, zoom in, and Fit: a small white pill. The
+ * builder and the signing view both use it.
+ */
 export function DocumentZoomControls({
+  className,
   onDecrease,
   onIncrease,
   onReset,
   zoomLevel,
 }: {
+  className?: string;
   onDecrease: () => void;
   onIncrease: () => void;
   onReset: () => void;
@@ -161,30 +176,44 @@ export function DocumentZoomControls({
   const zoomPercentage = Math.round(zoomLevel * 100);
 
   return (
-    <div className="inline-flex min-h-11 items-center gap-0.5 rounded-xl bg-(--surface) p-1">
+    <div
+      aria-label="Zoom"
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-full bg-(--paper) p-1 shadow-(--ring-soft)",
+        className,
+      )}
+      role="group"
+    >
       <button
         aria-label="Zoom out"
-        className="inline-flex size-9 items-center justify-center rounded-[0.5625rem] text-lg leading-none text-(--fg) transition hover:bg-white disabled:text-(--placeholder) disabled:hover:bg-transparent"
+        className={zoomButtonClassName}
         disabled={zoomLevel <= MIN_DOCUMENT_ZOOM_LEVEL}
         onClick={onDecrease}
         type="button"
       >
-        -
+        <MinusIcon aria-hidden="true" className="size-3.5" />
       </button>
-      <div className="flex min-w-[58px] items-center justify-center px-1 text-sm font-semibold tabular-nums text-(--fg)">
+      <span
+        aria-live="polite"
+        className="min-w-[3rem] text-center text-[0.8125rem] font-medium text-(--fg) tabular-nums"
+      >
         {zoomPercentage}%
-      </div>
+      </span>
       <button
         aria-label="Zoom in"
-        className="inline-flex size-9 items-center justify-center rounded-[0.5625rem] text-lg leading-none text-(--fg) transition hover:bg-white disabled:text-(--placeholder) disabled:hover:bg-transparent"
+        className={zoomButtonClassName}
         disabled={zoomLevel >= MAX_DOCUMENT_ZOOM_LEVEL}
         onClick={onIncrease}
         type="button"
       >
-        +
+        <PlusIcon aria-hidden="true" className="size-3.5" />
       </button>
+      <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-(--divider)" />
       <button
-        className="inline-flex min-h-9 items-center justify-center rounded-[0.5625rem] px-3 text-[0.8125rem] font-semibold text-(--secondary) transition hover:bg-white hover:text-(--fg)"
+        className={cn(
+          zoomButtonClassName,
+          "w-auto px-2.5 text-[0.8125rem] font-medium",
+        )}
         onClick={onReset}
         type="button"
       >

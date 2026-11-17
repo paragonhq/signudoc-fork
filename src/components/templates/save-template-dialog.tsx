@@ -1,23 +1,40 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { LayoutTemplateIcon } from "@/components/ui/icons";
+import { useState, type FormEvent, type RefObject } from "react";
 
-import { ShellButton } from "@/components/shared/form-shell";
+import { getSignerPalette } from "@/components/envelopes/signer-palette";
+import { getInitials } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { FieldError, FormField } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Tray,
+  TrayBody,
+  TrayClose,
+  TrayContent,
+  TrayDescription,
+  TrayFooter,
+  TrayHeader,
+  TrayTitle,
+} from "@/components/ui/tray";
+import {
+  ConfirmButton,
+  DONE_HOLD_MS,
+  KeptList,
+  TrayError,
+} from "@/components/envelopes/detail/trays/tray-parts";
 import { MAX_TEMPLATE_ROLE_NAME_LENGTH } from "@/lib/schemas/template";
 
 type SaveTemplateDialogProps = {
   envelopeId: string;
   /** What the template is called unless the sender changes it. */
   initialName: string;
-  onCancel: () => void;
+  onOpenChange: (open: boolean) => void;
   onSaved: (templateName: string) => void;
+  open: boolean;
+  /** Where focus goes when the tray closes (e.g. a menu's trigger). */
+  returnFocusRef?: RefObject<HTMLElement | null>;
   /** In signing order. The names only say whose place is being named. */
   signers: readonly { id: string; name: string }[];
 };
@@ -25,23 +42,71 @@ type SaveTemplateDialogProps = {
 const genericError = "Something went wrong. Please try again.";
 
 /**
- * Asks what to call the template and each place in its signing order, then
- * saves the envelope as a template.
+ * A tray that asks what to call the template and each place in its signing
+ * order, shows what a template keeps and what it leaves behind, then saves
+ * the envelope as a template.
  */
 export function SaveTemplateDialog({
   envelopeId,
   initialName,
-  onCancel,
+  onOpenChange,
   onSaved,
+  open,
+  returnFocusRef,
   signers,
 }: SaveTemplateDialogProps) {
-  const formId = useId();
+  const [isSaving, setIsSaving] = useState(false);
+
+  return (
+    <Tray
+      dismissible={!isSaving}
+      onOpenChange={(next) => !isSaving && onOpenChange(next)}
+      open={open}
+    >
+      <TrayContent
+        onCloseAutoFocus={(event) => {
+          if (returnFocusRef?.current) {
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }
+        }}
+        showCloseButton={!isSaving}
+        size="lg"
+      >
+        <SaveTemplateForm
+          envelopeId={envelopeId}
+          initialName={initialName}
+          isSaving={isSaving}
+          onSaved={onSaved}
+          setIsSaving={setIsSaving}
+          signers={signers}
+        />
+      </TrayContent>
+    </Tray>
+  );
+}
+
+/** Lives inside the tray, so every opening starts fresh. */
+function SaveTemplateForm({
+  envelopeId,
+  initialName,
+  isSaving,
+  onSaved,
+  setIsSaving,
+  signers,
+}: Pick<
+  SaveTemplateDialogProps,
+  "envelopeId" | "initialName" | "onSaved" | "signers"
+> & {
+  isSaving: boolean;
+  setIsSaving: (saving: boolean) => void;
+}) {
   const [name, setName] = useState(initialName);
   const [roleNames, setRoleNames] = useState(() =>
     signers.map((_, index) => `Signer ${String(index + 1)}`),
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const trimmedRoleNames = roleNames.map((roleName) => roleName.trim());
   const hasRepeatedRoleName =
@@ -55,7 +120,7 @@ export function SaveTemplateDialog({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!canSave || isSaving) {
+    if (!canSave || isSaving || saved) {
       return;
     }
 
@@ -75,81 +140,89 @@ export function SaveTemplateDialog({
 
       if (!response.ok) {
         setErrorMessage(payload?.error ?? genericError);
+        setIsSaving(false);
         return;
       }
 
-      onSaved(payload?.name ?? name.trim());
+      // "Saved" for a beat, then the tray closes into the confirmation.
+      setSaved(true);
+      setIsSaving(false);
+      window.setTimeout(
+        () => onSaved(payload?.name ?? name.trim()),
+        DONE_HOLD_MS,
+      );
     } catch {
       setErrorMessage(genericError);
-    } finally {
       setIsSaving(false);
     }
   }
 
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open && !isSaving) {
-          onCancel();
-        }
-      }}
-    >
-      <DialogContent className="max-w-lg sm:p-8" showCloseButton={false}>
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          <DialogHeader className="space-y-3">
-            <DialogTitle>Save as a template</DialogTitle>
-            <DialogDescription asChild>
-              <div className="space-y-2 text-sm leading-6 text-(--secondary)">
-                <p>
-                  A template keeps this document, where its fields are and the
-                  order people sign in. It does not keep anyone&apos;s name or
-                  email address, or anything that was filled in.
-                </p>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
+    <form className="flex min-h-0 flex-col" onSubmit={handleSubmit}>
+      <TrayHeader icon={<LayoutTemplateIcon aria-hidden="true" />}>
+        <TrayTitle>Save as a template</TrayTitle>
+        <TrayDescription>
+          Send it again with new people. Only their names change.
+        </TrayDescription>
+      </TrayHeader>
 
-          <label className="grid gap-1.5" htmlFor={`${formId}-name`}>
-            <span className="text-[0.8125rem] font-semibold text-(--secondary)">
-              Template name
-            </span>
-            <input
-              autoFocus
-              className="field-input"
-              disabled={isSaving}
-              id={`${formId}-name`}
-              maxLength={160}
-              onChange={(event) => {
-                setErrorMessage(null);
-                setName(event.target.value);
-              }}
-              type="text"
-              value={name}
-            />
-          </label>
+      <TrayBody className="flex flex-col gap-5 pt-4">
+        <FormField label="Template name">
+          <Input
+            autoFocus
+            disabled={isSaving}
+            maxLength={160}
+            onChange={(event) => {
+              setErrorMessage(null);
+              setName(event.target.value);
+            }}
+            type="text"
+            value={name}
+          />
+        </FormField>
 
-          <fieldset className="grid gap-3">
-            <legend className="text-[0.9375rem] font-extrabold text-(--fg)">
-              Who signs
-            </legend>
-            <p className="text-[0.8125rem] leading-5 text-(--secondary)">
-              Name each place in the signing order, such as Client or Landlord.
-              You say who that is each time you use the template.
-            </p>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm leading-5 font-medium text-(--fg)">
+            Name each place in the signing order
+          </legend>
+          <p className="-mt-0.5 mb-1 text-[0.8125rem] leading-5 text-(--secondary)">
+            Such as Client or Landlord. You say who that is each time.
+          </p>
+          <ol className="flex flex-col gap-2">
             {signers.map((signer, index) => (
-              <label
-                className="well grid gap-1.5 px-4 py-3"
-                htmlFor={`${formId}-role-${String(index)}`}
+              <li
+                className="flex flex-col gap-2 rounded-(--radius-well) bg-(--surface) p-3 sm:flex-row sm:items-center sm:gap-3"
                 key={signer.id}
               >
-                <span className="text-[0.8125rem] font-semibold text-(--secondary)">
-                  Signer {index + 1}, here {signer.name}
+                <span className="flex min-w-0 items-center gap-2.5 sm:w-40 sm:shrink-0">
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[0.6875rem] font-semibold"
+                    style={{
+                      background: getSignerPalette(index).tint,
+                      color: getSignerPalette(index).color,
+                    }}
+                  >
+                    {getInitials(signer.name)}
+                  </span>
+                  <span className="truncate text-[0.8125rem] leading-5 text-(--secondary)">
+                    {signer.name}
+                  </span>
                 </span>
-                <input
-                  className="field-input"
+                <Input
+                  aria-invalid={
+                    hasRepeatedRoleName &&
+                    trimmedRoleNames.filter(
+                      (role) =>
+                        role.toLowerCase() ===
+                        trimmedRoleNames[index]?.toLowerCase(),
+                    ).length > 1
+                      ? true
+                      : undefined
+                  }
+                  aria-label={`Signer ${String(index + 1)}, here ${signer.name}`}
+                  className="min-w-0 flex-1"
                   disabled={isSaving}
-                  id={`${formId}-role-${String(index)}`}
                   maxLength={MAX_TEMPLATE_ROLE_NAME_LENGTH}
                   onChange={(event) => {
                     setErrorMessage(null);
@@ -159,38 +232,39 @@ export function SaveTemplateDialog({
                       ),
                     );
                   }}
+                  placeholder={`Signer ${String(index + 1)}`}
                   type="text"
                   value={roleNames[index] ?? ""}
                 />
-              </label>
+              </li>
             ))}
-            {hasRepeatedRoleName ? (
-              <p className="text-xs font-semibold text-(--danger)" role="alert">
-                Give each signer a different name.
-              </p>
-            ) : null}
-          </fieldset>
+          </ol>
+          <FieldError role="alert">
+            {hasRepeatedRoleName ? "Give each signer a different name." : null}
+          </FieldError>
+        </fieldset>
 
-          {errorMessage ? (
-            <div className="notice notice-danger" role="alert">
-              <p>{errorMessage}</p>
-            </div>
-          ) : null}
+        <KeptList
+          kept={["The document", "Every field, where it sits", "Signing order"]}
+          notKept={["Names and email addresses", "Anything filled in"]}
+        />
 
-          <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
-            <ShellButton
-              disabled={isSaving}
-              onClick={onCancel}
-              variant="secondary"
-            >
-              Cancel
-            </ShellButton>
-            <ShellButton disabled={!canSave} loading={isSaving} type="submit">
-              {isSaving ? "Saving..." : "Save template"}
-            </ShellButton>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <TrayError message={errorMessage} />
+      </TrayBody>
+
+      <TrayFooter>
+        <TrayClose asChild>
+          <Button disabled={isSaving} type="button" variant="outline">
+            Cancel
+          </Button>
+        </TrayClose>
+        <ConfirmButton
+          disabled={!canSave && !isSaving && !saved}
+          labels={{ done: "Saved", idle: "Save template", pending: "Saving…" }}
+          phase={saved ? "done" : isSaving ? "pending" : "idle"}
+          type="submit"
+        />
+      </TrayFooter>
+    </form>
   );
 }

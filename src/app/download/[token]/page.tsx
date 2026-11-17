@@ -22,9 +22,7 @@ export default async function ExpiredDownloadPage({
       description="Download links work for a limited time. You can have new ones sent to the email address this document was sent to."
       title="This download link has expired"
     >
-      <div className="mx-auto w-full max-w-[52rem]">
-        <RenewDownloadButton token={token} />
-      </div>
+      <RenewDownloadButton token={token} />
     </PublicDocumentShell>
   );
 }

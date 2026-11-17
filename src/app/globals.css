@@ -4,15 +4,39 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Hover only exists for fine pointers (docs/redesign/motion.md). Tailwind's
+ * own `hover:` already waits for (hover: hover); this also rules out touch
+ * screens that report hover, so a tap never leaves a stuck hover state.
+ * `group-hover:` and `peer-hover:` follow it.
+ */
+@custom-variant hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
 @theme inline {
+  --font-sans: var(--font-ui), "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-code), "Geist Mono", ui-monospace, Menlo, monospace;
+  --color-sign-here: var(--sign-here);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-spring: cubic-bezier(0.24, 1.34, 0.38, 1);
+  --ease-soft-spring: cubic-bezier(0.3, 1.12, 0.4, 1);
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --color-background: var(--page);
   --color-foreground: var(--fg);
   --color-card: var(--paper);
   --color-card-foreground: var(--fg);
-  --color-popover: var(--paper-raised);
+  --color-popover: var(--paper);
   --color-popover-foreground: var(--fg);
   --color-primary: var(--accent);
-  --color-primary-foreground: #ffffff;
+  --color-primary-foreground: var(--on-accent);
   --color-secondary: var(--surface);
   --color-secondary-foreground: var(--fg);
   --color-muted: var(--surface);
@@ -20,74 +44,462 @@
   --color-accent: var(--surface-strong);
   --color-accent-foreground: var(--fg);
   --color-destructive: var(--danger);
-  --color-destructive-foreground: #ffffff;
+  --color-destructive-foreground: var(--on-accent);
   --color-border: var(--border);
-  --color-input: var(--border);
-  --color-ring: rgb(var(--accent-rgb) / 0.32);
+  --color-input: var(--border-strong);
+  --color-ring: rgb(var(--accent-rgb) / 0.3);
   --color-chart-1: var(--signer-1);
   --color-chart-2: var(--signer-2);
   --color-chart-3: var(--signer-3);
   --color-chart-4: var(--signer-4);
   --color-chart-5: var(--accent);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.25);
-  --radius-2xl: calc(var(--radius) * 1.5);
-  --radius-3xl: calc(var(--radius) * 1.75);
-  --radius-4xl: calc(var(--radius) * 2.25);
-  --shadow-xs: 0 1px 2px rgba(28, 29, 43, 0.05);
-  --shadow-sm: 0 1px 3px rgba(28, 29, 43, 0.08);
-  --shadow: 0 2px 6px rgba(28, 29, 43, 0.05);
-  --shadow-md: 0 10px 30px rgba(28, 29, 43, 0.08);
-  --shadow-lg: 0 18px 40px rgba(28, 29, 43, 0.12);
+  /*
+   * Radii (docs/redesign/calm.md): 6px kbd and chips, 10px small tiles,
+   * 14px controls' wells, menus and inputs (xl), 20px cards (2xl), 28px
+   * trays (3xl). Buttons and pills are full.
+   */
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+  --radius-4xl: 2rem;
+  --shadow-xs: 0 1px 2px rgb(var(--fg-rgb) / 0.04);
+  --shadow-sm: var(--ring-soft);
+  --shadow: var(--shadow-card);
+  --shadow-md: var(--shadow-card);
+  --shadow-lg: var(--shadow-pop);
 }
 
-/*
- * Soft Studio. A pale blue-grey page, white rounded cards that sit on it
- * without borders, one violet for anything the person can act on, and
- * status shown as tinted pills. Red is kept for errors and for actions that
- * cannot be undone.
- */
 :root {
-  --page: #f3f4f8;
-  --bg: #f3f4f8;
+  /*
+   * SignuDoc, calm (docs/redesign/calm.md). A Bond-light page, white
+   * surfaces with no border lines and soft elevation, Carbon text, Ink
+   * violet for the primary action and selection only, Tab yellow only for
+   * "sign here".
+   */
+  --brand-ink-violet: #3f22ec;
+  --brand-carbon: #0d0b14;
+  --brand-tab-yellow: #ffe83a;
+  --brand-bond: #f3f2ee;
+  --brand-copy-lilac: #c9c2ff;
+  --brand-deep-ink: #1b0f6b;
+
+  --page: #f3f2ee;
+  --page-rgb: 243 242 238;
+  --bg: #f3f2ee;
   --paper: #ffffff;
+  --paper-rgb: 255 255 255;
   --paper-raised: #ffffff;
-  --fg: #1c1d2b;
-  --secondary: #575a6e;
-  --tertiary: #6e7183;
-  --placeholder: #8b8ea0;
+  --paper-hover: #fafaf8;
+  --fg: #0d0b14;
+  --fg-rgb: 13 11 20;
+  /* Secondary text: 4.8:1 on the page, 5.4:1 on white. */
+  --secondary: #6b6976;
+  /* For small text on tinted tracks (segmented, tabs): 5.2:1 there. */
+  --secondary-strong: #5f5d6a;
+  --tertiary: #6b6976;
+  --placeholder: #84828e;
   /*
    * The accent and its shades. An install with its own color replaces all
    * of these together, from a rule the layout adds (see brand-color.ts).
    */
-  --accent: #5340d6;
-  --accent-rgb: 83 64 214;
-  --accent-hover: #4433b8;
-  --accent-soft: #ece9fd;
-  --accent-soft-hover: #e0dbfb;
-  --accent-softer: #f4f2ff;
-  --accent-ink: #4433b8;
+  --accent: #3f22ec;
+  --accent-rgb: 63 34 236;
+  --accent-hover: #351dc6;
+  --accent-soft: #eae7fd;
+  --accent-soft-hover: #dcd7fc;
+  --accent-softer: #f3f1fe;
+  --accent-ink: #351dc6;
+  /* Text and icons drawn on a filled accent, danger or success control. */
+  --on-accent: #ffffff;
+  --sign-here: #ffe83a;
+  --sign-here-rgb: 255 232 58;
+  --sign-here-ink: #0d0b14;
+  /* Status tints: a soft background, a readable word, a stronger dot. */
   --danger: #b42318;
+  --danger-rgb: 180 35 24;
   --danger-hover: #912018;
-  --danger-soft: #fdebea;
-  --success: #16704a;
-  --success-soft: #e3f6ec;
+  /* Solid red fills that carry white text (destructive buttons). */
+  --danger-solid: #b42318;
+  --danger-solid-hover: #912018;
+  --danger-solid-rgb: 180 35 24;
+  --danger-soft: #fdecea;
+  --success: #12683f;
+  --success-rgb: 18 104 63;
+  --success-soft: #e5f3ea;
+  --success-dot: #1f9d5c;
   --warning: #8a5300;
-  --warning-soft: #fdf1d8;
-  --surface: #f6f6fa;
-  --surface-strong: #e6e7ee;
-  --shell-surface: #ffffff;
-  --border: #e6e7ee;
-  --border-strong: #cfd0dc;
-  --border-hover: #b4b6c6;
-  --hover: rgba(28, 29, 43, 0.05);
-  --shell-wash: #f3f4f8;
-  --canvas-wash: #e9eaf1;
-  --shadow-soft: 0 18px 40px rgba(28, 29, 43, 0.12);
-  --shadow-card: 0 2px 6px rgba(28, 29, 43, 0.04);
-  --shadow-lift: 0 10px 30px rgba(28, 29, 43, 0.08);
+  --warning-rgb: 138 83 0;
+  --warning-soft: #fcf1dc;
+  --warning-dot: #e0961a;
+  --dot-neutral: #a3a1ab;
+  /* Wells inside white surfaces, and a stronger step for neutral pills. */
+  --surface: #f6f5f2;
+  --surface-strong: #edece8;
+  --shell-surface: var(--page);
+  /* Lines: dividers inside surfaces, never around them. */
+  --divider: rgb(var(--fg-rgb) / 0.06);
+  --border: rgb(var(--fg-rgb) / 0.08);
+  --border-strong: rgb(var(--fg-rgb) / 0.12);
+  --border-hover: rgb(var(--fg-rgb) / 0.2);
+  /* The pill track behind segmented controls and tabs. */
+  --track: rgb(var(--fg-rgb) / 0.05);
+  --hover: rgb(var(--fg-rgb) / 0.04);
+  --press: rgb(var(--fg-rgb) / 0.07);
+  --overlay: rgb(var(--fg-rgb) / 0.28);
+  --shell-wash: var(--page);
+  --canvas-wash: #ebeae5;
+
+  /* Radii. */
+  --radius-card: 1.25rem;
+  --radius-tray: 1.75rem;
+  --radius-well: 0.875rem;
+
+  /*
+   * Material (docs/redesign/craft.md, "Real material layers"). Every raised
+   * thing is built from the same few layers, top to bottom: an inner top
+   * highlight (light catching the upper edge), a 1px hairline edge, a
+   * contact shadow (where it touches the surface) and, for things that
+   * float, an ambient shadow. Wells (inputs, tracks) get an inner shadow
+   * instead. Dark mode redefines the layers, so composites follow.
+   */
+  --surface-highlight: inset 0 1px 0 rgb(255 255 255 / 0.75);
+  --surface-highlight-dim: inset 0 1px 0 rgb(255 255 255 / 0.3);
+  /* On a filled (violet, red, carbon) surface. */
+  --surface-highlight-fill: inset 0 1px 0 rgb(255 255 255 / 0.2);
+  --surface-highlight-fill-dim: inset 0 1px 0 rgb(255 255 255 / 0.06);
+  --surface-sheen: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.09),
+    rgb(255 255 255 / 0) 70%
+  );
+  --surface-edge: rgb(var(--fg-rgb) / 0.08);
+  --surface-edge-strong: rgb(var(--fg-rgb) / 0.11);
+  --shadow-contact:
+    0 1px 2px rgb(var(--fg-rgb) / 0.06), 0 1px 1px rgb(var(--fg-rgb) / 0.03);
+  --shadow-contact-press: 0 0 1px rgb(var(--fg-rgb) / 0.08);
+  --shadow-ambient:
+    0 4px 12px -4px rgb(var(--fg-rgb) / 0.07),
+    0 16px 40px -12px rgb(var(--fg-rgb) / 0.14);
+  --shadow-well: inset 0 1px 2px rgb(var(--fg-rgb) / 0.05);
+  --shadow-well-strong: inset 0 1px 2px rgb(var(--fg-rgb) / 0.08);
+
+  /* Composites. Raised paper: a white control (secondary button, search). */
+  --material-raised:
+    var(--surface-highlight), 0 0 0 1px var(--surface-edge-strong),
+    var(--shadow-contact);
+  --material-raised-press:
+    var(--surface-highlight-dim), 0 0 0 1px var(--surface-edge-strong),
+    var(--shadow-contact-press);
+  /* Paper that floats: menus, popovers, tooltips, toasts. */
+  --material-paper:
+    var(--surface-highlight), 0 0 0 1px var(--surface-edge),
+    var(--shadow-contact), var(--shadow-ambient);
+
+  /* Elevation. Soft, neutral, never hard-edged. */
+  --ring-faint: 0 0 0 1px rgb(var(--fg-rgb) / 0.05);
+  --ring-soft:
+    var(--surface-highlight), 0 0 0 1px rgb(var(--fg-rgb) / 0.1),
+    0 1px 2px rgb(var(--fg-rgb) / 0.05);
+  /*
+   * The double card (Bastle OS, Figma 75:246 / 75:373). A card is an inner
+   * sheet with a hairline and a small contact shadow, set inside a slightly
+   * different outer shell with its own hairline. The shell is drawn as
+   * spread rings, so every surface that uses --shadow-card gets it without
+   * an extra wrapper; it sits --card-gutter outside the card's box.
+   */
+  --card-gutter: 5px;
+  --card-shell: #f8f7f4;
+  --card-shell-edge: rgb(var(--fg-rgb) / 0.08);
+  --card-inner-edge: rgb(var(--fg-rgb) / 0.07);
+  --card-inner-highlight: var(--surface-highlight);
+  --card-contact: 0 1px 2px rgb(var(--fg-rgb) / 0.06);
+  --card-ambient: 0 8px 24px -10px rgb(var(--fg-rgb) / 0.1);
+  --card-shell-rings:
+    0 0 0 var(--card-gutter) var(--card-shell),
+    0 0 0 calc(var(--card-gutter) + 1px) var(--card-shell-edge);
+  --shadow-card:
+    var(--card-inner-highlight), 0 0 0 1px var(--card-inner-edge),
+    var(--card-contact), var(--card-shell-rings), var(--card-ambient);
+  --shadow-card-hover:
+    var(--card-inner-highlight), 0 0 0 1px var(--card-inner-edge),
+    var(--card-contact), 0 0 0 var(--card-gutter) var(--card-shell),
+    0 0 0 calc(var(--card-gutter) + 1px) var(--border-strong),
+    0 12px 28px -10px rgb(var(--fg-rgb) / 0.14);
+  /*
+   * Selected and focused cards change the shell, not the inner card: the
+   * shell takes a faint accent tint and an accent edge.
+   */
+  --card-shell-selected: color-mix(
+    in srgb,
+    var(--accent) 9%,
+    var(--card-shell)
+  );
+  --shadow-card-selected:
+    var(--card-inner-highlight), 0 0 0 1px var(--card-inner-edge),
+    var(--card-contact), 0 0 0 var(--card-gutter) var(--card-shell-selected),
+    0 0 0 calc(var(--card-gutter) + 1px) rgb(var(--accent-rgb) / 0.4),
+    var(--card-ambient);
+  --shadow-card-focus:
+    var(--card-inner-highlight), 0 0 0 1px var(--card-inner-edge),
+    var(--card-contact), 0 0 0 var(--card-gutter) var(--card-shell),
+    0 0 0 calc(var(--card-gutter) + 1px) rgb(var(--accent-rgb) / 0.6),
+    0 0 0 calc(var(--card-gutter) + 4px) rgb(var(--accent-rgb) / 0.2);
+  /* The single sheet, for things that are not cards: a PDF page, a pill. */
+  --shadow-card-flat:
+    var(--surface-highlight), 0 0 0 1px rgb(var(--fg-rgb) / 0.04),
+    0 1px 2px rgb(var(--fg-rgb) / 0.04),
+    0 6px 20px -8px rgb(var(--fg-rgb) / 0.08);
+  /* Menus, popovers, tooltips, toasts, the floating tab bar. */
+  --shadow-pop: var(--material-paper);
+  /*
+   * The raised thumb in a segmented control, tabs and the active nav pill:
+   * a highlight, a hairline and a contact shadow, a little lift.
+   */
+  --shadow-thumb:
+    var(--surface-highlight), 0 0 0 1px rgb(var(--fg-rgb) / 0.06),
+    0 1px 2px rgb(var(--fg-rgb) / 0.08), 0 3px 8px -3px rgb(var(--fg-rgb) / 0.1);
+  /* Trays and dialogs: the highest thing on the page. */
+  --shadow-tray:
+    var(--surface-highlight), 0 0 0 1px rgb(var(--fg-rgb) / 0.05),
+    0 1px 2px rgb(var(--fg-rgb) / 0.04),
+    0 8px 20px -8px rgb(var(--fg-rgb) / 0.08),
+    0 24px 64px -16px rgb(var(--fg-rgb) / 0.24);
+  --shadow-soft: var(--shadow-pop);
+  --shadow-lift: var(--shadow-card-hover);
+  --focus-ring: 0 0 0 2px var(--page), 0 0 0 4px rgb(var(--accent-rgb) / 0.45);
+  /*
+   * Text fields: a 1px ring at 10% over an inner well, darker on hover, an
+   * accent halo at 30% on focus. All four share one shape (ring, well,
+   * halo) so the halo can grow on a spring between them.
+   */
+  --ring-input:
+    inset 0 0 0 1px rgb(var(--fg-rgb) / 0.1), var(--shadow-well),
+    0 0 0 0 rgb(var(--accent-rgb) / 0);
+  --ring-input-hover:
+    inset 0 0 0 1px rgb(var(--fg-rgb) / 0.18), var(--shadow-well),
+    0 0 0 0 rgb(var(--accent-rgb) / 0);
+  --focus-ring-input:
+    inset 0 0 0 1px rgb(var(--accent-rgb) / 0.6), var(--shadow-well),
+    0 0 0 4px rgb(var(--accent-rgb) / 0.3);
+  --focus-ring-danger:
+    inset 0 0 0 1px var(--danger), var(--shadow-well),
+    0 0 0 4px rgb(var(--danger-rgb) / 0.18);
+
+  /* Control heights: 40px buttons, 44px fields; 44px on touch. */
+  --control-h: 2.5rem;
+  --control-h-sm: 2.25rem;
+  --field-h: 2.75rem;
+
+  /* Motion. Names, never raw curves (docs/redesign/motion.md). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-spring: cubic-bezier(0.24, 1.34, 0.38, 1);
+  --ease-soft-spring: cubic-bezier(0.3, 1.12, 0.4, 1);
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 120ms;
+  --dur-hover: 160ms;
+  --dur-move: 220ms;
+  --dur-open: 260ms;
+  --dur-panel: 320ms;
+  --dur-morph: 420ms;
+
+  /*
+   * Springs (docs/redesign/craft.md, "Physics, not timelines"), sampled
+   * from real spring physics into CSS linear() curves, so CSS transitions
+   * stay interruptible and still move like springs. Pair each with its
+   * -dur. motion/react uses the same parameters (motion-tokens.ts).
+   */
+  /* stiffness 500, damping 32, mass 0.5: the press, critically damped. */
+  --spring-press: linear(
+    0,
+    0.209,
+    0.5,
+    0.71,
+    0.841,
+    0.916,
+    0.956,
+    0.977,
+    0.988,
+    0.994,
+    0.997,
+    0.998,
+    1
+  );
+  --spring-press-dur: 320ms;
+  /* stiffness 300, damping 16, mass 0.6: the release, one tiny overshoot. */
+  --spring-settle: linear(
+    0,
+    0.054,
+    0.182,
+    0.341,
+    0.514,
+    0.675,
+    0.814,
+    0.92,
+    1.001,
+    1.054,
+    1.084,
+    1.095,
+    1.094,
+    1.083,
+    1.069,
+    1.052,
+    1.036,
+    1.022,
+    1.011,
+    1.002,
+    0.996,
+    0.993,
+    0.991,
+    0.991,
+    0.992,
+    0.993,
+    0.994,
+    0.996,
+    0.997,
+    0.999,
+    1,
+    1,
+    1
+  );
+  --spring-settle-dur: 490ms;
+  /* stiffness 260, damping 24: thumbs and switches, about 3% overshoot. */
+  --spring-thumb: linear(
+    0,
+    0.032,
+    0.113,
+    0.218,
+    0.334,
+    0.454,
+    0.564,
+    0.664,
+    0.75,
+    0.825,
+    0.884,
+    0.93,
+    0.966,
+    0.991,
+    1.009,
+    1.02,
+    1.027,
+    1.029,
+    1.029,
+    1.028,
+    1.025,
+    1.021,
+    1.018,
+    1.015,
+    1.011,
+    1.009,
+    1.006,
+    1.004,
+    1.003,
+    1.002,
+    1.001,
+    1,
+    1
+  );
+  --spring-thumb-dur: 530ms;
+  /* stiffness 300, damping 24: menus, tooltips and focus halos opening. */
+  --spring-pop: linear(
+    0,
+    0.039,
+    0.13,
+    0.253,
+    0.384,
+    0.517,
+    0.636,
+    0.744,
+    0.831,
+    0.903,
+    0.956,
+    0.995,
+    1.021,
+    1.038,
+    1.046,
+    1.048,
+    1.046,
+    1.042,
+    1.036,
+    1.03,
+    1.023,
+    1.017,
+    1.012,
+    1.008,
+    1.005,
+    1.002,
+    1,
+    0.999,
+    0.998,
+    0.998,
+    0.998,
+    0.998,
+    1
+  );
+  --spring-pop-dur: 540ms;
+  /* stiffness 200, damping 26: panels and trays, no visible bounce. */
+  --spring-soft: linear(
+    0,
+    0.038,
+    0.125,
+    0.232,
+    0.347,
+    0.458,
+    0.558,
+    0.644,
+    0.72,
+    0.782,
+    0.833,
+    0.873,
+    0.905,
+    0.93,
+    0.949,
+    0.963,
+    0.974,
+    0.982,
+    0.988,
+    0.992,
+    0.995,
+    0.997,
+    0.999,
+    0.999,
+    1
+  );
+  --spring-soft-dur: 500ms;
+
+  /*
+   * Pass-3 names, kept so older screens compile, now pointing at the calm
+   * values: no carbon edges, no letterpress, no print shadows.
+   */
+  --ink-edge: rgb(var(--fg-rgb) / 0.08);
+  --ink-edge-soft: rgb(var(--fg-rgb) / 0.1);
+  --ink-edge-hover: rgb(var(--fg-rgb) / 0.18);
+  --rule-color: var(--divider);
+  --rule: 1px solid var(--divider);
+  --rule-strong: 1px solid var(--divider);
+  --rule-faint-color: var(--divider);
+  --rule-faint: 1px solid var(--divider);
+  --ink-press: 0 0 0 transparent;
+  --shadow-print-sm: var(--shadow-card);
+  --shadow-print: var(--shadow-card);
+  --shadow-print-lg: var(--shadow-tray);
+  --on-carbon: var(--brand-bond);
+  --on-carbon-muted: rgb(var(--page-rgb) / 0.64);
+  --on-carbon-faint: rgb(var(--page-rgb) / 0.08);
+  --focus-ring-on-dark: 0 0 0 2px var(--fg), 0 0 0 4px var(--brand-copy-lilac);
+  /* The document desk (builder and signing view): the one dot grid. */
+  --desk: #e9e8e3;
+  --desk-dot: #d3d1ca;
+  --sticker-edge: #ffffff;
+  --sign-line-on-dark: #8e8aa0;
+  --plate-skew: 0deg;
+
   --signer-1: #2563eb;
   --signer-1-tint: rgba(37, 99, 235, 0.12);
   --signer-2: #9333ea;
@@ -96,7 +508,142 @@
   --signer-3-tint: rgba(217, 119, 6, 0.14);
   --signer-4: #047857;
   --signer-4-tint: rgba(5, 150, 105, 0.12);
-  --radius: 0.75rem;
+  --radius: 0.875rem;
+
+  /*
+   * Page rhythm. The space between a page's sections (header, Needs you,
+   * the list) and between rows of cards in a grid. One place to tune.
+   */
+  --section-gap: 1.5rem;
+  --section-gap-lg: 1.75rem;
+  --card-row-gap: 1rem;
+}
+
+/*
+ * Dark mode. The `dark` class on <html> is set before paint by the theme
+ * script in the root layout (light, dark or system). Accent tints mix from
+ * --accent so an install's own brand color still works.
+ */
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+  /* Neutral greys from Bastle OS (Figma): page, inner card #1a1a1a, shell #202020. */
+  --page: #111111;
+  --page-rgb: 17 17 17;
+  --bg: #111111;
+  --paper: #1a1a1a;
+  --paper-rgb: 26 26 26;
+  --paper-raised: #202020;
+  --paper-hover: #1f1f1f;
+  --fg: #ededed;
+  --fg-rgb: 237 237 237;
+  --secondary: #a1a1a1;
+  --secondary-strong: #b5b5b5;
+  --tertiary: #8f8f8f;
+  --placeholder: #8a8a8a;
+  --accent-soft: color-mix(in srgb, var(--accent) 24%, #1a1a1a);
+  --accent-soft-hover: color-mix(in srgb, var(--accent) 32%, #1a1a1a);
+  --accent-softer: color-mix(in srgb, var(--accent) 14%, #1a1a1a);
+  --accent-ink: color-mix(in srgb, var(--accent) 45%, #ffffff);
+  --danger: #ff6b7b;
+  --danger-rgb: 255 107 123;
+  --danger-hover: #ff8592;
+  /* White text needs a deeper red than the text-tone --danger: 5.0:1. */
+  --danger-solid: #d0303f;
+  --danger-solid-hover: #b82a38;
+  --danger-solid-rgb: 208 48 63;
+  --danger-soft: #35191d;
+  --success: #5fc992;
+  --success-rgb: 95 201 146;
+  --success-soft: #172a20;
+  --warning: #f7b955;
+  --warning-rgb: 247 185 85;
+  --warning-soft: #33280f;
+  --dot-neutral: #6b6b6b;
+  --surface: #202020;
+  --surface-strong: #282828;
+  --divider: #282828;
+  --overlay: rgb(0 0 0 / 0.6);
+  --canvas-wash: #0c0c0c;
+  --desk: #0c0c0c;
+  --desk-dot: #262626;
+  --sticker-edge: #282828;
+  /* Double card, dark: shell #202020 / #2c2c2c, inner #1a1a1a / #2a2a2a. */
+  --card-shell: #202020;
+  --card-shell-edge: #2c2c2c;
+  --card-inner-edge: #2a2a2a;
+  --card-inner-highlight: inset 0 0 0 0 transparent;
+  --card-contact: 0 1px 2px rgb(0 0 0 / 0.35);
+  --card-ambient: 0 10px 28px -12px rgb(0 0 0 / 0.6);
+  --card-shell-selected: color-mix(
+    in srgb,
+    var(--accent) 12%,
+    var(--card-shell)
+  );
+  --shadow-card-flat:
+    var(--surface-highlight), 0 0 0 1px rgb(var(--fg-rgb) / 0.06),
+    0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px -8px rgb(0 0 0 / 0.5);
+  --on-carbon: var(--fg);
+  /*
+   * Dark material: light catches the top edge faintly, the hairline is a
+   * light line rather than a dark one, and shadows are black and deeper.
+   */
+  --surface-highlight: inset 0 1px 0 rgb(255 255 255 / 0.07);
+  --surface-highlight-dim: inset 0 1px 0 rgb(255 255 255 / 0.03);
+  --surface-highlight-fill: inset 0 1px 0 rgb(255 255 255 / 0.22);
+  --surface-highlight-fill-dim: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  --surface-sheen: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.07),
+    rgb(255 255 255 / 0) 70%
+  );
+  --surface-edge: rgb(255 255 255 / 0.08);
+  --surface-edge-strong: rgb(255 255 255 / 0.11);
+  --shadow-contact: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.2);
+  --shadow-contact-press: 0 0 1px rgb(0 0 0 / 0.5);
+  --shadow-ambient:
+    0 4px 12px -4px rgb(0 0 0 / 0.4), 0 16px 40px -12px rgb(0 0 0 / 0.6);
+  --shadow-well: inset 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-well-strong: inset 0 1px 3px rgb(0 0 0 / 0.4);
+  --ring-soft:
+    var(--surface-highlight), 0 0 0 1px rgb(255 255 255 / 0.1),
+    0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-thumb:
+    var(--surface-highlight), 0 0 0 1px rgb(255 255 255 / 0.08),
+    0 1px 2px rgb(0 0 0 / 0.4), 0 3px 8px -3px rgb(0 0 0 / 0.5);
+  --shadow-tray:
+    var(--surface-highlight), 0 0 0 1px rgb(255 255 255 / 0.08),
+    0 8px 20px -8px rgb(0 0 0 / 0.4), 0 24px 64px -16px rgb(0 0 0 / 0.7);
+  --signer-1: #6b9bff;
+  --signer-1-tint: rgba(107, 155, 255, 0.18);
+  --signer-2: #c084fc;
+  --signer-2-tint: rgba(192, 132, 252, 0.18);
+  --signer-3: #f0a54a;
+  --signer-3-tint: rgba(240, 165, 74, 0.18);
+  --signer-4: #34d399;
+  --signer-4-tint: rgba(52, 211, 153, 0.16);
+}
+
+/* A squircle corner reads tighter than a round one at the same radius,
+   so supporting browsers get larger radii to keep the same visual softness. */
+@supports (corner-shape: squircle) {
+  :root {
+    --radius-card: 1.75rem;
+    --radius-tray: 2.25rem;
+    --radius-well: 1.25rem;
+    --radius: 1.25rem;
+  }
+}
+
+/* Touch: every control grows to a 44px target. */
+@media (pointer: coarse) {
+  :root {
+    --control-h: 2.75rem;
+    --control-h-sm: 2.5rem;
+  }
 }
 
 /*
@@ -107,11 +654,20 @@
   * {
     box-sizing: border-box;
     border-color: var(--border);
+    /* Squircle corners (continuous curvature, the Apple look) on every
+       rounded box. Browsers without corner-shape keep plain round corners. */
+    corner-shape: squircle;
+  }
+
+  /* True circles stay circles (avatars, dots, spinners). */
+  .rounded-full {
+    corner-shape: round;
   }
 
   html {
     background: var(--page);
     color: var(--fg);
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -119,10 +675,10 @@
     min-height: 100vh;
     background: var(--page);
     color: var(--fg);
-    font-family:
-      var(--font-ui), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-    letter-spacing: -0.005em;
+    font-family: var(--font-ui), "Geist", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.006em;
     text-rendering: optimizeLegibility;
+    font-feature-settings: "ss01" off;
   }
 
   a {
@@ -144,18 +700,19 @@
   /*
    * Every select draws the same chevron instead of the browser's own caret,
    * which sits flush against the right edge and differs between browsers.
-   * The SVG is the Lucide chevron-down used elsewhere, in the secondary ink.
+   * The SVG is the Lucide chevron-down in the tertiary ink (a data URI
+   * cannot read a custom property, so the colour is written out once here).
    */
   select {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23575a6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6976' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.875rem center;
     background-size: 1rem 1rem;
-    padding-right: 2.75rem;
+    padding-right: 2.5rem;
   }
 
   select:disabled {
@@ -176,7 +733,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgb(var(--accent-rgb) / 0.55);
+    outline: 2px solid rgb(var(--accent-rgb) / 0.5);
     outline-offset: 2px;
   }
 
@@ -186,29 +743,21 @@
   h4,
   h5,
   h6 {
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  [data-animate="enter"] {
-    animation: quiet-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  [data-animate-delay="1"] {
-    animation-delay: 60ms;
-  }
-
-  [data-animate-delay="2"] {
-    animation-delay: 120ms;
-  }
-}
-
+/*
+ * ---------------------------------------------------------------------------
+ * Keyframes. Entrances rise 6px and clear a 2px blur; exits only fade and
+ * shrink a little, and run at about 60% of the entrance.
+ * ---------------------------------------------------------------------------
+ */
 @keyframes quiet-rise {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(4px);
   }
 
   to {
@@ -217,56 +766,1267 @@
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(var(--menu-shift, -4px));
+  }
+}
+
+/* The travel alone, run on a spring; opacity runs on its own short fade. */
+@keyframes menu-grow {
+  from {
+    transform: scale(0.94) translateY(var(--menu-shift, -4px));
+  }
+}
+
+@keyframes menu-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@keyframes tray-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+
+@keyframes tray-out {
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes sheet-down {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translate(var(--tip-x, 0), var(--tip-y, 2px));
+  }
+}
+
+@keyframes tooltip-grow {
+  from {
+    transform: scale(0.9) translate(var(--tip-x, 0), var(--tip-y, 2px));
+  }
+}
+
+@keyframes tray-grow {
+  from {
+    transform: translateY(10px) scale(0.95);
+  }
+}
+
+/* A status dot that changed: one breath, a ring that widens and fades. */
+@keyframes dot-breathe {
+  40% {
+    transform: scale(1.5);
+  }
+}
+
+@keyframes dot-ring {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+
+/* The skeleton's sheen: a soft band that passes once every 1.8s. */
+@keyframes skeleton-sheen {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes field-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-4px);
+  }
+
+  40% {
+    transform: translateX(4px);
+  }
+
+  60% {
+    transform: translateX(-3px);
+  }
+
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes skeleton-breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes seal-stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.18) rotate(-8deg);
+    filter: blur(3px);
+  }
+
+  60% {
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  to {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/*
+ * Entrance: a short rise with a 2px blur that clears, once per page. Kept
+ * short so pages are readable almost at once; stagger via data-animate-delay.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-animate="enter"] {
+    animation: quiet-rise var(--dur-open) var(--ease-out) both;
+  }
+
+  [data-animate-delay="1"] {
+    animation-delay: 40ms;
+  }
+
+  [data-animate-delay="2"] {
+    animation-delay: 80ms;
+  }
+
+  /*
+   * Lists on first load: children rise with a 30ms stagger, capped at the
+   * eighth so the whole list has landed within 250ms. Set data-stagger on
+   * the parent (Table's TableBody does it for you on first mount).
+   */
+  [data-stagger] > * {
+    animation: quiet-rise var(--dur-open) var(--ease-out) both;
+  }
+
+  [data-stagger] > :nth-child(2) {
+    animation-delay: 30ms;
+  }
+
+  [data-stagger] > :nth-child(3) {
+    animation-delay: 60ms;
+  }
+
+  [data-stagger] > :nth-child(4) {
+    animation-delay: 90ms;
+  }
+
+  [data-stagger] > :nth-child(5) {
+    animation-delay: 120ms;
+  }
+
+  [data-stagger] > :nth-child(6) {
+    animation-delay: 150ms;
+  }
+
+  [data-stagger] > :nth-child(7) {
+    animation-delay: 180ms;
+  }
+
+  [data-stagger] > :nth-child(n + 8) {
+    animation-delay: 210ms;
+  }
+
+  /* The seal lands once: a short drop with one settle, then rests. */
+  .seal-stamp {
+    animation: seal-stamp 520ms var(--ease-soft-spring) both;
+    transform-origin: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-animate="enter"],
+  [data-stagger] > * {
+    animation: fade-in var(--dur-open) var(--ease-out) both;
+  }
+}
+
+/*
+ * Reduced motion: keep every state change and every fade, drop the travel.
+ * Components carry their own reduced variants; this catches the rest of the
+ * app (Tailwind transitions that move things, tw-animate-css slides, smooth
+ * scrolling). motion/react follows the same rule via MotionProvider.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    --tw-enter-translate-x: 0 !important;
+    --tw-enter-translate-y: 0 !important;
+    --tw-enter-scale: 1 !important;
+    --tw-enter-rotate: 0 !important;
+    --tw-exit-translate-x: 0 !important;
+    --tw-exit-translate-y: 0 !important;
+    --tw-exit-scale: 1 !important;
+    --tw-exit-rotate: 0 !important;
+  }
+
+  [class~="transition"],
+  [class*="transition-all"],
+  [class*="transition-transform"],
+  [class*="transition-["][class*="translate"],
+  [class*="transition-["][class*="scale"],
+  [class*="transition-["][class*="rotate"],
+  [class*="transition-["][class*="transform"],
+  [class*="transition-["][class*="width"],
+  [class*="transition-["][class*="height"] {
+    transition-duration: 1ms !important;
+  }
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Pass-3 utilities, neutralised (docs/redesign/calm.md). They stay defined
+ * so older screens compile, but draw the calm equivalents: a faint divider,
+ * a soft hairline, the soft card elevation. Do not use them in new work.
+ * ---------------------------------------------------------------------------
+ */
+@utility ledger-rule {
+  border-top: 1px solid var(--divider);
+}
+
+@utility ink-edge {
+  border: 1px solid var(--ink-edge);
+}
+
+/* A page's sections, stacked: header, Needs you, the list. */
+@utility section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+
+  @media (width >= 64rem) {
+    gap: var(--section-gap-lg);
+  }
+}
+
+@utility print-shadow {
+  box-shadow: var(--shadow-card);
+}
+
+@utility print-shadow-lg {
+  box-shadow: var(--shadow-card);
+}
+
+@utility print-shadow-sm {
+  box-shadow: var(--shadow-card);
+}
+
+/*
+ * Sonner toasts: brand easing on its own transitions. Sonner injects its
+ * stylesheet at runtime, so these sit outside the layers and are specific
+ * enough to win. Visuals live in ui/toaster.tsx.
+ */
+[data-sonner-toaster] [data-sonner-toast] {
+  transition-timing-function: var(--ease-drawer);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
+  transition-timing-function: var(--ease-exit);
+}
+
+/*
+ * Shared-element morph: a document's first page travels from its row on
+ * Documents to the detail page and back (dashboard/paper-thumb.tsx). The
+ * rest of the page cross-fades quickly underneath. Reduced motion: no
+ * travel, the pages swap.
+ */
+::view-transition-group(.document-morph) {
+  animation-duration: var(--dur-morph);
+  animation-timing-function: var(--ease-drawer);
+}
+
+::view-transition-image-pair(.document-morph) {
+  isolation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/*
+ * Vaul (phone trays) slides in with --ease-drawer on its own. With reduced
+ * motion the tray fades instead; dragging it still tracks the finger.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html [data-vaul-drawer][data-vaul-drawer-direction][data-state="open"] {
+    animation-name: fade-in;
+  }
+
+  html [data-vaul-drawer][data-vaul-drawer-direction][data-state="closed"] {
+    animation-name: fade-out;
+  }
+}
+
 @layer components {
-  /* A white card on the page. The main container on every screen. */
-  .panel {
-    position: relative;
-    border-radius: 1.5rem;
-    background: var(--paper);
-  }
+  /*
+   * -------------------------------------------------------------------------
+   * Type helpers
+   * -------------------------------------------------------------------------
+   */
 
-  /* A tinted well inside a card: a signer row, a summary, an empty state. */
-  .well {
-    border-radius: 1rem;
-    background: var(--surface);
-  }
-
-  /* A card that floats above the page: a signing sheet, a popover. */
-  .panel-raised {
-    border-radius: 1.25rem;
-    background: var(--paper);
-    box-shadow: var(--shadow-soft);
-  }
-
-  /* The small label above a title or a group. */
-  .section-eyebrow {
+  /*
+   * Small metadata: dates, counts, group labels. Calm: 13px/500 secondary,
+   * sentence case, tabular figures. No mono, no caps (docs/redesign/calm.md).
+   * Mono belongs only to IDs and hashes in detail views (`font-mono`).
+   */
+  .meta {
     font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -0.003em;
+    font-variant-numeric: tabular-nums;
+    color: var(--secondary);
+  }
+
+  /* Page titles: 28px/600/-0.03em; 24px on a phone. */
+  .display-title {
+    font-size: 1.5rem;
     font-weight: 600;
-    line-height: 1.3;
-    color: var(--tertiary);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    color: var(--fg);
   }
 
-  .page-width {
-    width: min(1180px, calc(100% - 2rem));
-    margin-inline: auto;
+  @media (min-width: 640px) {
+    .display-title {
+      font-size: 1.75rem;
+    }
   }
 
-  /* Status pills. The color says the state; the text says it too. */
-  .pill {
+  /*
+   * -------------------------------------------------------------------------
+   * Floating surfaces: menus, popovers, tooltips, trays.
+   * Menus and popovers grow from their trigger (Radix sets the origin) and
+   * leave faster than they arrive.
+   * -------------------------------------------------------------------------
+   */
+  .menu-surface {
+    --menu-shift: -4px;
+  }
+
+  .menu-surface[data-side="top"] {
+    --menu-shift: 4px;
+  }
+
+  .menu-surface[data-side="left"],
+  .menu-surface[data-side="right"] {
+    --menu-shift: 0px;
+  }
+
+  .menu-surface[data-state="open"] {
+    animation:
+      menu-grow var(--spring-pop-dur) var(--spring-pop),
+      fade-in var(--dur-hover) var(--ease-out);
+  }
+
+  .menu-surface[data-state="closed"] {
+    animation: menu-out calc(var(--dur-hover) * 0.95) var(--ease-exit) forwards;
+  }
+
+  .tooltip-surface {
+    --tip-x: 0px;
+    --tip-y: 2px;
+  }
+
+  .tooltip-surface[data-side="top"] {
+    --tip-y: 2px;
+  }
+
+  .tooltip-surface[data-side="bottom"] {
+    --tip-y: -2px;
+  }
+
+  .tooltip-surface[data-side="left"] {
+    --tip-x: 2px;
+    --tip-y: 0px;
+  }
+
+  .tooltip-surface[data-side="right"] {
+    --tip-x: -2px;
+    --tip-y: 0px;
+  }
+
+  /* The first tooltip eases in; moving between tooltips is instant. */
+  .tooltip-surface[data-state="delayed-open"] {
+    animation:
+      tooltip-grow var(--spring-pop-dur) var(--spring-pop),
+      fade-in var(--dur-press) var(--ease-out);
+  }
+
+  .tooltip-surface[data-state="closed"] {
+    animation: fade-out calc(var(--dur-hover) * 0.6) var(--ease-exit) forwards;
+  }
+
+  /* Overlays behind trays and dialogs. */
+  .overlay-surface[data-state="open"] {
+    animation: fade-in var(--dur-open) var(--ease-out);
+  }
+
+  .overlay-surface[data-state="closed"] {
+    animation: fade-out var(--dur-hover) var(--ease-exit) forwards;
+  }
+
+  /*
+   * Trays and dialogs. Desktop: centred, scale .96 to 1 with an 8px rise and
+   * a blur that clears, 260ms in and 160ms out. Phone (the legacy Dialog;
+   * Tray uses Vaul there): a sheet that slides up with the drawer curve.
+   */
+  .tray-surface[data-state="open"] {
+    animation:
+      tray-grow var(--spring-soft-dur) var(--spring-soft),
+      fade-in var(--dur-hover) var(--ease-out);
+  }
+
+  .tray-surface[data-state="closed"] {
+    animation: tray-out var(--dur-hover) var(--ease-exit) forwards;
+  }
+
+  @media (max-width: 639.98px) {
+    .tray-surface[data-sheet][data-state="open"] {
+      animation: sheet-up var(--dur-morph) var(--ease-drawer);
+    }
+
+    .tray-surface[data-sheet][data-state="closed"] {
+      animation: sheet-down var(--dur-open) var(--ease-exit) forwards;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu-surface[data-state="open"],
+    .tooltip-surface[data-state="delayed-open"],
+    .tray-surface[data-state="open"],
+    .tray-surface[data-sheet][data-state="open"] {
+      animation: fade-in var(--dur-hover) var(--ease-out);
+    }
+
+    .menu-surface[data-state="closed"],
+    .tray-surface[data-state="closed"],
+    .tray-surface[data-sheet][data-state="closed"] {
+      animation: fade-out calc(var(--dur-hover) * 0.6) var(--ease-exit) forwards;
+    }
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Fields
+   * -------------------------------------------------------------------------
+   */
+
+  /* A field that turns invalid shakes once, 4px each way. */
+  .field-control[aria-invalid="true"],
+  .field-input[aria-invalid="true"] {
+    animation: field-shake var(--dur-panel) var(--ease-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .field-control[aria-invalid="true"],
+    .field-input[aria-invalid="true"] {
+      animation: none;
+    }
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Checkbox: the tick draws on and pops; the box fills.
+   * -------------------------------------------------------------------------
+   */
+  .checkbox {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: var(--paper);
+    box-shadow:
+      inset 0 0 0 1.5px rgb(var(--fg-rgb) / 0.22),
+      var(--shadow-well);
+    color: var(--on-accent);
+    outline: none;
+    cursor: pointer;
+    /* Released: it springs back from the squash with a tiny overshoot. */
+    transition:
+      background-color var(--dur-hover) var(--ease-out),
+      box-shadow var(--dur-hover) var(--ease-out),
+      scale var(--spring-settle-dur) var(--spring-settle);
+  }
+
+  /* A 44px target on touch, 34px with a mouse, without growing the box. */
+  .checkbox::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem;
+  }
+
+  @media (pointer: coarse) {
+    .checkbox::after {
+      inset: -0.8125rem;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .checkbox:hover:not(:disabled) {
+      box-shadow:
+        inset 0 0 0 1.5px rgb(var(--fg-rgb) / 0.36),
+        var(--shadow-well);
+    }
+  }
+
+  /* Pressed: the box squashes a little, wider and shorter, fast. */
+  .checkbox:active:not(:disabled) {
+    scale: 1.06 0.86;
+    transition-duration:
+      var(--dur-hover), var(--dur-hover), var(--spring-press-dur);
+    transition-timing-function:
+      var(--ease-out), var(--ease-out), var(--spring-press);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .checkbox:active:not(:disabled) {
+      scale: 1;
+    }
+  }
+
+  .checkbox:focus-visible {
+    box-shadow:
+      inset 0 0 0 1.5px rgb(var(--fg-rgb) / 0.36),
+      var(--focus-ring);
+  }
+
+  /* Checked: a filled violet tile with its own highlight and contact. */
+  .checkbox[data-state="checked"],
+  .checkbox[data-state="indeterminate"] {
+    background: var(--surface-sheen), var(--accent);
+    box-shadow:
+      var(--surface-highlight-fill),
+      inset 0 0 0 1px rgb(0 0 0 / 0.08),
+      0 1px 2px rgb(var(--accent-rgb) / 0.3);
+  }
+
+  .checkbox[data-state="checked"]:focus-visible,
+  .checkbox[data-state="indeterminate"]:focus-visible {
+    box-shadow:
+      var(--surface-highlight-fill),
+      inset 0 0 0 1px rgb(0 0 0 / 0.08),
+      var(--focus-ring);
+  }
+
+  .checkbox[aria-invalid="true"] {
+    box-shadow: inset 0 0 0 1.5px var(--danger);
+  }
+
+  .checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .checkbox-mark {
+    display: grid;
+    width: 0.75rem;
+    height: 0.75rem;
+    place-items: center;
+    scale: 0.6;
+    opacity: 0;
+    transition:
+      scale var(--spring-pop-dur) var(--spring-pop),
+      opacity var(--dur-press) var(--ease-out);
+  }
+
+  .checkbox-mark path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset var(--dur-hover) var(--ease-out) 40ms;
+  }
+
+  .checkbox[data-state="checked"] .checkbox-mark,
+  .checkbox[data-state="indeterminate"] .checkbox-mark {
+    scale: 1;
+    opacity: 1;
+  }
+
+  .checkbox[data-state="checked"] .checkbox-tick,
+  .checkbox[data-state="indeterminate"] .checkbox-dash {
+    stroke-dashoffset: 0;
+  }
+
+  /* Unticking is quicker than ticking, and does not bounce. */
+  .checkbox[data-state="unchecked"] .checkbox-mark {
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-exit);
+  }
+
+  .checkbox[data-state="unchecked"] .checkbox-mark path {
+    transition-duration: var(--dur-press);
+    transition-delay: 0ms;
+  }
+
+  .checkbox .checkbox-dash,
+  .checkbox[data-state="indeterminate"] .checkbox-tick {
+    display: none;
+  }
+
+  .checkbox[data-state="indeterminate"] .checkbox-dash {
+    display: block;
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Switch: a soft track, a white thumb that springs across and stretches
+   * while pressed.
+   * -------------------------------------------------------------------------
+   */
+  .switch {
+    --switch-w: 2.125rem;
+    --switch-h: 1.25rem;
+    --switch-pad: 2px;
+    --switch-stretch: 0px;
+    --switch-thumb: calc(var(--switch-h) - var(--switch-pad) * 2);
+    position: relative;
     display: inline-flex;
-    min-height: 1.625rem;
+    flex: none;
+    align-items: center;
+    width: var(--switch-w);
+    height: var(--switch-h);
+    padding: var(--switch-pad);
+    border-radius: 999px;
+    /* A pill stays a pill: no squircle on the track or the thumb. */
+    corner-shape: round;
+    background: rgb(var(--fg-rgb) / 0.14);
+    /* The track is a well: the thumb sits in it. */
+    box-shadow: var(--shadow-well-strong);
+    outline: none;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-hover) var(--ease-out),
+      box-shadow var(--dur-hover) var(--ease-out);
+  }
+
+  .switch::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem -0.25rem;
+  }
+
+  @media (pointer: coarse) {
+    .switch {
+      --switch-w: 2.875rem;
+      --switch-h: 1.75rem;
+    }
+
+    .switch::after {
+      inset: -0.5rem -0.125rem;
+    }
+  }
+
+  .switch[data-size="sm"] {
+    --switch-w: 1.75rem;
+    --switch-h: 1rem;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .switch:hover:not(:disabled) {
+      background: rgb(var(--fg-rgb) / 0.2);
+    }
+
+    .switch[data-state="checked"]:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+  }
+
+  .switch:focus-visible {
+    box-shadow: var(--shadow-well-strong), var(--focus-ring);
+  }
+
+  .switch[data-state="checked"] {
+    background: var(--accent);
+  }
+
+  .switch:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .switch:active:not(:disabled) {
+    --switch-stretch: 3px;
+  }
+
+  /*
+   * The thumb: paper with a top highlight, a hairline and a contact
+   * shadow. It springs across (--spring-thumb) and, while pressed,
+   * stretches toward the side it will travel to.
+   */
+  .switch-thumb {
+    display: block;
+    corner-shape: round;
+    width: calc(var(--switch-thumb) + var(--switch-stretch));
+    height: var(--switch-thumb);
+    border-radius: 999px;
+    background: var(--switch-thumb-fill, var(--paper));
+    box-shadow:
+      var(--surface-highlight),
+      0 0 0 0.5px rgb(0 0 0 / 0.06),
+      0 1px 2px rgb(0 0 0 / 0.16),
+      0 2px 5px -1px rgb(0 0 0 / 0.1);
+    transition:
+      translate var(--spring-thumb-dur) var(--spring-thumb),
+      width var(--spring-thumb-dur) var(--spring-thumb);
+  }
+
+  :root.dark .switch {
+    --switch-thumb-fill: #e9e8e4;
+  }
+
+  .switch[data-state="checked"] .switch-thumb {
+    translate: calc(
+        var(--switch-w) - var(--switch-thumb) - var(--switch-pad) * 2 -
+          var(--switch-stretch)
+      )
+      0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .switch-thumb {
+      transition: none;
+    }
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Pass-3 labels, calmed (docs/redesign/calm.md). PlateLabel, TabFlag and
+   * Stamp all render as soft pills now: a tint, a sentence-case word, no
+   * skew, no mono caps, no rotation. TabFlag "sign-here" stays yellow (the
+   * signing view needs it). Do not use them in new work; use StatusFlag.
+   * -------------------------------------------------------------------------
+   */
+  .plate-label,
+  .tab-flag,
+  .stamp {
+    --plate-bg: var(--surface-strong);
+    --plate-fg: var(--fg);
+    display: inline-flex;
+    flex: none;
     align-items: center;
     gap: 0.375rem;
+    height: 1.5rem;
+    padding-inline: 0.625rem;
     border-radius: 999px;
-    padding: 0.125rem 0.625rem;
+    background: var(--plate-bg);
+    color: var(--plate-fg);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.003em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  .plate-label svg,
+  .tab-flag svg,
+  .stamp svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex: none;
+  }
+
+  .plate-label[data-tone="accent"],
+  .plate-label[data-tone="accent-soft"],
+  .plate-label[data-tone="violet"],
+  .tab-flag[data-tone="accent"],
+  .stamp[data-tone="accent"] {
+    --plate-bg: var(--accent-softer);
+    --plate-fg: var(--accent-ink);
+  }
+
+  .plate-label[data-tone="yellow"],
+  .plate-label[data-tone="sign-here"],
+  .tab-flag[data-tone="sign-here"] {
+    --plate-bg: var(--sign-here);
+    --plate-fg: var(--sign-here-ink);
+  }
+
+  .plate-label[data-tone="bond"] {
+    --plate-bg: var(--paper);
+  }
+
+  .stamp[data-tone="success"] {
+    --plate-bg: var(--success-soft);
+    --plate-fg: var(--success);
+  }
+
+  .stamp[data-tone="danger"] {
+    --plate-bg: var(--danger-soft);
+    --plate-fg: var(--danger);
+  }
+
+  .stamp[data-tone="warning"] {
+    --plate-bg: var(--warning-soft);
+    --plate-fg: var(--warning);
+  }
+
+  .plate-label[data-size="micro"],
+  .stamp[data-size="xs"] {
+    height: 1.25rem;
+    padding-inline: 0.5rem;
     font-size: 0.75rem;
+  }
+
+  .plate-label[data-size="micro"] {
+    height: 1rem;
+    padding-inline: 0.375rem;
+    font-size: 0.6875rem;
+  }
+
+  .plate-label[data-size="md"],
+  .stamp[data-size="lg"],
+  .stamp[data-size="xl"] {
+    height: 2rem;
+    padding-inline: 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .plate-label[data-size="lg"] {
+    height: 2.25rem;
+    padding-inline: 1rem;
+    font-size: 0.9375rem;
     font-weight: 600;
-    line-height: 1.2;
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Skeleton: a soft tint that breathes once loading takes a moment.
+   * -------------------------------------------------------------------------
+   */
+  /*
+   * A soft well with a quiet sheen that passes over it, left to right,
+   * once every 1.8s. The sheen moves by transform only.
+   */
+  .skeleton {
+    --skeleton-sheen: rgb(255 255 255 / 0.6);
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 0.5rem;
+    background-color: rgb(var(--fg-rgb) / 0.06);
+    animation: fade-in var(--dur-hover) var(--ease-out)
+      var(--skeleton-delay, 0ms) backwards;
+  }
+
+  :root.dark .skeleton {
+    --skeleton-sheen: rgb(255 255 255 / 0.045);
+  }
+
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--skeleton-sheen) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: skeleton-sheen 1.8s var(--ease-in-out)
+      calc(var(--skeleton-delay, 0ms) + 300ms) infinite;
+  }
+
+  /* Older sign-line skeletons render as a plain rounded line. */
+  .skeleton-line {
+    display: block;
+    min-height: 0.625rem;
+    border-radius: 999px;
+    background-color: rgb(var(--fg-rgb) / 0.06);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Data tables (ui/table.tsx), light: 52px rows split by faint dividers,
+   * quiet sentence-case headers with no rule above, a soft hover wash, an
+   * accent wash on selected rows. Below 768px each row becomes a stacked
+   * card: title + status on the first line, meta on the second.
+   * -------------------------------------------------------------------------
+   */
+  .data-table {
+    --table-sticky-top: 3.5rem;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+    color: var(--fg);
+  }
+
+  @media (min-width: 1024px) {
+    .data-table {
+      --table-sticky-top: 0px;
+    }
+  }
+
+  .data-table th {
+    position: sticky;
+    top: var(--table-sticky-top);
+    z-index: 2;
+    height: 2.75rem;
+    padding: 0 0.75rem;
+    border-bottom: 1px solid var(--divider);
+    background: var(--paper);
+    text-align: left;
+    vertical-align: middle;
     white-space: nowrap;
   }
 
+  [data-slot="table-container"][data-variant="bare"] .data-table th {
+    background: transparent;
+  }
+
+  .data-table th .table-head-label,
+  .data-table th .meta {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--secondary);
+  }
+
+  .data-table td {
+    height: 3.25rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--divider);
+    vertical-align: middle;
+    transition: background-color var(--dur-press) var(--ease-out);
+  }
+
+  .data-table th:first-child,
+  .data-table td:first-child {
+    padding-left: 1.25rem;
+  }
+
+  .data-table th:last-child,
+  .data-table td:last-child {
+    padding-right: 1.25rem;
+  }
+
+  .data-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .data-table tbody tr {
+    position: relative;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .data-table tbody tr:not([data-empty]):hover td {
+      background: var(--hover);
+    }
+  }
+
+  .data-table tbody tr[data-selected="true"] td {
+    background: var(--accent-softer);
+  }
+
+  .data-table tbody tr:focus-within td {
+    background: var(--hover);
+  }
+
+  /* A link in the row's title cell covers the whole row. */
+  .row-link {
+    outline: none;
+  }
+
+  .row-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .row-link:focus-visible::after {
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 2px rgb(var(--accent-rgb) / 0.5);
+  }
+
+  /* Anything interactive in a row sits above the row link. */
+  .data-table td :where(button, a:not(.row-link), input, select, label),
+  .table-actions {
+    position: relative;
+    z-index: 1;
+  }
+
+  .table-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    transition: opacity var(--dur-press) var(--ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .data-table tbody tr:not([data-selected="true"]) .table-actions {
+      opacity: 0;
+    }
+
+    .data-table tbody tr:hover .table-actions,
+    .data-table tbody tr:focus-within .table-actions,
+    .data-table .table-actions:has([data-state="open"]) {
+      opacity: 1;
+    }
+  }
+
+  .table-cell-label {
+    display: none;
+  }
+
+  @media (max-width: 767.98px) {
+    .data-table[data-stack="true"] thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .data-table[data-stack="true"],
+    .data-table[data-stack="true"] tbody {
+      display: block;
+    }
+
+    .data-table[data-stack="true"] tbody tr {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: 0.5rem;
+      row-gap: 0.25rem;
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--divider);
+    }
+
+    .data-table[data-stack="true"] tbody tr[data-selected="true"] {
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .data-table[data-stack="true"] tbody tr:last-child {
+      border-bottom: 0;
+    }
+
+    /* A zero-height line break between the first line and the meta line. */
+    .data-table[data-stack="true"] tbody tr::before {
+      content: "";
+      order: 3;
+      flex-basis: 100%;
+      height: 0;
+    }
+
+    .data-table[data-stack="true"] tbody tr[data-empty]::before {
+      display: none;
+    }
+
+    .data-table[data-stack="true"] td {
+      display: block;
+      height: auto;
+      min-width: 0;
+      padding: 0 !important;
+      border: 0;
+      background: transparent !important;
+    }
+
+    .data-table[data-stack="true"] td[data-mobile="select"] {
+      order: 0;
+      flex: none;
+    }
+
+    .data-table[data-stack="true"] td[data-mobile="title"] {
+      order: 1;
+      flex: 1 1 0%;
+      font-weight: 500;
+    }
+
+    .data-table[data-stack="true"] td[data-mobile="status"] {
+      order: 2;
+      flex: none;
+    }
+
+    .data-table[data-stack="true"] td[data-mobile="actions"] {
+      order: 2;
+      flex: none;
+      margin-right: -0.5rem;
+    }
+
+    .data-table[data-stack="true"] td[data-mobile="meta"] {
+      order: 4;
+      flex: none;
+      font-size: 0.8125rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--secondary);
+    }
+
+    .data-table[data-stack="true"]
+      td[data-mobile="meta"]
+      ~ td[data-mobile="meta"]::before {
+      content: "·";
+      margin-right: 0.5rem;
+    }
+
+    .data-table[data-stack="true"] td[data-mobile="block"] {
+      order: 5;
+      flex-basis: 100%;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-top: 0.25rem !important;
+    }
+
+    .data-table[data-stack="true"] td[data-mobile="hidden"] {
+      display: none;
+    }
+
+    .data-table[data-stack="true"] td[data-mobile="block"] .table-cell-label {
+      display: block;
+    }
+
+    .data-table[data-stack="true"] tr[data-empty] td {
+      flex-basis: 100%;
+    }
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Older shared classes, restyled calm so screens that still use them read
+   * as part of the same product until they are rebuilt.
+   * -------------------------------------------------------------------------
+   */
+
+  /* A white card: no border, soft elevation, 20px corners. */
+  .panel {
+    position: relative;
+    border-radius: var(--radius-card);
+    background: var(--paper);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* A tinted well inside a card: a signer row, a summary. */
+  .well {
+    border-radius: var(--radius-well);
+    background: var(--surface);
+  }
+
+  /* A card that floats above the page: a popover-like sheet. */
+  .panel-raised {
+    border-radius: var(--radius-card);
+    background: var(--paper);
+    box-shadow: var(--shadow-pop);
+  }
+
+  /* The small label above a title or a group: 13px/500, sentence case. */
+  .section-eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--secondary);
+  }
+
+  .page-width {
+    width: min(1080px, calc(100% - 2.5rem));
+    margin-inline: auto;
+  }
+
+  /* A soft status pill: tint, dot, sentence-case word. */
+  .pill {
+    display: inline-flex;
+    min-height: 1.5rem;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem 0.125rem 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .pill::before {
+    content: "";
+    width: 0.375rem;
+    height: 0.375rem;
+    flex: none;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
   .pill-accent {
-    background: var(--accent-soft);
+    background: var(--accent-softer);
     color: var(--accent-ink);
   }
 
@@ -286,85 +2046,109 @@
   }
 
   .pill-neutral {
-    background: #eeeff4;
+    background: var(--surface-strong);
     color: var(--secondary);
   }
 
-  /* A row of choices where one is selected: filters, draw or type. */
+  /* A row of choices where one is selected: a pill track, a white pill. */
   .segmented {
     display: inline-flex;
     max-width: 100%;
     flex-wrap: wrap;
     gap: 0.125rem;
-    border-radius: 0.75rem;
-    background: var(--surface-strong);
-    padding: 0.25rem;
+    border-radius: 999px;
+    background: var(--track);
+    padding: 0.1875rem;
   }
 
   .segmented-item {
     display: inline-flex;
-    min-height: 2.125rem;
+    min-height: calc(var(--control-h) - 0.375rem);
     align-items: center;
     justify-content: center;
+    gap: 0.375rem;
     border: 0;
-    border-radius: 0.5625rem;
+    border-radius: 999px;
     background: transparent;
     padding: 0 0.875rem;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--secondary-strong);
+    outline: none;
     transition:
-      background-color 120ms ease,
-      color 120ms ease,
-      box-shadow 120ms ease;
+      background-color var(--dur-hover) var(--ease-out),
+      color var(--dur-hover) var(--ease-out),
+      box-shadow var(--dur-hover) var(--ease-out),
+      scale var(--dur-press) var(--ease-out);
   }
 
-  .segmented-item:hover {
-    color: var(--fg);
+  @media (hover: hover) and (pointer: fine) {
+    .segmented-item:hover {
+      color: var(--fg);
+    }
+  }
+
+  .segmented-item:active {
+    scale: 0.97;
+  }
+
+  .segmented-item:focus-visible {
+    box-shadow: var(--focus-ring);
   }
 
   .segmented-item[aria-pressed="true"],
   .segmented-item[aria-selected="true"],
+  .segmented-item[aria-checked="true"],
   .segmented-item[data-active="true"] {
     background: var(--paper);
     color: var(--fg);
-    box-shadow: 0 1px 3px rgba(28, 29, 43, 0.12);
+    box-shadow: var(--shadow-thumb);
   }
 
-  /* A text field drawn without the Input component. */
+  /* A text field drawn without the Input component: the Input look. */
   .field-input {
-    min-height: 3rem;
+    min-height: var(--field-h);
     width: 100%;
     min-width: 0;
-    border: 1.5px solid var(--border-strong);
-    border-radius: 0.75rem;
+    border: 0;
+    border-radius: var(--radius-well);
     background: var(--paper);
-    padding: 0.625rem 1rem;
-    font-size: 0.875rem;
+    box-shadow: var(--ring-input);
+    padding: 0.5rem 0.875rem;
+    font-size: 0.9375rem;
     color: var(--fg);
     outline: none;
+    /* The focus halo grows on a spring. */
     transition:
-      border-color 120ms ease,
-      box-shadow 120ms ease;
+      box-shadow var(--spring-pop-dur) var(--spring-pop),
+      background-color var(--dur-hover) var(--ease-out);
+  }
+
+  @media (pointer: coarse) {
+    .field-input {
+      font-size: 1rem;
+    }
   }
 
   /* .field-input's background shorthand clears the chevron, so add it back. */
   select.field-input {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23575a6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6976' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.875rem center;
     background-size: 1rem 1rem;
-    padding-right: 2.75rem;
+    padding-right: 2.5rem;
     text-overflow: ellipsis;
   }
 
-  .field-input:hover {
-    border-color: var(--border-hover);
+  @media (hover: hover) and (pointer: fine) {
+    .field-input:hover:not(:disabled):not(:focus) {
+      box-shadow: var(--ring-input-hover);
+    }
   }
 
-  .field-input:focus-visible {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.16);
+  .field-input:focus-visible,
+  .field-input:focus {
+    box-shadow: var(--focus-ring-input);
   }
 
   .field-input:disabled {
@@ -375,35 +2159,63 @@
   }
 
   .field-input[aria-invalid="true"] {
-    border-color: var(--danger);
-    box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12);
+    box-shadow:
+      inset 0 0 0 1px var(--danger),
+      var(--shadow-well),
+      0 0 0 0 rgb(var(--danger-rgb) / 0);
   }
 
-  /* A small secondary button: move, remove, copy, zoom. */
+  .field-input[aria-invalid="true"]:focus {
+    box-shadow: var(--focus-ring-danger);
+  }
+
+  /* A small secondary button: a white pill with the soft ring. */
   .btn-quiet {
     display: inline-flex;
-    min-height: 2.5rem;
+    min-height: var(--control-h-sm);
     align-items: center;
     justify-content: center;
     gap: 0.375rem;
-    border: 1.5px solid var(--border-strong);
-    border-radius: 0.75rem;
+    border: 0;
+    border-radius: 999px;
     background: var(--paper);
+    box-shadow: var(--ring-soft);
     padding: 0 0.875rem;
     font-size: 0.8125rem;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--fg);
     white-space: nowrap;
+    outline: none;
     transition:
-      background-color 120ms ease,
-      border-color 120ms ease,
-      color 120ms ease;
+      background-color var(--dur-hover) var(--ease-out),
+      color var(--dur-hover) var(--ease-out),
+      box-shadow var(--dur-press) var(--ease-out),
+      scale var(--spring-settle-dur) var(--spring-settle);
   }
 
-  .btn-quiet:hover:not(:disabled) {
-    border-color: var(--accent);
-    background: var(--accent-softer);
-    color: var(--accent-ink);
+  @media (hover: hover) and (pointer: fine) {
+    .btn-quiet:hover:not(:disabled) {
+      background: var(--paper-hover);
+    }
+
+    .btn-quiet-danger:hover:not(:disabled) {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+  }
+
+  .btn-quiet:active:not(:disabled) {
+    scale: 0.97;
+    box-shadow: var(--material-raised-press);
+    transition-duration:
+      var(--dur-hover), var(--dur-hover), var(--dur-press),
+      var(--spring-press-dur);
+    transition-timing-function:
+      var(--ease-out), var(--ease-out), var(--ease-out), var(--spring-press);
+  }
+
+  .btn-quiet:focus-visible {
+    box-shadow: var(--ring-soft), var(--focus-ring);
   }
 
   .btn-quiet:disabled,
@@ -412,18 +2224,13 @@
     opacity: 0.45;
   }
 
-  .btn-quiet-danger:hover:not(:disabled) {
-    border-color: var(--danger);
-    background: var(--danger-soft);
-    color: var(--danger);
-  }
-
-  /* A message in a tinted box: something failed, or needs attention. */
+  /* A message in a soft tinted box: something failed, or needs attention. */
   .notice {
-    border-radius: 1rem;
-    padding: 0.875rem 1.25rem;
+    border: 0;
+    border-radius: var(--radius-well);
+    padding: 0.75rem 1rem;
     font-size: 0.875rem;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1.5;
   }
 
@@ -447,14 +2254,275 @@
     color: var(--accent-ink);
   }
 
-  /* The desk a document page sits on in the editor and the signing view. */
+  /*
+   * The desk a document page sits on in the editor and the signing view:
+   * the one place a dot grid is allowed. Faint.
+   */
   [data-paper-grid] {
-    background-color: var(--canvas-wash);
-    background-image: radial-gradient(
-      rgba(28, 29, 43, 0.07) 1px,
-      transparent 1px
-    );
+    background-color: var(--desk);
+    background-image: radial-gradient(var(--desk-dot) 1px, transparent 1px);
     background-position: center center;
-    background-size: 22px 22px;
+    background-size: 24px 24px;
+  }
+}
+
+/*
+ * Sonner stacking (ui/toaster.tsx): collapsed toasts behind the front one
+ * already scale to .95 and .9; they also hide their words and sit a shade
+ * darker, so they read as receipts stacked behind it. Hovering fans them
+ * out (Sonner's expand), where they get their colour and words back.
+ */
+[data-sonner-toaster]
+  [data-sonner-toast][data-expanded="false"][data-front="false"] {
+  background-color: color-mix(in srgb, var(--paper) 90%, var(--page));
+}
+
+[data-sonner-toaster]
+  [data-sonner-toast][data-expanded="false"][data-front="false"]
+  > * {
+  opacity: 0;
+}
+
+[data-sonner-toaster] [data-sonner-toast] > * {
+  transition: opacity var(--dur-hover) var(--ease-out);
+}
+
+@layer components {
+  /*
+   * -------------------------------------------------------------------------
+   * Tactile press (docs/redesign/craft.md, "Primitives get the same care").
+   * A control sinks on a fast critically damped spring while pressed and,
+   * released, settles back with one tiny overshoot. Interruptible: let go
+   * halfway and it springs back from where it is. Reduced motion keeps the
+   * colour and shadow change and drops the scale.
+   * Set --press-scale for a deeper or shallower press.
+   * -------------------------------------------------------------------------
+   */
+  .tactile {
+    --press-scale: 0.97;
+    touch-action: manipulation;
+    transition-property:
+      scale, translate, box-shadow, background-color, color, opacity;
+    transition-duration:
+      var(--spring-settle-dur), var(--spring-settle-dur), var(--dur-hover),
+      var(--dur-hover), var(--dur-hover), var(--dur-hover);
+    transition-timing-function:
+      var(--spring-settle), var(--spring-settle), var(--ease-out),
+      var(--ease-out), var(--ease-out), var(--ease-out);
+  }
+
+  .tactile:active:not(
+      :disabled,
+      [data-loading],
+      [aria-disabled="true"],
+      [data-disabled]
+    ) {
+    scale: var(--press-scale);
+    transition-duration:
+      var(--spring-press-dur), var(--spring-press-dur), var(--dur-press),
+      var(--dur-press), var(--dur-press), var(--dur-press);
+    transition-timing-function:
+      var(--spring-press), var(--spring-press), var(--ease-out),
+      var(--ease-out), var(--ease-out), var(--ease-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tactile:active:not(:disabled) {
+      scale: 1;
+    }
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Materials for controls. Each is a set of layers (see the Material
+   * tokens): a fill, an inner top highlight, a hairline edge and a contact
+   * shadow. Pressed, the highlight dims and the contact shadow flattens, so
+   * the control sinks into the page. Rest and pressed share one shape so
+   * the browser interpolates between them.
+   * -------------------------------------------------------------------------
+   */
+
+  /* A filled control: violet by default; set --fill-rgb for red or carbon. */
+  .mat-fill {
+    --fill-rgb: var(--accent-rgb);
+    --mat:
+      var(--surface-highlight-fill), inset 0 0 0 1px rgb(0 0 0 / 0.1),
+      0 1px 2px rgb(var(--fill-rgb) / 0.24),
+      0 3px 8px -3px rgb(var(--fill-rgb) / 0.28);
+    --mat-press:
+      var(--surface-highlight-fill-dim), inset 0 0 0 1px rgb(0 0 0 / 0.14),
+      0 0 1px rgb(var(--fill-rgb) / 0.3),
+      0 1px 2px -1px rgb(var(--fill-rgb) / 0.2);
+    background-image: var(--surface-sheen);
+    box-shadow: var(--mat);
+  }
+
+  /* Raised paper: white control, hairline, contact shadow. */
+  .mat-raised {
+    --mat: var(--material-raised);
+    --mat-press: var(--material-raised-press);
+    box-shadow: var(--mat);
+  }
+
+  /* A tinted control (secondary): a soft highlight and a tinted hairline. */
+  .mat-tint {
+    --mat:
+      inset 0 1px 0 rgb(255 255 255 / 0.5),
+      inset 0 0 0 1px rgb(var(--accent-rgb) / 0.08);
+    --mat-press:
+      inset 0 1px 0 rgb(255 255 255 / 0.15),
+      inset 0 0 0 1px rgb(var(--accent-rgb) / 0.12);
+    box-shadow: var(--mat);
+  }
+
+  :root.dark .mat-tint {
+    --mat:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      inset 0 0 0 1px rgb(var(--accent-rgb) / 0.22);
+    --mat-press:
+      inset 0 1px 0 rgb(255 255 255 / 0.02),
+      inset 0 0 0 1px rgb(var(--accent-rgb) / 0.28);
+  }
+
+  :is(.mat-fill, .mat-raised, .mat-tint):active:not(
+      :disabled,
+      [data-loading],
+      [aria-disabled="true"]
+    ) {
+    box-shadow: var(--mat-press);
+  }
+
+  :is(.mat-fill, .mat-raised, .mat-tint):focus-visible {
+    box-shadow: var(--mat), var(--focus-ring);
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Avatars (ui/avatar.tsx): an inner ring and a faint top highlight.
+   * Stacked (two or more side by side), each one wears a paper rim and
+   * casts a small contact shadow on the one it overlaps; hovering the
+   * stack spreads them a little on staggered springs, and they close back
+   * in the reverse order.
+   * -------------------------------------------------------------------------
+   */
+  [data-slot="avatar"],
+  [data-slot="signer-avatar"] {
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--fg-rgb) / 0.06),
+      var(--surface-highlight-dim);
+    transition: translate var(--spring-settle-dur) var(--spring-settle);
+  }
+
+  :has(
+      > :is([data-slot="avatar"], [data-slot="signer-chip"])
+        + :is([data-slot="avatar"], [data-slot="signer-chip"])
+    )
+    > [data-slot="avatar"] {
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--fg-rgb) / 0.06),
+      var(--surface-highlight-dim),
+      0 0 0 2px var(--avatar-rim, var(--paper)),
+      2px 1px 4px rgb(0 0 0 / 0.12);
+  }
+
+  :has(
+      > :is([data-slot="avatar"], [data-slot="signer-chip"])
+        + :is([data-slot="avatar"], [data-slot="signer-chip"])
+    )
+    > :is([data-slot="avatar"], [data-slot="signer-chip"]) {
+    transition: translate var(--spring-settle-dur) var(--spring-settle);
+  }
+
+  :has(
+      > :is([data-slot="avatar"], [data-slot="signer-chip"])
+        + :is([data-slot="avatar"], [data-slot="signer-chip"])
+    )
+    > :nth-last-child(2) {
+    transition-delay: 25ms;
+  }
+
+  :has(
+      > :is([data-slot="avatar"], [data-slot="signer-chip"])
+        + :is([data-slot="avatar"], [data-slot="signer-chip"])
+    )
+    > :nth-last-child(3) {
+    transition-delay: 50ms;
+  }
+
+  :has(
+      > :is([data-slot="avatar"], [data-slot="signer-chip"])
+        + :is([data-slot="avatar"], [data-slot="signer-chip"])
+    )
+    > :nth-last-child(n + 4) {
+    transition-delay: 75ms;
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    :has(
+        > :is([data-slot="avatar"], [data-slot="signer-chip"])
+          + :is([data-slot="avatar"], [data-slot="signer-chip"])
+      ):hover
+      > * {
+      transition-delay: 0ms;
+    }
+
+    :has(
+        > :is([data-slot="avatar"], [data-slot="signer-chip"])
+          + :is([data-slot="avatar"], [data-slot="signer-chip"])
+      ):hover
+      > :nth-child(2) {
+      translate: 4px 0;
+      transition-delay: 25ms;
+    }
+
+    :has(
+        > :is([data-slot="avatar"], [data-slot="signer-chip"])
+          + :is([data-slot="avatar"], [data-slot="signer-chip"])
+      ):hover
+      > :nth-child(3) {
+      translate: 8px 0;
+      transition-delay: 50ms;
+    }
+
+    :has(
+        > :is([data-slot="avatar"], [data-slot="signer-chip"])
+          + :is([data-slot="avatar"], [data-slot="signer-chip"])
+      ):hover
+      > :nth-child(n + 4) {
+      translate: 12px 0;
+      transition-delay: 75ms;
+    }
+  }
+
+  /*
+   * -------------------------------------------------------------------------
+   * Status dot (ui/status-flag.tsx): when a status changes in place, the
+   * dot takes one breath and a faint ring widens off it. Never on first
+   * render, never on a loop.
+   * -------------------------------------------------------------------------
+   */
+  .status-dot {
+    position: relative;
+  }
+
+  .status-dot[data-breathe] {
+    animation: dot-breathe 640ms var(--ease-in-out);
+  }
+
+  .status-dot[data-breathe]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--dot);
+    opacity: 0;
+    animation: dot-ring 900ms var(--ease-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-dot[data-breathe],
+    .status-dot[data-breathe]::after {
+      animation: none;
+    }
   }
 }
