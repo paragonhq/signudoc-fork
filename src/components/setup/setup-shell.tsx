@@ -33,8 +33,8 @@ type SetupShellProps = {
 
 /*
  * First-run setup: the onboarding moment. The same
- * calm column as the auth pages: the app icon on top, then a short
- * sequence of step cards. When something has to happen outside the app
+ * calm column as the auth pages: the app icon on top, then one card that
+ * asks one thing at a time (setup-form.tsx). When something has to happen outside the app
  * first (a database, a token), one card says what, in words.
  */
 export function SetupShell(props: SetupShellProps) {
@@ -47,14 +47,20 @@ export function SetupShell(props: SetupShellProps) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <main className="flex flex-1 flex-col items-center px-4 pt-12 pb-16 sm:px-6 sm:pt-16">
+      <main
+        className={
+          formView
+            ? "flex flex-1 flex-col items-center px-2 pt-8 pb-10 sm:px-6 sm:pt-14 sm:pb-16"
+            : "flex flex-1 flex-col items-center px-4 pt-12 pb-16 sm:px-6 sm:pt-16"
+        }
+      >
         <div
           className={
-            formView ? "w-full max-w-[35rem]" : "w-full max-w-[26.5rem]"
+            formView ? "w-full max-w-[30rem]" : "w-full max-w-[26.5rem]"
           }
           data-animate="enter"
         >
-          <AuthBrand className="mb-7" href="/setup" />
+          <AuthBrand className={formView ? "mb-6" : "mb-7"} href="/setup" />
           {formView ? (
             <SetupForm
               hosted={props.hosted}

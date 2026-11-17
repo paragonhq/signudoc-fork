@@ -98,10 +98,14 @@ test("a new install is set up, a sender sends a PDF and a recipient signs it", a
     expect(earlySignup.status()).toBe(403);
     expect(await earlySignup.json()).toMatchObject({ code: "setup_required" });
 
+    // Setup asks one thing at a time (redesign): walk its steps.
+    await adminPage.getByRole("button", { name: "Get started" }).click();
     await adminPage.getByLabel("Organization name").fill(ORGANIZATION_NAME);
+    await adminPage.getByRole("button", { name: "Continue" }).click();
     await adminPage.getByLabel("Your name").fill("Ada Admin");
     await adminPage.getByLabel("Your email").fill(adminEmail);
     await adminPage.getByLabel("Password").fill(PASSWORD);
+    await adminPage.getByRole("button", { name: "Continue" }).click();
 
     // Setup does not finish without an address people can write to for
     // help. Nothing stands in for it, the administrator's own included.
@@ -124,6 +128,10 @@ test("a new install is set up, a sender sends a PDF and a recipient signs it", a
 
     await adminPage.getByLabel("Setup token").fill(e2eSetupToken);
     await adminPage.getByRole("button", { name: "Finish setup" }).click();
+    // (redesign) Skip the optional steps, then open Settings from the end.
+    await adminPage.getByRole("button", { name: "Skip for now" }).click();
+    await adminPage.getByRole("button", { name: "Skip for now" }).click();
+    await adminPage.getByRole("link", { name: "Open Settings" }).click();
 
     // Setup ends signed in, on the administrator's settings.
     await expect(adminPage).toHaveURL(/\/settings#organization$/);

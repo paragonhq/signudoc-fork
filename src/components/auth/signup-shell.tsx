@@ -48,6 +48,8 @@ const SIGNUP_RULE_ERROR_CODES = new Set([
 ]);
 
 type SignupShellProps = {
+  /** An address to start with, from an invitation's link (?email=). */
+  initialEmail?: string;
   /** False when password sign-in is turned off, so accounts come from SSO. */
   passwordSignIn?: boolean;
   /** Single sign-on, when the install has it (lib/auth/sso.ts). */
@@ -66,9 +68,9 @@ type SignupFormValues = {
 
 type SignupFormErrors = Partial<Record<keyof SignupFormValues, string>>;
 
-function createSignupFormValues(): SignupFormValues {
+function createSignupFormValues(email = ""): SignupFormValues {
   return {
-    email: "",
+    email,
     fullName: "",
     password: "",
   };
@@ -299,6 +301,7 @@ export function passwordHint(length: number, minimum = 15) {
 }
 
 export function SignupShell({
+  initialEmail = "",
   passwordSignIn = true,
   signupAvailable = true,
   signupRule = null,
@@ -310,6 +313,7 @@ export function SignupShell({
 
   return (
     <LiveSignupShell
+      initialEmail={initialEmail}
       passwordSignIn={passwordSignIn || !sso}
       signupRule={signupRule}
       sso={sso}
@@ -339,16 +343,18 @@ function SignupClosedCard() {
 }
 
 function LiveSignupShell({
+  initialEmail,
   passwordSignIn,
   signupRule,
   sso,
 }: {
+  initialEmail: string;
   passwordSignIn: boolean;
   signupRule: string | null;
   sso: SsoOption | null;
 }) {
   const [values, setValues] = useState<SignupFormValues>(
-    createSignupFormValues(),
+    createSignupFormValues(initialEmail),
   );
   const [errors, setErrors] = useState<SignupFormErrors>({});
   const [bannerMessage, setBannerMessage] = useState<string | null>(null);

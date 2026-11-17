@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getAuth, getAuthSessionFromHeaders } from "@/lib/auth/server";
 import { runAsSetup } from "@/lib/auth/setup-context";
 import { addEmailDomain } from "@/lib/email-status";
+import { toOrganizationSettingsView } from "@/lib/organization-settings";
 import { rejectBots } from "@/lib/security/botid";
 import { logRouteError, logSecurityEvent } from "@/lib/security/logging";
 import {
@@ -11,7 +12,26 @@ import {
   buildRateLimitKey,
 } from "@/lib/security/route-controls";
 import { getClientIpAddress, getRequestPathname } from "@/lib/security/request";
+import { readStoredSettings, resolveSettings } from "@/lib/settings";
 import { completeSetup, SetupError } from "@/lib/setup";
+
+/**
+ * The settings as the Organization form sees them, for setup's optional
+ * steps (branding, inviting the team), which save through the same admin
+ * route as Settings and so send the whole form back. Null if they cannot
+ * be read: those steps are then skipped, and setup is still done.
+ */
+async function readSettingsView() {
+  try {
+    return toOrganizationSettingsView(
+      resolveSettings(await readStoredSettings()),
+    );
+  } catch (error) {
+    console.error("Setup finished, but its settings could not be read:", error);
+
+    return null;
+  }
+}
 
 // First-run setup. Open to anyone who reaches it while the install has no
 // administrator, which is the point: there is nobody to sign in as yet.
@@ -170,12 +190,19 @@ export async function POST(request: Request) {
           error,
         );
 
-        return NextResponse.json({ redirectTo: "/login" }, { status: 201 });
+        return NextResponse.json(
+          { redirectTo: "/login", signedIn: false },
+          { status: 201 },
+        );
       }
     }
 
     return NextResponse.json(
-      { redirectTo: "/settings#organization" },
+      {
+        redirectTo: "/settings#organization",
+        settings: await readSettingsView(),
+        signedIn: true,
+      },
       { status: 201 },
     );
   } catch (error) {
