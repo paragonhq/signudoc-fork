@@ -8,8 +8,7 @@ import { useBranding } from "@/components/layout/branding-provider";
 import { cn } from "@/lib/cn";
 
 /**
- * The lockup at the top of every page outside the app
- * (docs/redesign/calm.md): the install's own logo when it has one,
+ * The lockup at the top of every page outside the app: the install's own logo when it has one,
  * otherwise the app icon with the organization's (or SignuDoc's) name. One
  * link, named for the install, so assistive tech hears the name whatever
  * is drawn.

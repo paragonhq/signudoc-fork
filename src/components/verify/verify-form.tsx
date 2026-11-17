@@ -80,7 +80,7 @@ async function sha256OfFile(file: File): Promise<string> {
 }
 
 /*
- * Verify (docs/redesign/calm.md): one card with one job. Drop a PDF; a
+ * Verify: one card with one job. Drop a PDF; a
  * calm line says what is happening (the file never leaves the device, only
  * its fingerprint is sent); the answer is a sentence. A match earns the
  * seal, the one moment of delight here. No match says plainly what that

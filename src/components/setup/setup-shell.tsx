@@ -32,7 +32,7 @@ type SetupShellProps = {
 };
 
 /*
- * First-run setup: the onboarding moment (docs/redesign/calm.md). The same
+ * First-run setup: the onboarding moment. The same
  * calm column as the auth pages: the app icon on top, then a short
  * sequence of step cards. When something has to happen outside the app
  * first (a database, a token), one card says what, in words.

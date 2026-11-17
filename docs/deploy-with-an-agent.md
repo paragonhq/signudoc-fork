@@ -66,13 +66,13 @@ Open the production address (`https://<project>.vercel.app`, or the "Visit" link
 On the setup page:
 
 1. Enter the **organization's name** and the **support email address**.
-2. **Send email from** is filled in from what the site knows, usually `notifications@sign.<their domain>`. Check it against the domain the person gave you, and correct it if needed. If the person wants to try email before the domain is verified, clear it instead; it can be set later under Settings, Organization.
+2. The **Email** step shows the address the site will send from, filled in from what the site knows, usually `notifications@sign.<their domain>`. Choose **Change** to check the domain against the one the person gave you, and correct it if needed. If the person wants to try email before the domain is verified, leave the domain empty instead; it can be set later under Settings, Email.
 3. Enter the **administrator's name** and **email**. Let the person type the password, or use their password manager if they told you to. Never make one up and keep it.
-4. Finish setup. You are signed in as the administrator.
+4. Choose **Finish setup**. You are signed in as the administrator.
 
 ## 7. Check email
 
-Open **Settings, Organization** and find the email section.
+Open **Settings, Email**.
 
 - **"Email is not connected".** The Resend keys reached the project after this deployment was built. Redeploy once (step 4.3) and reload.
 - **DNS records listed, not yet verified.** The domain's records are not in place yet. If the domain is managed somewhere other than Vercel, give the person the list of records to add where their domain is managed. The page checks them again by itself. This can take from minutes to a few hours.

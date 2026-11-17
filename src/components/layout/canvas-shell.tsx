@@ -63,7 +63,7 @@ export function CanvasShellOverridesProvider({
 }
 
 /**
- * Full-bleed editor chrome for the builder (docs/redesign/calm.md): one
+ * Full-bleed editor chrome for the builder: one
  * light bar the colour of the page (back, the document's name with where
  * you are in plain words under it, then the quiet things on the right:
  * whatever the screen adds, its save state, and Next) over a canvas that

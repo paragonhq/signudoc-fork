@@ -15,8 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * No documents, ever: one card, one sentence, one button
- * (docs/redesign/calm.md), over an envelope that opens when reached for
+ * No documents, ever: one card, one sentence, one button, over an envelope that opens when reached for
  * (objects/Envelope; decorative). The heading text is what the e2e suite
  * finds.
  */

@@ -18,7 +18,7 @@ import { type PrepareFieldType } from "./model";
 
 /*
  * The builder's field-type icons: plain Hugeicons marks at the kit's 1.75
- * stroke (docs/redesign/calm.md). They take `className` and `strokeWidth`
+ * stroke. They take `className` and `strokeWidth`
  * like any icon in the kit.
  */
 

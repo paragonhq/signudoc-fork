@@ -570,7 +570,7 @@ export async function deleteTemplate(
 }
 
 /* ------------------------------------------------------------------ */
-/* Template studio (pass 5): the library, the template page, its        */
+/* Template studio: the library, the template page, its             */
 /* pictures, renaming, and making a template from scratch. Everything    */
 /* below is additive: the functions above behave as they always did.    */
 /* ------------------------------------------------------------------ */

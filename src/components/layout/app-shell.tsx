@@ -33,7 +33,7 @@ function isFullScreen(pathname: string) {
 }
 
 /*
- * The workspace shell, pass 5 (docs/redesign/calm.md, "Shell").
+ * The workspace shell.
  *
  * Desktop: a 64px top bar on the Bond page. It sits flat on the page and
  * only gains a hairline and a soft blur once the page scrolls under it.

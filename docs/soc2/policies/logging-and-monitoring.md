@@ -9,7 +9,7 @@
    - `role_changed`, `two_factor_requirement_changed`, `settings_changed`, `part11_mode_changed`: a change to who can do what. Confirmed with the person who made it.
    - `type` `security`, `category` `backup_failure`, `backup_finished` with `level` `error`, or `retention_job_failure`: a daily job failed.
    - No `backup_finished` line in `[26 hours]`: the backup did not run.
-3. Every `[month]`, `[role]` checks that both audit chains are intact (Settings, Organization, Sign-in security; and a sample of documents), downloads the site audit trail CSV and files it in `[location]`, and looks for anything unexpected.
+3. Every `[month]`, `[role]` checks that both audit chains are intact (Settings, Audit trail; and a sample of documents), downloads the site audit trail CSV and files it in `[location]`, and looks for anything unexpected.
 4. An alert that is not explained becomes an incident.
 
 **Evidence:** the drain and alert configuration, alert tickets, the monthly review record.

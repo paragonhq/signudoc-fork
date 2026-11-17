@@ -42,7 +42,7 @@ type EmptyStateProps = Omit<React.ComponentProps<"div">, "title"> & {
 };
 
 /**
- * An empty list or first run (docs/redesign/calm.md): an icon tile, a
+ * An empty list or first run: an icon tile, a
  * title, one sentence, one action, centred in its own white card (or in
  * the card it sits in, with `size="compact"`). Teach the one thing that
  * fills it.

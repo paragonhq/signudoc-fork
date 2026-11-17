@@ -96,9 +96,8 @@ const EMPTY_FILTER_WORDS: Record<DocumentFilter, string | undefined> = {
 };
 
 /*
- * Documents, the reference screen for the calm system
- * (docs/redesign/calm.md), pass 6. One job: see where your documents stand
- * and act on the few that need you. Search and "New" live in the top bar
+ * Documents, the reference screen for the calm system. One job: see
+ * where your documents stand and act on the few that need you. Search and "New" live in the top bar
  * (⌘K, N), so the page carries neither.
  *
  *   header      title and the latest thing that happened (→ Activity)

@@ -3,7 +3,7 @@ import * as React from "react";
 import { pick, seededRandom } from "@/components/brand/seeded";
 
 /*
- * Retired in pass 4 (docs/redesign/calm.md): <SignLines> renders nothing.
+ * Retired: <SignLines> renders nothing.
  * Kept for reference: the sign-line field from the profile banner: rows of "×" + a signature
  * line, skewed -12deg like the plate, most in a quiet grey and about one in
  * six in the accent. Decorative (aria-hidden) and deterministic: the same
@@ -83,7 +83,7 @@ function buildField({
 }
 
 /**
- * Calm (docs/redesign/calm.md): sign-line fields are retired and render
+ * Calm: sign-line fields are retired and render
  * nothing. The props are kept so older callers still compile; buildField
  * stays for anything that draws the motif itself.
  */

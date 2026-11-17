@@ -377,7 +377,7 @@ export function Rosette({
 }
 
 /**
- * Calm (docs/redesign/calm.md): the guilloche ribbon is retired and renders
+ * Calm: the guilloche ribbon is retired and renders
  * nothing. The props are kept so older callers still compile.
  */
 export function Ribbon(props: {

@@ -84,7 +84,7 @@ function navItem(section: ShellSection): ShellNavItem {
 
 /**
  * The phone's floating bar holds the two places people go daily; the
- * rest wait one tap away in "More" (calm.md: gradual revelation).
+ * rest wait one tap away in "More".
  */
 export const phoneTabItems: ShellNavItem[] = [
   navItem("documents"),

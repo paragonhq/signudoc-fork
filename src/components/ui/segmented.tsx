@@ -38,7 +38,7 @@ type SegmentedProps<T extends string> = {
  * jump. A pill track at 5% carbon (a shallow well) with one raised paper
  * thumb (highlight, hairline, contact shadow) that springs, stretching, to
  * the active item instead of each item painting its own
- * background (docs/redesign/calm.md). Too many items for a phone? It
+ * background. Too many items for a phone? It
  * scrolls sideways inside itself (never the page) and keeps the active
  * item in view.
  *

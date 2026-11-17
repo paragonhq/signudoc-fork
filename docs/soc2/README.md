@@ -28,11 +28,11 @@ Turn these on before an audit period starts. Each links to how.
 - [ ] Neon project on a plan whose restore window meets your recovery objective. Console access limited the same way.
 - [ ] `CRON_SECRET` set, so only Vercel's cron can start the daily jobs ([self-hosting](../self-hosting.md#daily-cleanup)).
 - [ ] `SETUP_TOKEN` set before the install's URL is public, or setup finished at once ([self-hosting](../self-hosting.md#lock-down-a-new-install)).
-- [ ] Single sign-on through your identity provider, with `PASSWORD_SIGN_IN=off` and one or two break-glass addresses ([self-hosting](../self-hosting.md#single-sign-on)). Or, without SSO, two-step sign-in required for everyone (Settings, Organization, Sign-in security).
-- [ ] Session limits set: for example 30 minutes without use and 12 hours at most (Settings, Organization, Sign-in security).
-- [ ] Sign-up limited to your own email domains, or closed (Settings, Organization).
+- [ ] Single sign-on through your identity provider, with `PASSWORD_SIGN_IN=off` and one or two break-glass addresses ([self-hosting](../self-hosting.md#single-sign-on)). Or, without SSO, two-step sign-in required for everyone (Settings, Sign-in security).
+- [ ] Session limits set: for example 30 minutes without use and 12 hours at most (Settings, Sessions).
+- [ ] Sign-up limited to your own email domains, or closed (Settings, General).
 - [ ] A Vercel log drain to your SIEM, with alerts on `sign_in_locked`, `role_changed`, `two_factor_requirement_changed`, `settings_changed`, `backup_failure` and `retention_job_failure` ([self-hosting](../self-hosting.md#send-the-audit-trail-to-your-siem)).
 - [ ] The daily backup to a second Blob store in another Vercel team, and a test restore on the calendar ([Backup and restore](../backup-and-restore.md)).
-- [ ] Retention rules that match your records policy (Settings, Organization).
+- [ ] Retention rules that match your records policy (Settings, Retention).
 - [ ] The GitHub repository that deploys the install (your copy) with branch protection on the production branch, and updates taken through pull requests ([self-hosting](../self-hosting.md#keep-your-install-up-to-date)).
-- [ ] A support address that reaches a monitored mailbox (Settings, Organization).
+- [ ] A support address that reaches a monitored mailbox (Settings, General).

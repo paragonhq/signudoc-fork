@@ -23,9 +23,9 @@ Everything about running your own SignuDoc: deploying it, setting it up, what it
    - a private file store, [Vercel Blob](https://vercel.com/docs/vercel-blob), for the documents.
 4. **Click Deploy.** The build creates the database tables by itself. If it stops with "One or more integration resources failed to provision", see [If the first deployment fails](#if-the-first-deployment-fails).
 5. **Open your new site.** It takes you to a setup page, where you name your organization, give the email address people should write to for help, and create the first account. That account is the administrator.
-6. **Set up the address you send from.** Under Settings, Organization, enter an address at your own domain in "Send email from" and save (the setup page offers the same field). The site lists the DNS records for that domain and checks them for you. Add them where your domain is managed. If your Resend key is not allowed to manage domains, the page sends you to Resend's dashboard for this step instead.
+6. **Set up the address you send from.** Under Settings, Email, enter an address at your own domain in "Send email from" and save (the setup page offers the same field). The site lists the DNS records for that domain and checks them for you. Add them where your domain is managed. If your Resend key is not allowed to manage domains, the page sends you to Resend's dashboard for this step instead.
 
-![The setup page of a new install](images/setup.png)
+![The setup page of a new install, on a computer and on a phone](images/screens/setup.png)
 
 Step 6 is the one part that cannot be done for you: every email provider asks for proof that you own the domain you send from. While "Send email from" is empty, email goes out from Resend's test address, which Resend delivers only to the email address of the Resend account itself, normally the one on your Vercel account. So to try the whole product straight away, leave that field empty and send a document to that address. Once you save an address of your own, email is sent from it, and Resend does not deliver it until the domain shows as verified. Add the records before you count on it.
 
@@ -39,7 +39,7 @@ Vercel starts the first deployment as soon as the last store is added. Resend as
 
 If it fails the same way again, wait a few more minutes and redeploy once more. A deployment that fails during the build, with a log, is a different problem: the log says what went wrong.
 
-The build itself never waits on Resend. SignuDoc builds and runs without email, and Settings, Organization says when email is not connected yet.
+The build itself never waits on Resend. SignuDoc builds and runs without email, and Settings, Email says when email is not connected yet.
 
 If the site opens on a page that says to connect a database, the database was not connected when the site was built. Connect it under Storage in the Vercel project, deploy again and reload.
 
@@ -149,11 +149,11 @@ A deployment made with the button needs no environment variables. These are ther
 
 The first time you open a new install it takes you to `/setup`. There you name your organization, give its support address, and create the first account, which becomes the administrator. After that the setup page is gone for good.
 
-- **Support address.** Setup does not finish without one. It is the address signers and people with an account are told to write to, and where replies to the site's emails go. It is saved in your install's own settings and nowhere else; there is no SignuDoc address that it falls back to. The administrator can change it under Settings, Organization, but not remove it.
+- **Support address.** Setup does not finish without one. It is the address signers and people with an account are told to write to, and where replies to the site's emails go. It is saved in your install's own settings and nowhere else; there is no SignuDoc address that it falls back to. The administrator can change it under Settings, General, but not remove it.
 
-- **Who can sign up.** The install starts by letting people with an email address at the administrator's own domain create accounts (or nobody else, if the administrator used a public mailbox such as Gmail). The administrator can change this under Settings, Organization: people at listed domains, nobody, or anyone. People who are only sent a document to sign never need an account.
-- **More administrators.** Settings, Organization lists everyone with an account under People, where an administrator can make someone else an administrator or take that away. There is always at least one. When an account is closed, its finished documents and their audit trails move to the longest-standing administrator, because they are the organization's records. If that person later stops being an administrator, those documents move on to one who stays, and the documents they sent themselves stay with them.
-- **Email.** Settings, Organization also shows whether email is working. While no sender address is set, mail goes out from Resend's test address, which only reaches the owner of the Resend account. Enter a sender address at your domain and the page shows the DNS records to add and checks them for you. Mail from that address is not delivered until its domain is verified.
+- **Who can sign up.** The install starts by letting people with an email address at the administrator's own domain create accounts (or nobody else, if the administrator used a public mailbox such as Gmail). The administrator can change this under Settings, General: people at listed domains, nobody, or anyone. People who are only sent a document to sign never need an account.
+- **More administrators.** Settings, People lists everyone with an account, where an administrator can make someone else an administrator or take that away. There is always at least one. When an account is closed, its finished documents and their audit trails move to the longest-standing administrator, because they are the organization's records. If that person later stops being an administrator, those documents move on to one who stays, and the documents they sent themselves stay with them.
+- **Email.** Settings, Email shows whether email is working. While no sender address is set, mail goes out from Resend's test address, which only reaches the owner of the Resend account. Enter a sender address at your domain and the page shows the DNS records to add and checks them for you. Mail from that address is not delivered until its domain is verified.
 - **`SETUP_TOKEN`.** A new install can be claimed by whoever opens it first. If its URL will be public before you get to it, set `SETUP_TOKEN` to a secret of your own and the setup page will ask for it.
 - **An install from before this page existed** has accounts but no administrator. Set `SETUP_TOKEN`, sign in with the account that should be in charge, and open `/setup`. It asks for a support address if the install has none. Sign-up stays open, as it was, until that administrator changes it.
 
@@ -170,11 +170,11 @@ These cover the people with an account (senders and administrators). Signers who
 
   Then change the secret and deploy. Everyone signs in with their password alone once, and sets up two-step sign-in again (an install that requires it asks at once). The site audit trail does not show this reset, so record it with the incident.
 
-- **Requiring it.** An administrator can require two-step sign-in of everyone under Settings, Organization, Sign-in security. They have to use it themselves first. From then on anyone who has not set it up sees only the setup page until they have, the API refuses their requests too, and nobody can turn theirs off.
+- **Requiring it.** An administrator can require two-step sign-in of everyone under Settings, Sign-in security. They have to use it themselves first. From then on anyone who has not set it up sees only the setup page until they have, the API refuses their requests too, and nobody can turn theirs off.
 - **Lost phone.** If someone loses their phone and their backup codes, an administrator can reset their two-step sign-in under People. That turns it off and signs them out everywhere at once; they sign in with their password and set it up again (at once, if it is required).
-- **Sessions.** A session lasts 7 days by default. Under Settings, Organization, Sign-in security an administrator can sign people out after 15 minutes to 8 hours without use, and at the latest 8 hours to 3 days after they signed in. A change applies to sessions that are already open, from their next click. Anyone can sign out on every device at once under Settings, Signed-in devices.
+- **Sessions.** A session lasts 7 days by default. Under Settings, Sessions an administrator can sign people out after 15 minutes to 8 hours without use, and at the latest 8 hours to 3 days after they signed in. A change applies to sessions that are already open, from their next click. Anyone can sign out on every device at once under Settings, Signed-in devices.
 - **Wrong passwords.** Ten wrong passwords for one email address within 15 minutes stop sign-in for that address until the 15 minutes are up. This happens whether or not the address has an account, so it says nothing about which ones do. Ten wrong codes at the second step lock that step for 15 minutes in the same way.
-- **The site audit trail** (Settings, Organization, Sign-in security) records each sign-in and failed sign-in with the address it came from, lockouts, sign-outs, password changes and resets, two-step sign-in being turned on, off or reset, new backup codes, and changes to settings, roles, the logo, the email domain, identity confirmations and signing locks. The rows form one hash chain, so a changed or removed row shows, and the trail downloads as CSV.
+- **The site audit trail** (Settings, Audit trail) records each sign-in and failed sign-in with the address it came from, lockouts, sign-outs, password changes and resets, two-step sign-in being turned on, off or reset, new backup codes, and changes to settings, roles, the logo, the email domain, identity confirmations and signing locks. The rows form one hash chain, so a changed or removed row shows, and the trail downloads as CSV.
 
 ### Send the audit trail to your SIEM
 
@@ -200,7 +200,7 @@ People can sign in through your organization's identity provider instead of with
 
 How it behaves:
 
-- **New people** get an account the first time they sign in, under the same sign-up rule as a password sign-up (Settings, Organization, Who can sign up). So the email domain limit holds for single sign-on too. With Google this matters: any Google account can use the button, and the rule decides who gets an account. To let only your directory in, set the rule to your domains, or to nobody and add people some other way first.
+- **New people** get an account the first time they sign in, under the same sign-up rule as a password sign-up (Settings, General, Who can create an account). So the email domain limit holds for single sign-on too. With Google this matters: any Google account can use the button, and the rule decides who gets an account. To let only your directory in, set the rule to your domains, or to nobody and add people some other way first.
 - **People who already have an account** with the same email address are signed in to it, if their address here is confirmed and the provider does not say theirs is unverified. Microsoft Entra ID does not say either way, and its addresses are trusted.
 - **Two-step sign-in** is not asked for after single sign-on: the provider's sign-in, with its own MFA, is the check. When an administrator requires two-step sign-in, it applies to people who have a password; someone who only uses single sign-on is not held up.
 - **Turning passwords off.** With single sign-on set up, `PASSWORD_SIGN_IN=off` stops password sign-in, password sign-up and password reset links. Put one or two administrator addresses in `PASSWORD_SIGN_IN_ALLOWED_EMAILS` (comma-separated) so there is a way in if the provider is down; their sign-in page shows "Sign in with a password instead". Without single sign-on set up, `PASSWORD_SIGN_IN=off` does nothing, so nobody is locked out by a half-finished setup.
@@ -211,7 +211,7 @@ SAML is not supported. Okta, Entra ID and Google all offer OIDC for the same app
 
 ## Your responsibilities
 
-Your install carries your organization's name, not SignuDoc's. In Settings, link your own terms and privacy policy (without a privacy link, signers see a notice built from your settings at `/signer-privacy`; check it), keep the support address you gave at setup pointed at a mailbox someone reads, and choose how long finished documents are kept. Under GDPR your organization is the controller; Settings, Organization has the tools to answer a signer who asks for their data or for its erasure.
+Your install carries your organization's name, not SignuDoc's. In Settings, link your own terms and privacy policy (without a privacy link, signers see a notice built from your settings at `/signer-privacy`; check it), keep the support address you gave at setup pointed at a mailbox someone reads, and choose how long finished documents are kept. Under GDPR your organization is the controller; Settings, Signer data requests has the tools to answer a signer who asks for their data or for its erasure.
 
 ## FDA 21 CFR Part 11
 
@@ -346,7 +346,7 @@ Away from Vercel, a few things Vercel does for you are yours to set:
 
 Self-hosted operators are responsible for:
 
-- linking to their own terms and privacy policy under Settings, Organization;
+- linking to their own terms and privacy policy under Settings, Legal links;
 - keeping the support address pointed at a mailbox someone reads, and verifying a sending domain for email;
 - configuring retention, consent, and compliance requirements for their own deployment; and
 - scheduling the [daily cleanup](#daily-cleanup) if they are not on Vercel, where it is scheduled for them.

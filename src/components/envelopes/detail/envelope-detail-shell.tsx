@@ -38,7 +38,7 @@ type EnvelopeDetailShellProps = {
 };
 
 /**
- * The envelope page (docs/redesign/calm.md). One job: where does this
+ * The envelope page. One job: where does this
  * stand, and what do I do next? With the document itself beside it.
  *
  *   header     the title and what it is in a few words

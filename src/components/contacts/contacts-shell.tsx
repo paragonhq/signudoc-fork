@@ -51,7 +51,7 @@ function groupLetter(name: string) {
 }
 
 /*
- * Contacts, the address book (docs/redesign/calm.md). Everyone you have
+ * Contacts, the address book. Everyone you have
  * sent to, newest first or by name, as calm rows: initials on a soft
  * tint, the name and address, how many documents and when you last sent
  * one, and a short bar of how those documents stand. A row opens the

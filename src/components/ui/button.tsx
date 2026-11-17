@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { Spinner } from "@/components/ui/spinner";
 
 /*
- * Buttons (docs/redesign/calm.md, docs/redesign/craft.md). Pills: 40px with
+ * Buttons. Pills: 40px with
  * a mouse, 44px on touch (`--control-h`), 36px for `sm`, 48px for `lg`.
  *
  * Each filled or raised variant is built in layers (globals.css, "Materials

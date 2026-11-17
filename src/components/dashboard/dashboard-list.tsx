@@ -30,7 +30,7 @@ export type ListSelection = {
 
 /**
  * The documents, grouped by when they were made (Today, This week,
- * Earlier), each group a white card of calm rows (docs/redesign/calm.md).
+ * Earlier), each group a white card of calm rows.
  * No column headers, no IDs: a page, a title, where it stands in words,
  * who signs and a soft status pill. The whole row opens the document.
  *

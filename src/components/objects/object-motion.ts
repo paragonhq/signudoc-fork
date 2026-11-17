@@ -13,7 +13,6 @@ import {
  * What the signature objects (Envelope, DocumentStack, PaperSheet) share:
  * the three poses, the size scale over one master geometry, the springs,
  * and a reduced-motion read that is safe to hydrate.
- * See docs/redesign/craft.md, "Our signature objects".
  */
 
 /** Rest (quiet, slightly alive), hover (anticipation), active (reveal). */

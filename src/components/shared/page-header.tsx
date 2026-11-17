@@ -38,8 +38,7 @@ type PageHeaderProps = {
 };
 
 /**
- * The top of a page, straight on the page ground (no card), calm
- * (docs/redesign/calm.md): an optional small eyebrow, the title at
+ * The top of a page, straight on the page ground (no card), calm: an optional small eyebrow, the title at
  * 28px/600 (24px on a phone), one quiet line of description, and the
  * actions on the right. No rules, marks, microtext or sign lines.
  *

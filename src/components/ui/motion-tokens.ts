@@ -1,7 +1,7 @@
 /*
  * The motion tokens from globals.css, for motion/react (which cannot read
- * CSS custom properties for easing). Keep the two in step; see
- * docs/redesign/motion.md. Durations are in seconds, as motion expects.
+ * CSS custom properties for easing). Keep the two in step.
+ * Durations are in seconds, as motion expects.
  */
 
 export const EASE = {
@@ -43,7 +43,7 @@ export const SPRING_SOFT = {
 } as const;
 
 /*
- * The craft springs (docs/redesign/craft.md): the same physics as the CSS
+ * The craft springs: the same physics as the CSS
  * --spring-* curves in globals.css, for motion/react.
  */
 

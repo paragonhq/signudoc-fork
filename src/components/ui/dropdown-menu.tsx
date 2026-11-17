@@ -10,7 +10,7 @@ import { offsetWithin, useGlide } from "@/components/ui/glide";
 import { CheckIcon, ChevronRightIcon } from "@/components/ui/icons";
 
 /*
- * Menus (docs/redesign/craft.md): layered paper (a top highlight, a
+ * Menus: layered paper (a top highlight, a
  * hairline, a contact and an ambient shadow) that grows from its trigger
  * on a spring (.menu-surface in globals.css). One soft pill marks the
  * highlighted item and slides between items as the pointer or the arrow

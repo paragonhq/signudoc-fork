@@ -25,7 +25,7 @@ import { TextMorph } from "@/components/ui/text-morph";
 
 /*
  * The parts every settings section is built from, calm and grouped like
- * iOS settings brought to the web (docs/redesign/calm.md):
+ * iOS settings brought to the web:
  *
  *   <SettingsGroup label="Account">                    a quiet chapter title
  *     <SettingsSection id="profile" title="Profile" description="…">

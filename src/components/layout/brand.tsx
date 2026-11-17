@@ -92,7 +92,7 @@ export function BrandMark({ className = "" }: { className?: string }) {
 }
 
 /**
- * The workspace brand in the app shell (docs/redesign/calm.md): the app
+ * The workspace brand in the app shell: the app
  * icon S and the organization's name, quietly. An install with its own
  * logo shows the logo instead. The link carries the product name for
  * assistive tech either way. (`tone` is accepted for older callers.)

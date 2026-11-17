@@ -12,7 +12,7 @@ import {
 /*
  * Glide: one layer (a raised thumb, a hover pill, a selection highlight)
  * that travels to whichever item is active instead of each item painting
- * its own background (docs/redesign/craft.md). Its two edges ride their own
+ * its own background. Its two edges ride their own
  * springs; with `stretch`, the leading edge is stiffer than the trailing
  * one, so the layer stretches toward where it is going and gathers up as
  * it lands. Interruptible: retargeting mid-flight springs on from where it

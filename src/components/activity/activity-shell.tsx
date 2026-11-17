@@ -44,7 +44,7 @@ import type {
 import { cn } from "@/lib/cn";
 
 /*
- * Activity (docs/redesign/calm.md, pass 6): what happened across every
+ * Activity: what happened across every
  * document you sent, newest first, grouped by day in your own time zone.
  * One calm card per day; each event is a sentence ("Riley signed Mutual
  * NDA") with a small tinted glyph on a quiet timeline thread, and opens its

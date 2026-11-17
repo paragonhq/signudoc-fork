@@ -8,8 +8,7 @@ import { DUR, EASE, exitDuration } from "@/components/ui/motion-tokens";
 import { cn } from "@/lib/cn";
 
 /*
- * Small parts shared by the auth, setup and public screens
- * (docs/redesign/calm.md): the heading block, an icon tile, the inline
+ * Small parts shared by the auth, setup and public screens: the heading block, an icon tile, the inline
  * notice and the "or" divider. Quiet by design: no eyebrows, no rules.
  */
 

@@ -30,7 +30,7 @@ const defaultLinkClassName =
   "inline-flex min-h-8 items-center gap-1 rounded-md text-[0.8125rem] font-medium text-(--secondary) outline-none transition-colors duration-(--dur-hover) ease-(--ease-out) hover:text-(--fg) focus-visible:shadow-(--focus-ring) pointer-coarse:min-h-10";
 
 /**
- * The footer under every page outside the app (docs/redesign/calm.md): the
+ * The footer under every page outside the app: the
  * install's legal links, the copyright line and, on self-hosted installs,
  * the "Powered by" credit with the app icon. Small and quiet, on the page
  * itself: no rule, no band.

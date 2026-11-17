@@ -5,7 +5,7 @@ import type { EnvelopeStatus } from "@/lib/types/domain";
 import { StatusDot } from "@/components/ui/status-dot";
 
 /*
- * Status (docs/redesign/calm.md): a soft pill, a tinted background, a
+ * Status: a soft pill, a tinted background, a
  * coloured dot and a sentence-case word: Draft, Waiting, Completed,
  * Declined, Voided, Expired. No stamps, no plates, no mono caps. Colour
  * says the state and the word says it again, so no one depends on colour.

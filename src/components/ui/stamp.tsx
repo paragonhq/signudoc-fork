@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import { hashString } from "@/components/brand/seeded";
 
 /*
- * Stamp, calm (docs/redesign/calm.md): no ovals, rotation, texture or
+ * Stamp, calm: no ovals, rotation, texture or
  * landing any more. It renders a soft pill in the tone's tint with the
  * word in sentence case (.stamp in globals.css). Props are kept for older
  * callers; `rotate`, `texture` and `land` are accepted and ignored. The

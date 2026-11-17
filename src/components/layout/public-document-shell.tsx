@@ -57,7 +57,7 @@ export async function PublicDocumentShell({
 }
 
 /*
- * Reading layout (docs/redesign/calm.md): one 680px column on the Bond
+ * Reading layout: one 680px column on the Bond
  * page, a clear title and one line under it, body text set for reading
  * with whitespace (not rules) between sections. Long policies get a quiet
  * "On this page" disclosure, and on very wide screens a contents rail in

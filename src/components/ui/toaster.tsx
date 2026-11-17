@@ -14,7 +14,7 @@ import { useIsDesktop } from "@/components/ui/hooks";
 import { Spinner } from "@/components/ui/spinner";
 
 /*
- * Toasts confirm what just happened, out of the way (docs/redesign/calm.md):
+ * Toasts confirm what just happened, out of the way:
  * a pill of layered paper (top highlight, hairline, contact and ambient
  * shadows), an icon and one line. Several stack like receipts: the ones
  * behind scale to .95 and .9, go blank and sit a shade darker, and fan

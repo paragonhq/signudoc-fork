@@ -23,7 +23,7 @@ function stepLabel(step: ProgressStep) {
 }
 
 /**
- * The send flow's progress, quiet (docs/redesign/calm.md): four short
+ * The send flow's progress, quiet: four short
  * segments that fill in the accent as you go, and only the current step
  * named beside them ("Signers  2 of 4"). Moving forward fills the next
  * segment from the left; going back empties it. Finished steps are not

@@ -22,7 +22,7 @@ export function resolveNotFoundShellState(
 }
 
 /*
- * 404 (docs/redesign/calm.md): a friendly icon tile, "No envelope here",
+ * 404: a friendly icon tile, "No envelope here",
  * one sentence and one way home. Nothing else.
  */
 export function NotFoundShell({

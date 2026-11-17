@@ -33,7 +33,7 @@ function getAuthNavAction(pathname: string): AuthNavAction | null {
 }
 
 /*
- * The auth layout (docs/redesign/calm.md): one calm white card in the
+ * The auth layout: one calm white card in the
  * middle of the Bond page, the install's icon and name above it, the one
  * other way in ("New here? Sign up") under it, and the legal links at the
  * foot. Nothing else competes with the form.

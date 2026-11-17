@@ -4,7 +4,7 @@ import { Slot } from "radix-ui";
 import { cn } from "@/lib/cn";
 
 /*
- * Sheets (docs/redesign/calm.md): white surfaces on the Bond-light page,
+ * Sheets: white surfaces on the Bond-light page,
  * no border lines, 20px corners, soft elevation. Sections inside a sheet
  * are split by faint dividers.
  *

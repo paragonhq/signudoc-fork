@@ -72,7 +72,7 @@ function findErrors(people: readonly Person[]): PersonErrors[] {
 }
 
 /**
- * Use a template, in two columns (pass 5): the document on the left, as it
+ * Use a template, in two columns: the document on the left, as it
  * will go out, and one question on the right, "Who signs this time?". A
  * row per role in signing order (its colour, when it signs, a name and an
  * email), then the title, prefilled. Filling in a role brings its fields

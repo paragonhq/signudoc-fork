@@ -45,7 +45,7 @@ type MicrotextProps = Omit<React.ComponentProps<"div">, "children"> & {
 };
 
 /**
- * Calm (docs/redesign/calm.md): microtext is retired and renders nothing.
+ * Calm: microtext is retired and renders nothing.
  * The props are kept so older callers still compile.
  */
 function Microtext(props: MicrotextProps) {

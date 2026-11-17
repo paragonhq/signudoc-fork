@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 
 /*
  * Card keeps its old parts, drawn as a calm Sheet: a white surface, no
- * border line, 20px corners and the soft elevation (docs/redesign/calm.md).
+ * border line, 20px corners and the soft elevation.
  * `variant` is still accepted: `quiet` drops the elevation to the faint
  * ring for cards nested in a busy layout. New work uses Sheet directly.
  */

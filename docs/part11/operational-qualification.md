@@ -94,10 +94,10 @@ Use test documents only, and mark them as such.
 
 ## OQ-10 Records are kept (SYS-02)
 
-| Step | Action                                                                           | Expected                                                                   |
-| ---- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 1    | As Admin, try to set a retention period.                                         | The field is disabled while Part 11 mode is on.                            |
-| 2    | In Settings, Signer data, erase Signer A's data (confirm by typing the address). | The Part 11 record is reported as kept, and it still opens for the Sender. |
+| Step | Action                                                                                    | Expected                                                                   |
+| ---- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 1    | As Admin, try to set a retention period.                                                  | The field is disabled while Part 11 mode is on.                            |
+| 2    | In Settings, Signer data requests, erase Signer A's data (confirm by typing the address). | The Part 11 record is reported as kept, and it still opens for the Sender. |
 
 ## OQ-11 Void needs a reason (SYS-07)
 

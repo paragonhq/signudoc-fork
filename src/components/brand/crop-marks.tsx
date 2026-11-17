@@ -1,7 +1,7 @@
 import * as React from "react";
 
 /*
- * Retired in pass 4 (docs/redesign/calm.md); see CropMarks below. Was: crop marks: four L-shaped corners (1.5px, 14px) just outside a box, like
+ * Retired; see CropMarks below. Was: crop marks: four L-shaped corners (1.5px, 14px) just outside a box, like
  * the corners of a proof sheet on the brand boards. Wrap the thing that is
  * "the document": the thumbnail on the detail page, a drop zone, the page
  * on the signing desk, the auth card. Decorative (aria-hidden).
@@ -22,7 +22,7 @@ type CropMarksProps = React.ComponentProps<"div"> & {
 };
 
 /**
- * Calm (docs/redesign/calm.md): crop marks are retired. This renders its
+ * Calm: crop marks are retired. This renders its
  * children in a plain wrapper (className and props still apply, so layouts
  * that relied on it keep their shape) and draws no marks.
  */

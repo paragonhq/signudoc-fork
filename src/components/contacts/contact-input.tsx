@@ -30,7 +30,7 @@ type ContactInputProps = Omit<ComponentProps<typeof Input>, "value"> & {
 
 /**
  * A name or email field that offers people from the address book as you
- * type (docs/redesign/calm.md: one quiet popover, never in the way).
+ * type.
  *
  * Suggestions appear only after typing in the field, never on focus, and
  * nothing is chosen until you choose it: arrows move through them, Enter

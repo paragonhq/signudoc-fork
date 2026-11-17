@@ -43,7 +43,7 @@ import { cn } from "@/lib/cn";
 import type { TemplateDetail, TemplateFieldPreview } from "@/lib/templates";
 
 /*
- * A template's own page (docs/redesign/calm.md, pass 5). One job: see what
+ * A template's own page. One job: see what
  * this template sends, then use it.
  *
  *   header    name, what it holds in words, "Use template"; Rename and

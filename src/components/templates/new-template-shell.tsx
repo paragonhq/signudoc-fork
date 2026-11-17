@@ -82,7 +82,7 @@ function formatSize(bytes: number) {
 }
 
 /*
- * New template (docs/redesign/calm.md, pass 5): a short flow in one
+ * New template: a short flow in one
  * centred card under the standard step rail.
  *
  *   1 Document   drop or choose a PDF; its name becomes the template's

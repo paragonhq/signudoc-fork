@@ -40,7 +40,7 @@ type FlowFrameProps = {
 };
 
 /**
- * The frame shared by Upload, Signers and Review (docs/redesign/calm.md):
+ * The frame shared by Upload, Signers and Review:
  * a short guided conversation, one question per screen. A quiet progress
  * bar, the question as the page title, one line of help, the step's
  * content in a single centred column, and the action row at the end.

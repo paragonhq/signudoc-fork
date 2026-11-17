@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /*
- * Tables (docs/redesign/calm.md): light. 52px rows split by faint
+ * Tables: light. 52px rows split by faint
  * dividers, quiet 13px sentence-case headers with no rule above them, a
  * soft hover wash and an accent wash on selected rows. Inside a `sheet`
  * the table sits on a white card with the soft elevation. Row actions are

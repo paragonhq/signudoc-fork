@@ -59,11 +59,12 @@ The first time you open the app it takes you to `/setup`, where you name the org
 - Vercel Blob object storage (local disk in development)
 - Resend for transactional email
 - `pdf-lib` and `pdfjs-dist`
-- Tailwind CSS 4 + shadcn/ui
+- Tailwind CSS 4, Radix UI primitives and Motion
+- Geist and Geist Mono
 
 ## How the workflow fits together
 
-1. Upload a PDF and create a draft envelope.
+1. Upload a PDF, or write the document in the composer, and create a draft envelope.
 2. Add signers in the order they should receive it.
 3. Place fields on the document.
 4. Review and send.
@@ -102,7 +103,7 @@ The schema lives in `db/migrations` as plain SQL files. `npm run db:migrate` app
 
 SignuDoc sends transactional email through Resend.
 
-- The support address, where replies go, is asked for when the site is set up. It and the address email is sent from can be changed by the administrator under Settings, Organization. The sender address must be at a domain verified with Resend; the same page adds the domain to Resend, lists the DNS records and checks them. With a Resend API key that is only allowed to send, it points you at Resend's dashboard for that step instead.
+- The support address, where replies go, is asked for when the site is set up. It and the address email is sent from can be changed by the administrator under Settings, General and Settings, Email. The sender address must be at a domain verified with Resend; the same page adds the domain to Resend, lists the DNS records and checks them. With a Resend API key that is only allowed to send, it points you at Resend's dashboard for that step instead.
 - `RESEND_FROM_EMAIL` and `SUPPORT_EMAIL` are optional. When set they take the place of the addresses saved in Settings, which then cannot be changed there, and with `SUPPORT_EMAIL` set the setup page does not ask for a support address.
 - Until a sender address is set, mail goes out from `onboarding@resend.dev`, which Resend only delivers to the owner of the Resend account.
 - In hosted mode the support address is also the contact shown on the Terms, Privacy, and Accessibility pages.
@@ -116,6 +117,8 @@ Document import currently enforces these limits:
 - 20 MB maximum upload size
 - password-protected or encrypted PDFs are rejected
 - pure XFA or unsupported PDF variants are rejected
+
+Word (.docx), web page (.html), Markdown (.md) and plain-text (.txt) files are not uploaded as they are. They open in the document composer, which writes them as a PDF in the browser, with the fonts embedded, and that PDF goes through the same checks.
 
 ## Common scripts
 
@@ -150,4 +153,5 @@ src/lib         Auth, database, services, schemas, and domain logic
 db              SQL migrations and the script that applies them
 e2e             The Playwright end-to-end test
 public/pdfjs    PDF.js worker and standard font assets
+public/fonts    Fonts the document composer offers and embeds in its PDFs
 ```

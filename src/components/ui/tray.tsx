@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/motion-tokens";
 
 /*
- * Tray: the one dialog primitive, Family-style (docs/redesign/calm.md).
+ * Tray: the one dialog primitive, Family-style.
  * Layered paper (a top highlight, a hairline, contact and ambient
  * shadows), 28px corners, no borders. A header row with the
  * title and an icon button (close); one task per tray. When the content

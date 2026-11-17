@@ -30,7 +30,7 @@ type StickerProps = React.ComponentProps<"div"> & {
 };
 
 /**
- * Calm (docs/redesign/calm.md): stickers are retired. This renders its
+ * Calm: stickers are retired. This renders its
  * children as they are: no die-cut edge, no shadow, no rotation, no peel.
  */
 function Sticker({

@@ -336,7 +336,7 @@ export function signersSentence(row: DocumentRow) {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Calm Documents screen (docs/redesign/calm.md)                            */
+/* Calm Documents screen                            */
 /* ------------------------------------------------------------------------ */
 
 export type TimeGroup = "today" | "week" | "earlier";

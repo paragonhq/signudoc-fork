@@ -40,7 +40,7 @@ import { offsetWithin, useGlide } from "@/components/ui/glide";
 import { Kbd } from "@/components/ui/kbd";
 
 /*
- * The command menu (⌘K / Ctrl K), docs/redesign/calm.md, pass 5.
+ * The command menu (⌘K / Ctrl K).
  *
  * Keyboard first and instant: it opens and closes with no animation (it
  * is opened hundreds of times a day, usually from the keyboard), the
@@ -97,7 +97,7 @@ type RecentItem = {
   label: string;
 };
 
-/** The same words the status pills use (calm.md: "sent" reads Waiting). */
+/** The same words the status pills use. */
 const STATUS_WORDS: Record<string, string> = {
   completed: "Completed",
   declined: "Declined",

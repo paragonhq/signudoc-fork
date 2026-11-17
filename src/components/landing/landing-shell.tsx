@@ -13,7 +13,7 @@ import { PublicHeader } from "@/components/public/public-header";
 import { Button } from "@/components/ui/button";
 
 /*
- * The hosted service's landing page (docs/redesign/calm.md): calm and
+ * The hosted service's landing page: calm and
  * premium in the product's own language. A big plain hero, one product
  * visual, three steps, the price in facts, one closing ask. White cards on
  * the Bond page, nothing shouting.

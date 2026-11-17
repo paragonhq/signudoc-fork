@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/cn";
 
 /*
- * Ledger, calm (docs/redesign/calm.md): a simple key/value list. Label on
+ * Ledger, calm: a simple key/value list. Label on
  * the left in secondary, value on the right, light dividers between rows.
  * In a white card by default (`variant="bare"` for no frame). The mono
  * option is for IDs and hashes only (detail views), never uppercase.

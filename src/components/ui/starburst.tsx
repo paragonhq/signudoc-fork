@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/cn";
 
 /*
- * Starburst, calm: the burst is gone (docs/redesign/calm.md). It renders
+ * Starburst, calm: the burst is gone. It renders
  * the fact as plain text: the number (or word) in 600 with an optional
  * secondary caption beside it. The props are kept for older callers;
  * `rotate`, `size` and `tone` are accepted and ignored except for size,

@@ -44,7 +44,7 @@ function overview(count: number) {
 }
 
 /*
- * Templates, the library (docs/redesign/calm.md, pass 5). A gallery of the
+ * Templates, the library. A gallery of the
  * documents you send often: each card shows the template's pages as a
  * small stack of paper in a soft well (the real first page on top), the
  * name, what it holds in words and who signs as role pills. Under the

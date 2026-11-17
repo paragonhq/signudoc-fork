@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 /*
- * Calm illustrations (docs/redesign/calm.md, pass 5): a handful of soft,
+ * Calm illustrations: a handful of soft,
  * simple drawings for empty states and onboarding moments only. Drawn from
  * the product's own shapes (a white page, a few lines of text, the violet
  * of a field, the S) in the brand palette: Bond, white, Ink violet, and

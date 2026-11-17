@@ -41,7 +41,7 @@ Short templates for the procedures Part 11 expects you to have. Put each into yo
 ## SOP-5 Audit trail review and records (11.10(c), (e))
 
 1. Every `[month]`, an administrator:
-   - opens Settings, Organization, Sign-in security and confirms the site audit trail chain is intact;
+   - opens Settings, Audit trail and confirms the site audit trail chain is intact;
    - downloads the site audit trail CSV for the period and files it in `[location]`;
    - looks for unexpected settings changes, role changes, Part 11 mode changes, identity changes and locks.
 2. For each finished regulated record, the sender files the signed PDF, the certificate and the envelope's audit trail CSV in `[the record system]` within `[N]` days.

@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { useFieldControlProps } from "@/components/ui/field-context";
 
 /*
- * Text fields (docs/redesign/calm.md, craft.md): 44px, 14px corners, white,
+ * Text fields: 44px, 14px corners, white,
  * a 1px ring at 10% carbon over a shallow inner well, all drawn as inset
  * shadows (so nothing shifts), and an accent halo at 30% that grows on a
  * spring when the field takes focus. 16px text on touch so iOS does not zoom.
