@@ -208,6 +208,7 @@ test("each signer's revision keeps the signatures before it valid", async (t) =>
       await prepareSignerRevision(revisionZero, {
         fields: aliceFields,
         images: new Map(),
+        pages: [],
         signature: {
           fieldName: "Alice Example (signer 1)",
           name: "Alice Example",
@@ -233,6 +234,7 @@ test("each signer's revision keeps the signatures before it valid", async (t) =>
       await prepareSignerRevision(first.bytes, {
         fields: bobFields,
         images: new Map(),
+        pages: [],
         signature: {
           fieldName: "Bob Example (signer 2)",
           name: "Bob Example",
@@ -317,6 +319,7 @@ test("a signature for other content, or by another key, is refused", async () =>
     const prepared = await prepareSignerRevision(revisionZero, {
       fields: aliceFields,
       images: new Map(),
+      pages: [],
       signature: { fieldName: "Alice", signingTime: new Date() },
     });
     const otherContent = Buffer.from(
@@ -361,6 +364,7 @@ test("a qualified signature needs a qualified certificate", async () => {
       {
         fields: aliceFields,
         images: new Map(),
+        pages: [],
         signature: { fieldName: "Carol", signingTime: new Date() },
       },
     );
@@ -386,6 +390,7 @@ test("a signature timestamp counts only when it is for the signature and verifie
       {
         fields: aliceFields,
         images: new Map(),
+        pages: [],
         signature: { fieldName: "Alice", signingTime: new Date() },
       },
     );

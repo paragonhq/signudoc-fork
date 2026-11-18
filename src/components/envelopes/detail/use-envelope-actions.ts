@@ -242,6 +242,36 @@ export function useEnvelopeActions(envelopeId: string) {
     router.push(payload?.redirectPath ?? "/dashboard");
   }, [base, router]);
 
+  /** An administrator deletes a finished envelope for good. */
+  const deleteFinished = useCallback(
+    async (reason: string) => {
+      let response: Response;
+
+      try {
+        response = await fetch(`${base}/delete`, jsonInit("POST", { reason }));
+      } catch {
+        // The request may or may not have reached the server.
+        throw new ActionError(
+          "Could not reach the server. Reload the page to see whether the envelope was deleted.",
+        );
+      }
+
+      const payload = await readPayload(response);
+
+      if (!response.ok) {
+        throw new ActionError(
+          payload?.error ?? "Unable to delete this envelope.",
+        );
+      }
+
+      toast.success("Envelope deleted", {
+        description: "The deletion is kept in the install's audit log.",
+      });
+      router.push(payload?.redirectPath ?? "/dashboard");
+    },
+    [base, router],
+  );
+
   const voidEnvelope = useCallback(
     async (reason: string) => {
       let response: Response;
@@ -287,6 +317,7 @@ export function useEnvelopeActions(envelopeId: string) {
       copyToDraft,
       correctSigner,
       deleteDraft,
+      deleteFinished,
       download,
       exportAuditTrail,
       isSendingReminder,
@@ -300,6 +331,7 @@ export function useEnvelopeActions(envelopeId: string) {
       copyToDraft,
       correctSigner,
       deleteDraft,
+      deleteFinished,
       download,
       exportAuditTrail,
       isSendingReminder,

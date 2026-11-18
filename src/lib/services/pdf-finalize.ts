@@ -16,8 +16,10 @@ import { normalizedRectToPdfRect } from "../utils/pdf-coords.ts";
 import { embedTextFaces, type TextFace } from "./pdf-fonts.ts";
 import {
   drawOnDisplayedPage,
+  fieldOnDisplayedPage,
   getDisplayedPageGeometry,
   type DisplayedPageGeometry,
+  type StoredPageSize,
 } from "./pdf-page-geometry.ts";
 import { sha256Hex } from "./pdf-seal.ts";
 import { getBranding } from "../settings.ts";
@@ -1357,6 +1359,8 @@ export async function renderFinalizedEnvelopePdf(
     envelope: EnvelopeRecord;
     fields: FieldRecord[];
     includeAuditTrail?: boolean;
+    /** The envelope's stored page sizes, which fields were placed against. */
+    pages: readonly StoredPageSize[];
     signers: SignerRecord[];
     sourcePdfKey: string;
   },
@@ -1420,15 +1424,25 @@ export async function renderFinalizedEnvelopePdf(
     },
   );
   const imageCache = new Map<string, PDFImage>();
+  const storedPages = new Map(
+    input.pages.map((page) => [page.pageNumber, page]),
+  );
 
-  for (const field of stampedFields) {
-    const page = pdfDocument.getPage(field.page - 1);
+  for (const placedField of stampedFields) {
+    const page = pdfDocument.getPage(placedField.page - 1);
 
     if (!page) {
       throw new PdfFinalizeError(
-        `Field ${field.id} references missing page ${field.page}.`,
+        `Field ${placedField.id} references missing page ${placedField.page}.`,
       );
     }
+
+    const geometry = getDisplayedPageGeometry(page);
+    const field = fieldOnDisplayedPage(
+      placedField,
+      storedPages.get(placedField.page),
+      geometry,
+    );
 
     await stampFieldValue(
       field,
@@ -1437,6 +1451,7 @@ export async function renderFinalizedEnvelopePdf(
       imageCache,
       pdfDocument,
       storageService,
+      geometry,
     );
 
     const manifestation =
@@ -1479,6 +1494,7 @@ export async function finalizeEnvelope(
     copyRecipients?: readonly CertificateCopyRecipient[];
     envelope: EnvelopeRecord;
     fields: FieldRecord[];
+    pages: readonly StoredPageSize[];
     signers: SignerRecord[];
     sourcePdf: StorageObjectRef;
   },
@@ -1509,6 +1525,7 @@ export async function finalizeEnvelope(
           copyRecipients: input.copyRecipients,
           envelope: input.envelope,
           fields: input.fields,
+          pages: input.pages,
           signers: input.signers,
           sourcePdfKey: input.sourcePdf.key,
         },

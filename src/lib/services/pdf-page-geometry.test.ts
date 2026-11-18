@@ -16,6 +16,10 @@ import type { FieldRecord } from "../schemas/field.ts";
 import type { SignerRecord } from "../schemas/signer.ts";
 import { importPdfDocument } from "./document-import.ts";
 import { renderFinalizedEnvelopePdf } from "./pdf-finalize.ts";
+import {
+  fieldOnDisplayedPage,
+  type StoredPageSize,
+} from "./pdf-page-geometry.ts";
 import { prepareRevisionZero, prepareSignerRevision } from "./pdf-revision.ts";
 import { sha256Hex } from "./pdf-seal.ts";
 import type { StorageService } from "./storage.ts";
@@ -147,9 +151,21 @@ function field(overrides: Partial<FieldRecord>): FieldRecord {
   } as FieldRecord;
 }
 
+/** The stored size of an envelope imported since sizes are read as shown. */
+function shownSize(pageCase: PageCase): StoredPageSize[] {
+  return [
+    {
+      heightPt: pageCase.displayed.height,
+      pageNumber: 1,
+      widthPt: pageCase.displayed.width,
+    },
+  ];
+}
+
 async function finalize(
   sourcePdf: Uint8Array,
   fields: FieldRecord[],
+  pages: StoredPageSize[],
 ): Promise<Uint8Array> {
   const envelope: EnvelopeRecord = {
     completedAt: now,
@@ -196,6 +212,7 @@ async function finalize(
       completedAt: now,
       envelope,
       fields,
+      pages,
       signers,
       sourcePdfKey: envelope.sourcePdfKey,
     },
@@ -383,9 +400,11 @@ for (const pageCase of PAGE_CASES) {
 
   test(`a value is stamped where its field was placed on ${pageCase.name}`, async () => {
     const source = await makeSource(pageCase);
-    const pdfBytes = await finalize(source, [
-      field({ id: "field-1", value: VALUE }),
-    ]);
+    const pdfBytes = await finalize(
+      source,
+      [field({ id: "field-1", value: VALUE })],
+      shownSize(pageCase),
+    );
     const placed = await findText(pdfBytes, VALUE);
 
     assert.ok(placed, "the value was not found on the page");
@@ -407,6 +426,7 @@ for (const pageCase of PAGE_CASES) {
           }),
         ],
         images: new Map(),
+        pages: shownSize(pageCase),
         signature: {
           fieldName: "Alice Example (signer 1)",
           signingTime: new Date(now * 1000),
@@ -465,3 +485,134 @@ for (const pageCase of PAGE_CASES) {
     }
   });
 }
+
+// Envelopes imported before page sizes were read as shown stored the raw
+// MediaBox. The sender placed fields on a box of that shape, with the shown
+// page drawn in it as large as fits, centred. These tests place the field
+// where FIELD_RECT is on the page drawn in that box, and check that it is
+// stamped there.
+
+/** The raw MediaBox size, as envelopes imported before stored it. */
+function mediaBoxSize(pageCase: PageCase): StoredPageSize[] {
+  const [left, bottom, right, top] = pageCase.mediaBox;
+
+  return [{ heightPt: top - bottom, pageNumber: 1, widthPt: right - left }];
+}
+
+/** Where FIELD_RECT on the shown page is on a box of the stored shape. */
+function placedOnStoredBox(pageCase: PageCase) {
+  const [stored] = mediaBoxSize(pageCase);
+  const { height, width } = pageCase.displayed;
+  const scale = Math.min(stored!.widthPt / width, stored!.heightPt / height);
+  const drawnWidth = (scale * width) / stored!.widthPt;
+  const drawnHeight = (scale * height) / stored!.heightPt;
+
+  return {
+    height: FIELD_RECT.height * drawnHeight,
+    width: FIELD_RECT.width * drawnWidth,
+    x: (1 - drawnWidth) / 2 + FIELD_RECT.x * drawnWidth,
+    y: (1 - drawnHeight) / 2 + FIELD_RECT.y * drawnHeight,
+  };
+}
+
+for (const pageCase of PAGE_CASES) {
+  test(`on ${pageCase.name} imported before sizes were read as shown, a value is stamped where its field was placed`, async () => {
+    const source = await makeSource(pageCase);
+    const pdfBytes = await finalize(
+      source,
+      [field({ ...placedOnStoredBox(pageCase), id: "field-1", value: VALUE })],
+      mediaBoxSize(pageCase),
+    );
+    const placed = await findText(pdfBytes, VALUE);
+
+    assert.ok(placed, "the value was not found on the page");
+    assertShownInField(placed, pageCase);
+  });
+
+  test(`on ${pageCase.name} imported before sizes were read as shown, a signer's revision puts its annotation over the field`, async () => {
+    const source = await makeSource(pageCase);
+    const revision = await prepareSignerRevision(
+      await prepareRevisionZero(source),
+      {
+        fields: [
+          field({
+            ...placedOnStoredBox(pageCase),
+            id: "field-1",
+            value: VALUE,
+          }),
+        ],
+        images: new Map(),
+        pages: mediaBoxSize(pageCase),
+        signature: {
+          fieldName: "Alice Example (signer 1)",
+          signingTime: new Date(now * 1000),
+        },
+      },
+    );
+    const document = await PDFDocument.load(revision.bytes);
+    const [annotation] = document
+      .getPage(0)
+      .node.Annots()!
+      .asArray()
+      .map((ref) => document.context.lookup(ref, PDFDict));
+
+    assertClose(
+      annotation!
+        .lookup(PDFName.of("Rect"), PDFArray)
+        .asArray()
+        .map((entry) => Number(entry.toString())),
+      pageCase.fieldBox,
+    );
+
+    const placed = await findText(
+      await showAppearanceAlone(revision.bytes, 0),
+      VALUE,
+    );
+
+    assert.ok(placed, "the annotation does not show the value");
+    assertShownInField(placed, pageCase);
+  });
+}
+
+test("a field on a page stored at the shape it is shown keeps its place", () => {
+  const rect = { height: 0.1, width: 0.5, x: 0.1, y: 0.05 };
+
+  // Same shape, other scale, as when a CropBox keeps the page's proportions.
+  assert.equal(
+    fieldOnDisplayedPage(
+      rect,
+      { heightPt: 800, widthPt: 600 },
+      { heightPt: 400, widthPt: 300 },
+    ),
+    rect,
+  );
+  // Sizes as Postgres stores them, a little off in the last digits.
+  assert.equal(
+    fieldOnDisplayedPage(
+      rect,
+      { heightPt: 841.8900146484375, widthPt: 595.2760009765625 },
+      { heightPt: 841.89, widthPt: 595.276 },
+    ),
+    rect,
+  );
+  // No stored size: nothing to correct against.
+  assert.equal(
+    fieldOnDisplayedPage(rect, undefined, { heightPt: 600, widthPt: 800 }),
+    rect,
+  );
+});
+
+test("a field placed on a portrait box over a landscape page moves to the page", () => {
+  // A 600 x 800 box shows an 800 x 600 page at 600 x 450, 175 down from the
+  // top: the page's top is at 0.21875 of the box, and it fills 0.5625 of it.
+  const moved = fieldOnDisplayedPage(
+    { height: 0.05625, width: 0.5, x: 0.1, y: 0.21875 + 0.05 * 0.5625 },
+    { heightPt: 800, widthPt: 600 },
+    { heightPt: 600, widthPt: 800 },
+  );
+
+  assertClose(
+    [moved.x, moved.y, moved.width, moved.height],
+    [0.1, 0.05, 0.5, 0.1],
+  );
+});

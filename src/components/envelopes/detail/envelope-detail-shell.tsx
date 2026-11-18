@@ -23,13 +23,20 @@ import {
   CorrectSignerTray,
   type CorrectableSigner,
 } from "./trays/correct-signer-tray";
-import { DeleteDraftTray, VoidEnvelopeTray } from "./trays/danger-trays";
+import {
+  DeleteDraftTray,
+  DeleteFinishedTray,
+  VoidEnvelopeTray,
+} from "./trays/danger-trays";
+import { DeleteFinishedRow } from "./delete-finished-row";
 import { DeadlineTray } from "./trays/deadline-tray";
 import { RemindersTray } from "./trays/reminders-tray";
 import type { TrayName } from "./trays/tray-name";
 import { useEnvelopeActions } from "./use-envelope-actions";
 
 type EnvelopeDetailShellProps = {
+  /** An administrator may delete a finished envelope. */
+  canDeleteFinished?: boolean;
   envelopeId: string;
   initialState?: "error" | "not-found";
   /** When the page was rendered (ms): one clock for server and browser. */
@@ -55,6 +62,7 @@ type EnvelopeDetailShellProps = {
  * Every management action opens its own tray with one task.
  */
 export function EnvelopeDetailShell({
+  canDeleteFinished = false,
   envelopeId,
   initialState,
   now,
@@ -68,14 +76,23 @@ export function EnvelopeDetailShell({
     return <DetailUnavailable kind="error" />;
   }
 
-  return <EnvelopeDetail envelopeId={envelopeId} now={now} record={record} />;
+  return (
+    <EnvelopeDetail
+      canDeleteFinished={canDeleteFinished}
+      envelopeId={envelopeId}
+      now={now}
+      record={record}
+    />
+  );
 }
 
 function EnvelopeDetail({
+  canDeleteFinished,
   envelopeId,
   now: providedNow,
   record,
 }: {
+  canDeleteFinished: boolean;
   envelopeId: string;
   now?: number;
   record: EnvelopeDetailData;
@@ -109,6 +126,9 @@ function EnvelopeDetail({
   const source = useEnvelopePdf(model, isLarge || hasOpenedDocument);
   const status = record.status;
   const suggestTemplate = status === "completed" && record.signers.length > 0;
+  const showDeleteFinished =
+    canDeleteFinished &&
+    (status === "completed" || status === "declined" || status === "voided");
 
   const trayProps = (name: Exclude<TrayName, null>) => ({
     onOpenChange: (open: boolean) => setOpenTray(open ? name : null),
@@ -195,6 +215,12 @@ function EnvelopeDetail({
             model={model}
             onExport={actions.exportAuditTrail}
           />
+
+          {showDeleteFinished ? (
+            <DeleteFinishedRow
+              onDelete={() => setOpenTray("delete-finished")}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -235,6 +261,14 @@ function EnvelopeDetail({
             reasonRequired={record.part11}
           />
         </>
+      ) : null}
+
+      {showDeleteFinished ? (
+        <DeleteFinishedTray
+          {...trayProps("delete-finished")}
+          onConfirm={actions.deleteFinished}
+          reasonRequired={record.part11}
+        />
       ) : null}
 
       {status === "draft" ? (

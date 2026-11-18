@@ -201,6 +201,7 @@ export async function startProviderSigning(
   const revision = await prepareSignerRevision(base, {
     fields: prepared.signerFields,
     images: prepared.images,
+    pages: context.pages,
     signature: {
       fieldName: signatureFieldName(signer.name, prepared.signerIndex),
       name: signer.name,

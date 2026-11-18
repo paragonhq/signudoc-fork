@@ -2822,6 +2822,7 @@ export async function submitSigningForToken(
             copyRecipients,
             envelope: context.envelope,
             fields: completedFields,
+            pages: context.pages,
             signers: completedSigners,
             sourcePdf: {
               bucketName: sourcePdfHead.bucketName,

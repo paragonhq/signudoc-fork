@@ -1348,6 +1348,36 @@ test("a signer who declines is told the decline was recorded, not that the link 
       ),
     ).toBeVisible();
   });
+
+  await test.step("the administrator deletes the declined envelope for good", async () => {
+    await page.getByRole("button", { name: "Delete envelope" }).click();
+
+    const confirm = page.getByRole("dialog", {
+      name: "Delete this envelope?",
+    });
+
+    await confirm.getByLabel("Reason (optional)").fill("Never agreed.");
+    await confirm.getByRole("button", { name: "Delete envelope" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+
+    await page.goto(`/envelopes/${envelopeId}`);
+    await expect(
+      page.getByRole("heading", { name: "This envelope is unavailable" }),
+    ).toBeVisible();
+
+    // The deletion itself stays on record in the install's audit trail.
+    const audit = await page.request.get("/api/admin/audit");
+    const { events } = (await audit.json()) as {
+      events: { event: string; metadata: Record<string, unknown> | null }[];
+    };
+    const deletion = events.find((event) => event.event === "envelope_deleted");
+
+    expect(deletion?.metadata).toMatchObject({
+      envelopeId,
+      reason: "Never agreed.",
+      status: "declined",
+    });
+  });
 });
 
 test("two-step sign-in: an administrator sets it up and requires it of everyone", async ({

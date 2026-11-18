@@ -182,3 +182,66 @@ export function displayedRectToUserSpaceBox(
     top: Math.max(...ys),
   };
 }
+
+/** A page's size as stored with its envelope, which the field overlay uses. */
+export type StoredPageSize = {
+  heightPt: number;
+  pageNumber: number;
+  widthPt: number;
+};
+
+/**
+ * A field's place on the shown page, from its place on the stored page.
+ *
+ * Fields are placed on a box laid out to the page's stored size, with the
+ * shown page drawn in it as large as fits, centred. Envelopes made before
+ * page sizes were read as shown stored the raw MediaBox, so on a rotated or
+ * cropped page the box has another shape than the page in it, and the page
+ * sits inside it with a margin. This turns the field's place on that box
+ * into its place on the page, so it is stamped where the sender saw it.
+ *
+ * When the box has the page's shape, which is every page imported since,
+ * the field is returned as it is.
+ */
+export function fieldOnDisplayedPage<
+  Rect extends { height: number; width: number; x: number; y: number },
+>(
+  rect: Rect,
+  stored: Pick<StoredPageSize, "heightPt" | "widthPt"> | undefined,
+  geometry: Pick<DisplayedPageGeometry, "heightPt" | "widthPt">,
+): Rect {
+  if (
+    !stored ||
+    !(stored.widthPt > 0) ||
+    !(stored.heightPt > 0) ||
+    !(geometry.widthPt > 0) ||
+    !(geometry.heightPt > 0)
+  ) {
+    return rect;
+  }
+
+  const boxAspect = stored.widthPt / stored.heightPt;
+  const pageAspect = geometry.widthPt / geometry.heightPt;
+
+  if (Math.abs(boxAspect - pageAspect) <= 1e-6 * pageAspect) {
+    return rect;
+  }
+
+  // Measured in units of the box: the page drawn in it, and its margins.
+  const scale = Math.min(
+    stored.widthPt / geometry.widthPt,
+    stored.heightPt / geometry.heightPt,
+  );
+  const drawnWidth = (scale * geometry.widthPt) / stored.widthPt;
+  const drawnHeight = (scale * geometry.heightPt) / stored.heightPt;
+  const left = (1 - drawnWidth) / 2;
+  const top = (1 - drawnHeight) / 2;
+
+  return {
+    ...rect,
+    height: rect.height / drawnHeight,
+    width: rect.width / drawnWidth,
+    x: (rect.x - left) / drawnWidth,
+    y: (rect.y - top) / drawnHeight,
+  };
+}

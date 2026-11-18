@@ -42,6 +42,7 @@ export const systemAuditEventTypes = [
   "two_factor_requirement_changed",
   "logo_changed",
   "email_domain_changed",
+  "envelope_deleted",
 ] as const;
 
 export type SystemAuditEventType = (typeof systemAuditEventTypes)[number];

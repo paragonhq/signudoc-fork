@@ -4,6 +4,7 @@ export type TrayName =
   | "correct"
   | "deadline"
   | "delete"
+  | "delete-finished"
   | "reminders"
   | "template"
   | "void"

@@ -22,6 +22,7 @@ import {
   renderEnvelopeCertificatePdf,
   renderFinalizedEnvelopePdf,
 } from "./services/pdf-finalize.ts";
+import type { StoredPageSize } from "./services/pdf-page-geometry.ts";
 import {
   createStorageService,
   StorageObjectNotFoundError,
@@ -486,6 +487,25 @@ async function listFieldsForEnvelope(
   return rows.map(mapFieldRow);
 }
 
+async function listPageSizesForEnvelope(
+  envelopeId: string,
+  database: DbExecutor,
+): Promise<StoredPageSize[]> {
+  return queryMany<StoredPageSize>(
+    database,
+    `
+      SELECT
+        page_number AS "pageNumber",
+        width_pt AS "widthPt",
+        height_pt AS "heightPt"
+      FROM envelope_pages
+      WHERE envelope_id = $1
+      ORDER BY page_number ASC
+    `,
+    [envelopeId],
+  );
+}
+
 export function sanitizeFileNameSegment(value: string): string {
   return value
     .trim()
@@ -561,9 +581,10 @@ async function buildSignedPdfDownload(
     throw new DownloadAccessError("This file is no longer available.", 404);
   }
 
-  const [auditEvents, fields, signers] = await Promise.all([
+  const [auditEvents, fields, pages, signers] = await Promise.all([
     listAuditEventsForEnvelope(envelope.id, database),
     listFieldsForEnvelope(envelope.id, database),
+    listPageSizesForEnvelope(envelope.id, database),
     listSignersForEnvelope(envelope.id, database),
   ]);
   let body: Uint8Array;
@@ -575,6 +596,7 @@ async function buildSignedPdfDownload(
         completedAt: envelope.completedAt,
         envelope,
         fields,
+        pages,
         signers,
         sourcePdfKey: envelope.sourcePdfKey,
       },

@@ -53,6 +53,7 @@ const EVENT_LABELS: Record<SystemAuditEvent["event"], string> = {
   account_closure_requested: "Account closure requested",
   account_deleted: "Account deleted",
   email_domain_changed: "Email domain changed",
+  envelope_deleted: "Finished envelope deleted",
   identity_verification_revoked: "Identity confirmation taken back",
   identity_verified: "Identity confirmed",
   logo_changed: "Logo changed",
@@ -105,6 +106,7 @@ const CHANGE_EVENTS = new Set<SystemAuditEvent["event"]>([
 const WARNING_EVENTS = new Set<SystemAuditEvent["event"]>([
   "account_closure_requested",
   "account_deleted",
+  "envelope_deleted",
   "reauthentication_failed",
   "sign_in_failed",
   "sign_in_locked",
@@ -129,6 +131,16 @@ function describeEvent(event: SystemAuditEvent): string {
       : null;
 
   switch (event.event) {
+    case "envelope_deleted":
+      return [
+        typeof metadata.title === "string" ? `"${metadata.title}"` : null,
+        typeof metadata.status === "string" ? metadata.status : null,
+        typeof metadata.reason === "string" && metadata.reason
+          ? metadata.reason
+          : null,
+      ]
+        .filter(Boolean)
+        .join(", ");
     case "part11_mode_changed":
     case "two_factor_requirement_changed":
       return metadata.to === true ? "Turned on" : "Turned off";
