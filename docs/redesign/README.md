@@ -54,7 +54,7 @@ White-label rule: an install's logo and colour replace Ink violet and the
 plate in the chrome its signers see. The texture, type, Tab yellow and seal
 stay: they are SignuDoc's, and they are what make a document feel sealed.
 
-## Principles (Paragon design engineering)
+## Principles
 
 1. **Gradual revelation.** The basics in reach, everything else appears when
    it becomes relevant. Trays and inspectors, not walls of settings.
