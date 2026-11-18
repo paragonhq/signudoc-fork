@@ -14,11 +14,17 @@ function inline(text: string) {
     return `\u0000${codes.length - 1}\u0000`;
   });
   html = html
-    .replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (_, alt: string, src: string) =>
-      /^https:\/\//.test(src) ? `<img alt="${alt}" src="${src}">` : alt,
+    .replace(
+      /!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g,
+      (_, alt: string, src: string) =>
+        /^https:\/\//.test(src) ? `<img alt="${alt}" src="${src}">` : alt,
     )
-    .replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g, (_, label: string, href: string) =>
-      /^(https?:|mailto:|tel:)/i.test(href) ? `<a href="${href}">${label}</a>` : label,
+    .replace(
+      /\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g,
+      (_, label: string, href: string) =>
+        /^(https?:|mailto:|tel:)/i.test(href)
+          ? `<a href="${href}">${label}</a>`
+          : label,
     )
     .replace(/\*\*\*([^*]+)\*\*\*/g, "<strong><em>$1</em></strong>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
@@ -28,10 +34,19 @@ function inline(text: string) {
     .replace(/~~([^~]+)~~/g, "<s>$1</s>")
     .replace(/ {2,}$/g, "<br>");
 
-  return html.replace(/\u0000(\d+)\u0000/g, (_, index: string) => codes[Number(index)]);
+  return html.replace(
+    /\u0000(\d+)\u0000/g,
+    (_, index: string) => codes[Number(index)],
+  );
 }
 
-type ListItem = { checked?: boolean; indent: number; ordered: boolean; start: number; text: string };
+type ListItem = {
+  checked?: boolean;
+  indent: number;
+  ordered: boolean;
+  start: number;
+  text: string;
+};
 
 function renderList(items: ListItem[]) {
   let out = "";
@@ -48,13 +63,16 @@ function renderList(items: ListItem[]) {
     if (top && top.indent === item.indent) {
       out += "</li>";
     } else {
-      const checklist = item.checked !== undefined ? ' data-type="checklist"' : "";
-      const start = item.ordered && item.start > 1 ? ` start="${item.start}"` : "";
+      const checklist =
+        item.checked !== undefined ? ' data-type="checklist"' : "";
+      const start =
+        item.ordered && item.start > 1 ? ` start="${item.start}"` : "";
       out += `<${tag}${checklist}${start}>`;
       stack.push({ indent: item.indent, tag });
     }
 
-    const checked = item.checked === undefined ? "" : ` data-checked="${item.checked}"`;
+    const checked =
+      item.checked === undefined ? "" : ` data-checked="${item.checked}"`;
     out += `<li${checked}>${inline(item.text)}`;
   }
 
@@ -94,7 +112,10 @@ export function markdownToHtml(markdown: string) {
       flushList();
       const code: string[] = [];
       index += 1;
-      while (index < lines.length && !lines[index].trim().startsWith(fence[1])) {
+      while (
+        index < lines.length &&
+        !lines[index].trim().startsWith(fence[1])
+      ) {
         code.push(lines[index]);
         index += 1;
       }
@@ -107,7 +128,9 @@ export function markdownToHtml(markdown: string) {
     if (heading) {
       flushParagraph();
       flushList();
-      out.push(`<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`);
+      out.push(
+        `<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`,
+      );
       index += 1;
       continue;
     }
@@ -124,7 +147,8 @@ export function markdownToHtml(markdown: string) {
     if (item) {
       flushParagraph();
       list.push({
-        checked: item[5] === undefined ? undefined : item[5].toLowerCase() === "x",
+        checked:
+          item[5] === undefined ? undefined : item[5].toLowerCase() === "x",
         indent: item[1].replace(/\t/g, "    ").length,
         ordered: !!item[3],
         start: item[3] ? Number.parseInt(item[3], 10) : 1,
@@ -146,15 +170,26 @@ export function markdownToHtml(markdown: string) {
       continue;
     }
 
-    if (/^\s*\|.*\|\s*$/.test(line) && /^\s*\|?\s*:?-{2,}/.test(lines[index + 1] ?? "")) {
+    if (
+      /^\s*\|.*\|\s*$/.test(line) &&
+      /^\s*\|?\s*:?-{2,}/.test(lines[index + 1] ?? "")
+    ) {
       flushParagraph();
       flushList();
       const cells = (row: string) =>
-        row.trim().replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim());
-      let table = `<table><tbody><tr>${cells(line).map((cell) => `<th><p>${inline(cell)}</p></th>`).join("")}</tr>`;
+        row
+          .trim()
+          .replace(/^\||\|$/g, "")
+          .split("|")
+          .map((cell) => cell.trim());
+      let table = `<table><tbody><tr>${cells(line)
+        .map((cell) => `<th><p>${inline(cell)}</p></th>`)
+        .join("")}</tr>`;
       index += 2;
       while (index < lines.length && /^\s*\|.*\|\s*$/.test(lines[index])) {
-        table += `<tr>${cells(lines[index]).map((cell) => `<td><p>${inline(cell)}</p></td>`).join("")}</tr>`;
+        table += `<tr>${cells(lines[index])
+          .map((cell) => `<td><p>${inline(cell)}</p></td>`)
+          .join("")}</tr>`;
         index += 1;
       }
       out.push(`${table}</tbody></table>`);

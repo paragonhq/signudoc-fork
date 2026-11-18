@@ -17,7 +17,9 @@ export function readComposerDraft(key: string): Stored | null {
     const raw = window.localStorage.getItem(storageName(key));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Stored;
-    return typeof parsed.html === "string" && isPageSetup(parsed.page) ? parsed : null;
+    return typeof parsed.html === "string" && isPageSetup(parsed.page)
+      ? parsed
+      : null;
   } catch {
     return null;
   }
@@ -25,7 +27,10 @@ export function readComposerDraft(key: string): Stored | null {
 
 export function writeComposerDraft(key: string, value: ComposerSource) {
   try {
-    window.localStorage.setItem(storageName(key), JSON.stringify({ ...value, savedAt: Date.now() }));
+    window.localStorage.setItem(
+      storageName(key),
+      JSON.stringify({ ...value, savedAt: Date.now() }),
+    );
     return true;
   } catch {
     return false;

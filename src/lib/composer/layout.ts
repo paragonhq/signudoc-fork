@@ -35,11 +35,51 @@ export type TextStyle = {
 };
 
 export type LayoutItem =
-  | { kind: "text"; baseline: number; height: number; style: TextStyle; text: string; width: number; x: number; y: number }
-  | { kind: "image"; height: number; src: string; width: number; x: number; y: number }
-  | { kind: "fill"; color: Rgba; height: number; width: number; x: number; y: number }
-  | { kind: "marker"; baseline: number; height: number; marker: string; style: TextStyle; width: number; x: number; y: number }
-  | { checked: boolean; kind: "checkbox"; height: number; size: number; width: number; x: number; y: number };
+  | {
+      kind: "text";
+      baseline: number;
+      height: number;
+      style: TextStyle;
+      text: string;
+      width: number;
+      x: number;
+      y: number;
+    }
+  | {
+      kind: "image";
+      height: number;
+      src: string;
+      width: number;
+      x: number;
+      y: number;
+    }
+  | {
+      kind: "fill";
+      color: Rgba;
+      height: number;
+      width: number;
+      x: number;
+      y: number;
+    }
+  | {
+      kind: "marker";
+      baseline: number;
+      height: number;
+      marker: string;
+      style: TextStyle;
+      width: number;
+      x: number;
+      y: number;
+    }
+  | {
+      checked: boolean;
+      kind: "checkbox";
+      height: number;
+      size: number;
+      width: number;
+      x: number;
+      y: number;
+    };
 
 /** A block's background and borders: split across pages when it spans them. */
 export type LayoutBox = {
@@ -66,7 +106,15 @@ export type Measured = {
 };
 
 export type PagedItem = LayoutItem & { page: number };
-export type PagedBox = { borders: LayoutBox["borders"]; fill: Rgba | null; height: number; page: number; width: number; x: number; y: number };
+export type PagedBox = {
+  borders: LayoutBox["borders"];
+  fill: Rgba | null;
+  height: number;
+  page: number;
+  width: number;
+  x: number;
+  y: number;
+};
 
 export type Paginated = {
   boxes: PagedBox[];
@@ -76,18 +124,39 @@ export type Paginated = {
   pageStarts: number[];
 };
 
-const LEAF_BLOCKS = new Set(["P", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "PRE", "TD", "TH", "BLOCKQUOTE"]);
+const LEAF_BLOCKS = new Set([
+  "P",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "H6",
+  "LI",
+  "PRE",
+  "TD",
+  "TH",
+  "BLOCKQUOTE",
+]);
 const PT_TO_PX = 4 / 3;
 
 export function parseColor(value: string): Rgba | null {
-  const match = /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)/.exec(value);
+  const match =
+    /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)/.exec(
+      value,
+    );
 
   if (!match) return null;
   let alpha = match[4] === undefined ? 1 : Number.parseFloat(match[4]);
   if (match[4]?.endsWith("%")) alpha /= 100;
   if (alpha <= 0.001) return null;
 
-  return { a: alpha, b: Number(match[3]) / 255, g: Number(match[2]) / 255, r: Number(match[1]) / 255 };
+  return {
+    a: alpha,
+    b: Number(match[3]) / 255,
+    g: Number(match[2]) / 255,
+    r: Number(match[1]) / 255,
+  };
 }
 
 function availableFace(font: ComposerFont, bold: boolean, italic: boolean) {
@@ -98,7 +167,8 @@ function availableFace(font: ComposerFont, bold: boolean, italic: boolean) {
   }
 
   const upright = fontFaceKey(bold, false);
-  if (italic && font.faces?.includes(upright)) return { face: upright, synthItalic: true };
+  if (italic && font.faces?.includes(upright))
+    return { face: upright, synthItalic: true };
   if (bold && font.faces?.includes(fontFaceKey(false, italic))) {
     return { face: fontFaceKey(false, italic), synthItalic: false };
   }
@@ -154,7 +224,10 @@ function outermostRow(element: Element, root: Element) {
  * Reads the laid-out document. With `words`, every word is measured (for
  * the PDF); without, whole text runs (enough for page boundaries).
  */
-export function measureDocument(root: HTMLElement, options: { scale?: number; words: boolean }): Measured {
+export function measureDocument(
+  root: HTMLElement,
+  options: { scale?: number; words: boolean },
+): Measured {
   const scale = options.scale ?? 1;
   const origin = root.getBoundingClientRect();
   const items: LayoutItem[] = [];
@@ -205,20 +278,30 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
     const italic = cs.fontStyle !== "normal";
     const sizePx = Number.parseFloat(cs.fontSize);
     const { face, synthItalic } = availableFace(font, bold, italic);
-    const metrics = fontMetrics(`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`, sizePx);
+    const metrics = fontMetrics(
+      `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`,
+      sizePx,
+    );
     const block = leafBlockOf(element, root);
     let underline: Rgba | null = null;
     let strike: Rgba | null = null;
     let highlight: Rgba | null = null;
 
-    for (let current: Element | null = element; current; current = current.parentElement) {
+    for (
+      let current: Element | null = element;
+      current;
+      current = current.parentElement
+    ) {
       const s = current === element ? cs : getComputedStyle(current);
       const lines = s.textDecorationLine;
-      const decorationColor = parseColor(s.textDecorationColor) ?? parseColor(s.color);
-      if (!underline && lines.includes("underline")) underline = decorationColor;
+      const decorationColor =
+        parseColor(s.textDecorationColor) ?? parseColor(s.color);
+      if (!underline && lines.includes("underline"))
+        underline = decorationColor;
       if (!strike && lines.includes("line-through")) strike = decorationColor;
       if (current === block || current === root) break;
-      if (!highlight && s.display.startsWith("inline")) highlight = parseColor(s.backgroundColor);
+      if (!highlight && s.display.startsWith("inline"))
+        highlight = parseColor(s.backgroundColor);
     }
 
     const style: TextStyle = {
@@ -238,19 +321,40 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
     return style;
   };
 
-  const addText = (text: string, rect: DOMRect, style: TextStyle, host: Element) => {
+  const addText = (
+    text: string,
+    rect: DOMRect,
+    style: TextStyle,
+    host: Element,
+  ) => {
     const r = rel(rect);
     if (r.width <= 0 && r.height <= 0) return;
     // The baseline: the text box is the font's ascent + descent, centred
     // the same way the browser centres it.
     const contentHeight = style.ascentPx + style.descentPx;
     const baseline = r.top + (r.height - contentHeight) / 2 + style.ascentPx;
-    place({ baseline, height: r.height, kind: "text", style, text, width: r.width, x: r.left, y: r.top }, host);
+    place(
+      {
+        baseline,
+        height: r.height,
+        kind: "text",
+        style,
+        text,
+        width: r.width,
+        x: r.left,
+        y: r.top,
+      },
+      host,
+    );
   };
 
   // ── Text ──
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+  for (
+    let node = walker.nextNode() as Text | null;
+    node;
+    node = walker.nextNode() as Text | null
+  ) {
     const host = node.parentElement;
     if (!host || !node.data) continue;
     if (host.closest("hr")) continue;
@@ -269,7 +373,8 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
       range.selectNodeContents(node);
       for (const rect of Array.from(range.getClientRects())) {
         const r = rel(rect);
-        if (r.height > 0) atoms.push({ bottom: r.bottom, items: [], top: r.top });
+        if (r.height > 0)
+          atoms.push({ bottom: r.bottom, items: [], top: r.top });
       }
       continue;
     }
@@ -284,7 +389,9 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
       const word = raw.replace(/[\s ]+$/, "");
       range.setStart(node, start);
       range.setEnd(node, start + raw.length);
-      const rects = Array.from(range.getClientRects()).filter((rect) => rect.height > 0);
+      const rects = Array.from(range.getClientRects()).filter(
+        (rect) => rect.height > 0,
+      );
 
       if (rects.length === 0) continue;
 
@@ -303,9 +410,15 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
         const rect = range.getBoundingClientRect();
         if (segmentRect && Math.abs(rect.top - segmentRect.top) < 1) {
           segment += word[i];
-          segmentRect = new DOMRect(segmentRect.left, segmentRect.top, rect.right - segmentRect.left, Math.max(segmentRect.height, rect.height));
+          segmentRect = new DOMRect(
+            segmentRect.left,
+            segmentRect.top,
+            rect.right - segmentRect.left,
+            Math.max(segmentRect.height, rect.height),
+          );
         } else {
-          if (segmentRect && segment) addText(segment, segmentRect, style, host);
+          if (segmentRect && segment)
+            addText(segment, segmentRect, style, host);
           segment = word[i];
           segmentRect = rect;
         }
@@ -328,7 +441,17 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
       const width = Number.parseFloat(cs.borderTopWidth);
       const color = parseColor(cs.borderTopColor);
       if (width > 0 && color && cs.borderTopStyle !== "none") {
-        place({ color, height: width, kind: "fill", width: r.width, x: r.left, y: r.top }, element);
+        place(
+          {
+            color,
+            height: width,
+            kind: "fill",
+            width: r.width,
+            x: r.left,
+            y: r.top,
+          },
+          element,
+        );
       }
       continue;
     }
@@ -337,7 +460,17 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
       const image = element as HTMLImageElement;
       const r = rel(image.getBoundingClientRect());
       if (r.width > 0 && r.height > 0 && image.src) {
-        place({ height: r.height, kind: "image", src: image.currentSrc || image.src, width: r.width, x: r.left, y: r.top }, element);
+        place(
+          {
+            height: r.height,
+            kind: "image",
+            src: image.currentSrc || image.src,
+            width: r.width,
+            x: r.left,
+            y: r.top,
+          },
+          element,
+        );
       }
       continue;
     }
@@ -352,7 +485,9 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
       const borders: LayoutBox["borders"] = {};
       for (const side of ["top", "right", "bottom", "left"] as const) {
         const style = cs.getPropertyValue(`border-${side}-style`);
-        const width = Number.parseFloat(cs.getPropertyValue(`border-${side}-width`));
+        const width = Number.parseFloat(
+          cs.getPropertyValue(`border-${side}-width`),
+        );
         const color = parseColor(cs.getPropertyValue(`border-${side}-color`));
         if (width > 0 && color && style !== "none" && style !== "hidden") {
           borders[side] = { color, width };
@@ -361,7 +496,14 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
 
       if (fill || Object.keys(borders).length) {
         const r = rel(element.getBoundingClientRect());
-        boxes.push({ borders, bottom: r.bottom, fill, left: r.left, right: r.right, top: r.top });
+        boxes.push({
+          borders,
+          bottom: r.bottom,
+          fill,
+          left: r.left,
+          right: r.right,
+          top: r.top,
+        });
       }
     }
 
@@ -384,8 +526,19 @@ export function measureDocument(root: HTMLElement, options: { scale?: number; wo
 
 function toRoman(n: number) {
   const numerals: Array<[number, string]> = [
-    [1000, "m"], [900, "cm"], [500, "d"], [400, "cd"], [100, "c"], [90, "xc"],
-    [50, "l"], [40, "xl"], [10, "x"], [9, "ix"], [5, "v"], [4, "iv"], [1, "i"],
+    [1000, "m"],
+    [900, "cm"],
+    [500, "d"],
+    [400, "cd"],
+    [100, "c"],
+    [90, "xc"],
+    [50, "l"],
+    [40, "xl"],
+    [10, "x"],
+    [9, "ix"],
+    [5, "v"],
+    [4, "iv"],
+    [1, "i"],
   ];
   let out = "";
   for (const [value, numeral] of numerals) {
@@ -438,7 +591,14 @@ function addListMarker(
   li: HTMLLIElement,
   cs: CSSStyleDeclaration,
   styleOf: (element: Element) => TextStyle,
-  rel: (rect: DOMRect) => { left: number; top: number; height: number; width: number; bottom: number; right: number },
+  rel: (rect: DOMRect) => {
+    left: number;
+    top: number;
+    height: number;
+    width: number;
+    bottom: number;
+    right: number;
+  },
   place: (item: LayoutItem, host: Element) => void,
   items: LayoutItem[],
 ) {
@@ -450,7 +610,18 @@ function addListMarker(
   if (list.getAttribute("data-type") === "checklist") {
     const size = CHECKBOX_SIZE_PT * PT_TO_PX;
     const y = r.top + 0.575 * style.sizePx - size / 2;
-    place({ checked: li.getAttribute("data-checked") === "true", height: size, kind: "checkbox", size, width: size, x: r.left - CHECKBOX_GAP_PT * PT_TO_PX, y }, li);
+    place(
+      {
+        checked: li.getAttribute("data-checked") === "true",
+        height: size,
+        kind: "checkbox",
+        size,
+        width: size,
+        x: r.left - CHECKBOX_GAP_PT * PT_TO_PX,
+        y,
+      },
+      li,
+    );
     return;
   }
 
@@ -461,7 +632,11 @@ function addListMarker(
   if (list.tagName === "OL") {
     const start = Number.parseInt(list.getAttribute("start") ?? "1", 10);
     index = Number.isFinite(start) ? start : 1;
-    for (let sibling = li.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+    for (
+      let sibling = li.previousElementSibling;
+      sibling;
+      sibling = sibling.previousElementSibling
+    ) {
       if (sibling.tagName === "LI") index += 1;
     }
   }
@@ -471,15 +646,34 @@ function addListMarker(
 
   // The first line of the item sets the marker's baseline.
   const firstText = items.find(
-    (item) => item.kind === "text" && item.text && item.y >= r.top - 1 && item.y < r.bottom,
+    (item) =>
+      item.kind === "text" &&
+      item.text &&
+      item.y >= r.top - 1 &&
+      item.y < r.bottom,
   ) as Extract<LayoutItem, { kind: "text" }> | undefined;
-  const baseline = firstText && Math.abs(firstText.y - r.top) < style.sizePx * 2
-    ? firstText.baseline
-    : r.top + (style.sizePx * 1.15 - (style.ascentPx + style.descentPx)) / 2 + style.ascentPx;
-  const markerStyle = firstText && Math.abs(firstText.y - r.top) < style.sizePx * 2 ? { ...firstText.style, highlight: null, strike: null, underline: null } : style;
+  const baseline =
+    firstText && Math.abs(firstText.y - r.top) < style.sizePx * 2
+      ? firstText.baseline
+      : r.top +
+        (style.sizePx * 1.15 - (style.ascentPx + style.descentPx)) / 2 +
+        style.ascentPx;
+  const markerStyle =
+    firstText && Math.abs(firstText.y - r.top) < style.sizePx * 2
+      ? { ...firstText.style, highlight: null, strike: null, underline: null }
+      : style;
 
   place(
-    { baseline, height: markerStyle.sizePx, kind: "marker", marker, style: markerStyle, width: 0, x: r.left, y: baseline - markerStyle.ascentPx },
+    {
+      baseline,
+      height: markerStyle.sizePx,
+      kind: "marker",
+      marker,
+      style: markerStyle,
+      width: 0,
+      x: r.left,
+      y: baseline - markerStyle.ascentPx,
+    },
     li,
   );
 }
@@ -488,7 +682,14 @@ function addListMarker(
  * Splits the measured column into pages `pageHeight` tall (CSS px).
  */
 export function paginate(measured: Measured, pageHeight: number): Paginated {
-  type Band = { bottom: number; break?: boolean; items: number[]; offset: number; page: number; top: number };
+  type Band = {
+    bottom: number;
+    break?: boolean;
+    items: number[];
+    offset: number;
+    page: number;
+    top: number;
+  };
   const EPS = 0.5;
   const sorted = [...measured.atoms].sort((a, b) => a.top - b.top);
   const bands: Band[] = [];
@@ -500,7 +701,14 @@ export function paginate(measured: Measured, pageHeight: number): Paginated {
   for (const atom of sorted) {
     while (breakQueue.length && breakQueue[0] <= atom.top) {
       const y = breakQueue.shift()!;
-      bands.push({ bottom: y, break: true, items: [], offset: 0, page: 0, top: y });
+      bands.push({
+        bottom: y,
+        break: true,
+        items: [],
+        offset: 0,
+        page: 0,
+        top: y,
+      });
     }
 
     const last = bands[bands.length - 1];
@@ -508,12 +716,25 @@ export function paginate(measured: Measured, pageHeight: number): Paginated {
       last.bottom = Math.max(last.bottom, atom.bottom);
       last.items.push(...atom.items);
     } else {
-      bands.push({ bottom: atom.bottom, items: [...atom.items], offset: 0, page: 0, top: atom.top });
+      bands.push({
+        bottom: atom.bottom,
+        items: [...atom.items],
+        offset: 0,
+        page: 0,
+        top: atom.top,
+      });
     }
   }
 
   for (const y of breakQueue) {
-    bands.push({ bottom: y, break: true, items: [], offset: 0, page: 0, top: y });
+    bands.push({
+      bottom: y,
+      break: true,
+      items: [],
+      offset: 0,
+      page: 0,
+      top: y,
+    });
   }
 
   let page = 0;
@@ -560,7 +781,8 @@ export function paginate(measured: Measured, pageHeight: number): Paginated {
 
   const contentBands = bands.filter((band) => !band.break);
   const itemBand = new Map<number, Band>();
-  for (const band of contentBands) for (const index of band.items) itemBand.set(index, band);
+  for (const band of contentBands)
+    for (const index of band.items) itemBand.set(index, band);
 
   const items: PagedItem[] = [];
   measured.items.forEach((item, index) => {
@@ -570,7 +792,11 @@ export function paginate(measured: Measured, pageHeight: number): Paginated {
     const itemPage = band?.page ?? Math.max(0, Math.floor(flowY / pageHeight));
     const shift = offsetY - itemPage * pageHeight;
     const moved = { ...item, page: itemPage, y: item.y + shift } as PagedItem;
-    if (moved.kind === "text" || moved.kind === "marker") moved.baseline = item.kind === "text" || item.kind === "marker" ? item.baseline + shift : 0;
+    if (moved.kind === "text" || moved.kind === "marker")
+      moved.baseline =
+        item.kind === "text" || item.kind === "marker"
+          ? item.baseline + shift
+          : 0;
     items.push(moved);
   });
 
@@ -578,7 +804,9 @@ export function paginate(measured: Measured, pageHeight: number): Paginated {
   const offsetAt = (y: number, edge: "top" | "bottom") => {
     if (!contentBands.length) return { offset: 0 };
     if (edge === "top") {
-      const band = contentBands.find((b) => b.bottom > y + EPS) ?? contentBands[contentBands.length - 1];
+      const band =
+        contentBands.find((b) => b.bottom > y + EPS) ??
+        contentBands[contentBands.length - 1];
       return { offset: band.offset };
     }
     let found = contentBands[0];
@@ -595,11 +823,15 @@ export function paginate(measured: Measured, pageHeight: number): Paginated {
     const flowBottom = box.bottom + offsetAt(box.bottom, "bottom").offset;
     if (flowBottom <= flowTop) continue;
     const firstPage = Math.max(0, Math.floor((flowTop + EPS) / pageHeight));
-    const lastPage = Math.max(firstPage, Math.floor((flowBottom - EPS) / pageHeight));
+    const lastPage = Math.max(
+      firstPage,
+      Math.floor((flowBottom - EPS) / pageHeight),
+    );
 
     for (let p = firstPage; p <= lastPage; p += 1) {
       const top = Math.max(flowTop, p * pageHeight) - p * pageHeight;
-      const bottom = Math.min(flowBottom, (p + 1) * pageHeight) - p * pageHeight;
+      const bottom =
+        Math.min(flowBottom, (p + 1) * pageHeight) - p * pageHeight;
       boxes.push({
         borders: {
           bottom: p === lastPage ? box.borders.bottom : undefined,

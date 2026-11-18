@@ -1,7 +1,15 @@
 // App-wide icon set, backed by Hugeicons (stroke-rounded, free set).
 // Import icons from here, never from an icon package directly.
-import { forwardRef, type ForwardRefExoticComponent, type RefAttributes } from "react";
-import { HugeiconsIcon, type HugeiconsProps, type IconSvgElement } from "@hugeicons/react";
+import {
+  forwardRef,
+  type ForwardRefExoticComponent,
+  type RefAttributes,
+} from "react";
+import {
+  HugeiconsIcon,
+  type HugeiconsProps,
+  type IconSvgElement,
+} from "@hugeicons/react";
 import {
   Agreement02Icon as HugeAgreement02Icon,
   AlarmClockOffIcon as HugeAlarmClockOffIcon,
@@ -160,29 +168,60 @@ import {
 } from "@hugeicons/core-free-icons";
 
 export type IconProps = Omit<HugeiconsProps, "icon" | "ref">;
-export type IconComponent = ForwardRefExoticComponent<IconProps & RefAttributes<SVGSVGElement>>;
+export type IconComponent = ForwardRefExoticComponent<
+  IconProps & RefAttributes<SVGSVGElement>
+>;
 
 function create(svg: IconSvgElement, name: string): IconComponent {
   const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(props, ref) {
-    return <HugeiconsIcon ref={ref} icon={svg} strokeWidth={1.75} aria-hidden={props["aria-label"] ? undefined : true} {...props} />;
+    return (
+      <HugeiconsIcon
+        ref={ref}
+        icon={svg}
+        strokeWidth={1.75}
+        aria-hidden={props["aria-label"] ? undefined : true}
+        {...props}
+      />
+    );
   });
   Icon.displayName = name;
   return Icon;
 }
 
-export const AlarmClockOffIcon = create(HugeAlarmClockOffIcon, "AlarmClockOffIcon");
+export const AlarmClockOffIcon = create(
+  HugeAlarmClockOffIcon,
+  "AlarmClockOffIcon",
+);
 export const AlarmClockOff = AlarmClockOffIcon;
-export const AlignCenterHorizontalIcon = create(HugeAlignHorizontalCenterIcon, "AlignCenterHorizontalIcon");
+export const AlignCenterHorizontalIcon = create(
+  HugeAlignHorizontalCenterIcon,
+  "AlignCenterHorizontalIcon",
+);
 export const AlignCenterHorizontal = AlignCenterHorizontalIcon;
-export const AlignCenterVerticalIcon = create(HugeAlignVerticalCenterIcon, "AlignCenterVerticalIcon");
+export const AlignCenterVerticalIcon = create(
+  HugeAlignVerticalCenterIcon,
+  "AlignCenterVerticalIcon",
+);
 export const AlignCenterVertical = AlignCenterVerticalIcon;
-export const AlignEndHorizontalIcon = create(HugeAlignBottomIcon, "AlignEndHorizontalIcon");
+export const AlignEndHorizontalIcon = create(
+  HugeAlignBottomIcon,
+  "AlignEndHorizontalIcon",
+);
 export const AlignEndHorizontal = AlignEndHorizontalIcon;
-export const AlignEndVerticalIcon = create(HugeAlignRightIcon, "AlignEndVerticalIcon");
+export const AlignEndVerticalIcon = create(
+  HugeAlignRightIcon,
+  "AlignEndVerticalIcon",
+);
 export const AlignEndVertical = AlignEndVerticalIcon;
-export const AlignStartHorizontalIcon = create(HugeAlignTopIcon, "AlignStartHorizontalIcon");
+export const AlignStartHorizontalIcon = create(
+  HugeAlignTopIcon,
+  "AlignStartHorizontalIcon",
+);
 export const AlignStartHorizontal = AlignStartHorizontalIcon;
-export const AlignStartVerticalIcon = create(HugeAlignLeftIcon, "AlignStartVerticalIcon");
+export const AlignStartVerticalIcon = create(
+  HugeAlignLeftIcon,
+  "AlignStartVerticalIcon",
+);
 export const AlignStartVertical = AlignStartVerticalIcon;
 export const ArchiveIcon = create(HugeArchive02Icon, "ArchiveIcon");
 export const Archive = ArchiveIcon;
@@ -194,9 +233,15 @@ export const ArrowRightIcon = create(HugeArrowRight02Icon, "ArrowRightIcon");
 export const ArrowRight = ArrowRightIcon;
 export const ArrowUpIcon = create(HugeArrowUp02Icon, "ArrowUpIcon");
 export const ArrowUp = ArrowUpIcon;
-export const ArrowUpRightIcon = create(HugeArrowUpRight01Icon, "ArrowUpRightIcon");
+export const ArrowUpRightIcon = create(
+  HugeArrowUpRight01Icon,
+  "ArrowUpRightIcon",
+);
 export const ArrowUpRight = ArrowUpRightIcon;
-export const BadgeCheckIcon = create(HugeCheckmarkBadge01Icon, "BadgeCheckIcon");
+export const BadgeCheckIcon = create(
+  HugeCheckmarkBadge01Icon,
+  "BadgeCheckIcon",
+);
 export const BadgeCheck = BadgeCheckIcon;
 export const BanIcon = create(HugeUnavailableIcon, "BanIcon");
 export const Ban = BanIcon;
@@ -206,7 +251,10 @@ export const BellRingIcon = create(HugeNotificationSquareIcon, "BellRingIcon");
 export const BellRing = BellRingIcon;
 export const Building2Icon = create(HugeBuilding03Icon, "Building2Icon");
 export const Building2 = Building2Icon;
-export const CalendarClockIcon = create(HugeCalendarCheckOut01Icon, "CalendarClockIcon");
+export const CalendarClockIcon = create(
+  HugeCalendarCheckOut01Icon,
+  "CalendarClockIcon",
+);
 export const CalendarClock = CalendarClockIcon;
 export const CalendarDaysIcon = create(HugeCalendar03Icon, "CalendarDaysIcon");
 export const CalendarDays = CalendarDaysIcon;
@@ -220,15 +268,24 @@ export const ChevronDownIcon = create(HugeArrowDown01Icon, "ChevronDownIcon");
 export const ChevronDown = ChevronDownIcon;
 export const ChevronLeftIcon = create(HugeArrowLeft01Icon, "ChevronLeftIcon");
 export const ChevronLeft = ChevronLeftIcon;
-export const ChevronRightIcon = create(HugeArrowRight01Icon, "ChevronRightIcon");
+export const ChevronRightIcon = create(
+  HugeArrowRight01Icon,
+  "ChevronRightIcon",
+);
 export const ChevronRight = ChevronRightIcon;
 export const ChevronUpIcon = create(HugeArrowUp01Icon, "ChevronUpIcon");
 export const ChevronUp = ChevronUpIcon;
-export const ChevronsUpDownIcon = create(HugeUnfoldMoreIcon, "ChevronsUpDownIcon");
+export const ChevronsUpDownIcon = create(
+  HugeUnfoldMoreIcon,
+  "ChevronsUpDownIcon",
+);
 export const ChevronsUpDown = ChevronsUpDownIcon;
 export const CircleAlertIcon = create(HugeAlertCircleIcon, "CircleAlertIcon");
 export const CircleAlert = CircleAlertIcon;
-export const CircleCheckIcon = create(HugeCheckmarkCircle02Icon, "CircleCheckIcon");
+export const CircleCheckIcon = create(
+  HugeCheckmarkCircle02Icon,
+  "CircleCheckIcon",
+);
 export const CircleCheck = CircleCheckIcon;
 export const CircleDotIcon = create(HugeRecordIcon, "CircleDotIcon");
 export const CircleDot = CircleDotIcon;
@@ -244,7 +301,10 @@ export const CopyIcon = create(HugeCopy01Icon, "CopyIcon");
 export const Copy = CopyIcon;
 export const CopyPlusIcon = create(HugeCopyPlusIcon, "CopyPlusIcon");
 export const CopyPlus = CopyPlusIcon;
-export const CornerDownLeftIcon = create(HugeArrowTurnBackwardIcon, "CornerDownLeftIcon");
+export const CornerDownLeftIcon = create(
+  HugeArrowTurnBackwardIcon,
+  "CornerDownLeftIcon",
+);
 export const CornerDownLeft = CornerDownLeftIcon;
 export const DatabaseIcon = create(HugeDatabase01Icon, "DatabaseIcon");
 export const Database = DatabaseIcon;
@@ -256,7 +316,10 @@ export const EllipsisIcon = create(HugeMoreHorizontalIcon, "EllipsisIcon");
 export const Ellipsis = EllipsisIcon;
 export const EraserIcon = create(HugeEraserIcon, "EraserIcon");
 export const Eraser = EraserIcon;
-export const ExternalLinkIcon = create(HugeLinkSquare02Icon, "ExternalLinkIcon");
+export const ExternalLinkIcon = create(
+  HugeLinkSquare02Icon,
+  "ExternalLinkIcon",
+);
 export const ExternalLink = ExternalLinkIcon;
 export const EyeIcon = create(HugeViewIcon, "EyeIcon");
 export const Eye = EyeIcon;
@@ -280,9 +343,15 @@ export const FileUpIcon = create(HugeFileUploadIcon, "FileUpIcon");
 export const FileUp = FileUpIcon;
 export const FileX2Icon = create(HugeFileRemoveIcon, "FileX2Icon");
 export const FileX2 = FileX2Icon;
-export const GitPullRequestArrowIcon = create(HugeGitPullRequestIcon, "GitPullRequestArrowIcon");
+export const GitPullRequestArrowIcon = create(
+  HugeGitPullRequestIcon,
+  "GitPullRequestArrowIcon",
+);
 export const GitPullRequestArrow = GitPullRequestArrowIcon;
-export const GripVerticalIcon = create(HugeDragDropVerticalIcon, "GripVerticalIcon");
+export const GripVerticalIcon = create(
+  HugeDragDropVerticalIcon,
+  "GripVerticalIcon",
+);
 export const GripVertical = GripVerticalIcon;
 export const HandshakeIcon = create(HugeAgreement02Icon, "HandshakeIcon");
 export const Handshake = HandshakeIcon;
@@ -296,9 +365,15 @@ export const KeyRoundIcon = create(HugeKey01Icon, "KeyRoundIcon");
 export const KeyRound = KeyRoundIcon;
 export const KeyboardIcon = create(HugeKeyboardIcon, "KeyboardIcon");
 export const Keyboard = KeyboardIcon;
-export const LayoutDashboardIcon = create(HugeDashboardSquare02Icon, "LayoutDashboardIcon");
+export const LayoutDashboardIcon = create(
+  HugeDashboardSquare02Icon,
+  "LayoutDashboardIcon",
+);
 export const LayoutDashboard = LayoutDashboardIcon;
-export const LayoutTemplateIcon = create(HugeLayoutTemplateIcon, "LayoutTemplateIcon");
+export const LayoutTemplateIcon = create(
+  HugeLayoutTemplateIcon,
+  "LayoutTemplateIcon",
+);
 export const LayoutTemplate = LayoutTemplateIcon;
 export const LibraryBigIcon = create(HugeLibraryIcon, "LibraryBigIcon");
 export const LibraryBig = LibraryBigIcon;
@@ -312,7 +387,10 @@ export const MailIcon = create(HugeMail01Icon, "MailIcon");
 export const Mail = MailIcon;
 export const MailCheckIcon = create(HugeMailValidation01Icon, "MailCheckIcon");
 export const MailCheck = MailCheckIcon;
-export const MailQuestionMarkIcon = create(HugeMailQuestionMarkIcon, "MailQuestionMarkIcon");
+export const MailQuestionMarkIcon = create(
+  HugeMailQuestionMarkIcon,
+  "MailQuestionMarkIcon",
+);
 export const MailQuestionMark = MailQuestionMarkIcon;
 export const MailWarningIcon = create(HugeMailBlockIcon, "MailWarningIcon");
 export const MailWarning = MailWarningIcon;
@@ -320,9 +398,15 @@ export const MailXIcon = create(HugeMailRemove01Icon, "MailXIcon");
 export const MailX = MailXIcon;
 export const MinusIcon = create(HugeMinusSignIcon, "MinusIcon");
 export const Minus = MinusIcon;
-export const MonitorSmartphoneIcon = create(HugeComputerPhoneSyncIcon, "MonitorSmartphoneIcon");
+export const MonitorSmartphoneIcon = create(
+  HugeComputerPhoneSyncIcon,
+  "MonitorSmartphoneIcon",
+);
 export const MonitorSmartphone = MonitorSmartphoneIcon;
-export const MoreHorizontalIcon = create(HugeMoreHorizontalIcon, "MoreHorizontalIcon");
+export const MoreHorizontalIcon = create(
+  HugeMoreHorizontalIcon,
+  "MoreHorizontalIcon",
+);
 export const MoreHorizontal = MoreHorizontalIcon;
 export const PaletteIcon = create(HugePaintBoardIcon, "PaletteIcon");
 export const Palette = PaletteIcon;
@@ -360,21 +444,36 @@ export const ShieldAlertIcon = create(HugeShield02Icon, "ShieldAlertIcon");
 export const ShieldAlert = ShieldAlertIcon;
 export const ShieldCheckIcon = create(HugeSecurityCheckIcon, "ShieldCheckIcon");
 export const ShieldCheck = ShieldCheckIcon;
-export const ShieldMinusIcon = create(HugeShieldBlockchainIcon, "ShieldMinusIcon");
+export const ShieldMinusIcon = create(
+  HugeShieldBlockchainIcon,
+  "ShieldMinusIcon",
+);
 export const ShieldMinus = ShieldMinusIcon;
 export const ShieldPlusIcon = create(HugeShieldEnergyIcon, "ShieldPlusIcon");
 export const ShieldPlus = ShieldPlusIcon;
 export const SignatureIcon = create(HugeSignatureIcon, "SignatureIcon");
 export const Signature = SignatureIcon;
-export const SlidersHorizontalIcon = create(HugeSlidersHorizontalIcon, "SlidersHorizontalIcon");
+export const SlidersHorizontalIcon = create(
+  HugeSlidersHorizontalIcon,
+  "SlidersHorizontalIcon",
+);
 export const SlidersHorizontal = SlidersHorizontalIcon;
 export const SmartphoneIcon = create(HugeSmartPhone01Icon, "SmartphoneIcon");
 export const Smartphone = SmartphoneIcon;
-export const SmartphoneNfcIcon = create(HugeSmartphoneNfcIcon, "SmartphoneNfcIcon");
+export const SmartphoneNfcIcon = create(
+  HugeSmartphoneNfcIcon,
+  "SmartphoneNfcIcon",
+);
 export const SmartphoneNfc = SmartphoneNfcIcon;
-export const SquareCheckIcon = create(HugeCheckmarkSquare02Icon, "SquareCheckIcon");
+export const SquareCheckIcon = create(
+  HugeCheckmarkSquare02Icon,
+  "SquareCheckIcon",
+);
 export const SquareCheck = SquareCheckIcon;
-export const SquareChevronDownIcon = create(HugeArrowDown01Icon, "SquareChevronDownIcon");
+export const SquareChevronDownIcon = create(
+  HugeArrowDown01Icon,
+  "SquareChevronDownIcon",
+);
 export const SquareChevronDown = SquareChevronDownIcon;
 export const TimerIcon = create(HugeTimer02Icon, "TimerIcon");
 export const Timer = TimerIcon;
@@ -392,7 +491,10 @@ export const UserPenIcon = create(HugeUserEdit01Icon, "UserPenIcon");
 export const UserPen = UserPenIcon;
 export const UserRoundIcon = create(HugeUserIcon, "UserRoundIcon");
 export const UserRound = UserRoundIcon;
-export const UserRoundCheckIcon = create(HugeUserCheck01Icon, "UserRoundCheckIcon");
+export const UserRoundCheckIcon = create(
+  HugeUserCheck01Icon,
+  "UserRoundCheckIcon",
+);
 export const UserRoundCheck = UserRoundCheckIcon;
 export const UserXIcon = create(HugeUserRemove01Icon, "UserXIcon");
 export const UserX = UserXIcon;
@@ -404,22 +506,58 @@ export const X = XIcon;
 // Document composer
 export const TextBoldIcon = create(HugeTextBoldIcon, "TextBoldIcon");
 export const TextItalicIcon = create(HugeTextItalicIcon, "TextItalicIcon");
-export const TextUnderlineIcon = create(HugeTextUnderlineIcon, "TextUnderlineIcon");
-export const TextStrikethroughIcon = create(HugeTextStrikethroughIcon, "TextStrikethroughIcon");
-export const TextSubscriptIcon = create(HugeTextSubscriptIcon, "TextSubscriptIcon");
-export const TextSuperscriptIcon = create(HugeTextSuperscriptIcon, "TextSuperscriptIcon");
+export const TextUnderlineIcon = create(
+  HugeTextUnderlineIcon,
+  "TextUnderlineIcon",
+);
+export const TextStrikethroughIcon = create(
+  HugeTextStrikethroughIcon,
+  "TextStrikethroughIcon",
+);
+export const TextSubscriptIcon = create(
+  HugeTextSubscriptIcon,
+  "TextSubscriptIcon",
+);
+export const TextSuperscriptIcon = create(
+  HugeTextSuperscriptIcon,
+  "TextSuperscriptIcon",
+);
 export const TextColorIcon = create(HugeTextColorIcon, "TextColorIcon");
 export const HighlighterIcon = create(HugeHighlighterIcon, "HighlighterIcon");
 export const TextClearIcon = create(HugeTextClearIcon, "TextClearIcon");
-export const TextAlignLeftIcon = create(HugeTextAlignLeftIcon, "TextAlignLeftIcon");
-export const TextAlignCenterIcon = create(HugeTextAlignCenterIcon, "TextAlignCenterIcon");
-export const TextAlignRightIcon = create(HugeTextAlignRightIcon, "TextAlignRightIcon");
-export const TextAlignJustifyIcon = create(HugeTextAlignJustifyCenterIcon, "TextAlignJustifyIcon");
-export const LeftToRightListBulletIcon = create(HugeLeftToRightListBulletIcon, "LeftToRightListBulletIcon");
-export const LeftToRightListNumberIcon = create(HugeLeftToRightListNumberIcon, "LeftToRightListNumberIcon");
+export const TextAlignLeftIcon = create(
+  HugeTextAlignLeftIcon,
+  "TextAlignLeftIcon",
+);
+export const TextAlignCenterIcon = create(
+  HugeTextAlignCenterIcon,
+  "TextAlignCenterIcon",
+);
+export const TextAlignRightIcon = create(
+  HugeTextAlignRightIcon,
+  "TextAlignRightIcon",
+);
+export const TextAlignJustifyIcon = create(
+  HugeTextAlignJustifyCenterIcon,
+  "TextAlignJustifyIcon",
+);
+export const LeftToRightListBulletIcon = create(
+  HugeLeftToRightListBulletIcon,
+  "LeftToRightListBulletIcon",
+);
+export const LeftToRightListNumberIcon = create(
+  HugeLeftToRightListNumberIcon,
+  "LeftToRightListNumberIcon",
+);
 export const CheckListIcon = create(HugeCheckListIcon, "CheckListIcon");
-export const TextIndentMoreIcon = create(HugeTextIndentMoreIcon, "TextIndentMoreIcon");
-export const TextIndentLessIcon = create(HugeTextIndentLessIcon, "TextIndentLessIcon");
+export const TextIndentMoreIcon = create(
+  HugeTextIndentMoreIcon,
+  "TextIndentMoreIcon",
+);
+export const TextIndentLessIcon = create(
+  HugeTextIndentLessIcon,
+  "TextIndentLessIcon",
+);
 export const LinkIcon = create(HugeLink01Icon, "LinkIcon");
 export const UnlinkIcon = create(HugeUnlink01Icon, "UnlinkIcon");
 export const ImageAddIcon = create(HugeImageAdd01Icon, "ImageAddIcon");
@@ -430,15 +568,36 @@ export const ParagraphIcon = create(HugeParagraphIcon, "ParagraphIcon");
 export const FileImportIcon = create(HugeFileImportIcon, "FileImportIcon");
 export const ScissorsIcon = create(HugeScissor01Icon, "ScissorsIcon");
 export const ClipboardIcon = create(HugeClipboardIcon, "ClipboardIcon");
-export const ClipboardPasteIcon = create(HugeClipboardPasteIcon, "ClipboardPasteIcon");
+export const ClipboardPasteIcon = create(
+  HugeClipboardPasteIcon,
+  "ClipboardPasteIcon",
+);
 export const ZoomInIcon = create(HugeZoomInIcon, "ZoomInIcon");
 export const ZoomOutIcon = create(HugeZoomOutIcon, "ZoomOutIcon");
 export const InsertRowUpIcon = create(HugeInsertRowUpIcon, "InsertRowUpIcon");
-export const InsertRowDownIcon = create(HugeInsertRowDownIcon, "InsertRowDownIcon");
-export const InsertColumnLeftIcon = create(HugeInsertColumnLeftIcon, "InsertColumnLeftIcon");
-export const InsertColumnRightIcon = create(HugeInsertColumnRightIcon, "InsertColumnRightIcon");
+export const InsertRowDownIcon = create(
+  HugeInsertRowDownIcon,
+  "InsertRowDownIcon",
+);
+export const InsertColumnLeftIcon = create(
+  HugeInsertColumnLeftIcon,
+  "InsertColumnLeftIcon",
+);
+export const InsertColumnRightIcon = create(
+  HugeInsertColumnRightIcon,
+  "InsertColumnRightIcon",
+);
 export const DeleteRowIcon = create(HugeDeleteRowIcon, "DeleteRowIcon");
-export const DeleteColumnIcon = create(HugeDeleteColumnIcon, "DeleteColumnIcon");
+export const DeleteColumnIcon = create(
+  HugeDeleteColumnIcon,
+  "DeleteColumnIcon",
+);
 export const PaintBrushIcon = create(HugePaintBrush01Icon, "PaintBrushIcon");
-export const TextSelectionIcon = create(HugeTextSelectionIcon, "TextSelectionIcon");
-export const MoreVerticalIcon = create(HugeMoreVerticalIcon, "MoreVerticalIcon");
+export const TextSelectionIcon = create(
+  HugeTextSelectionIcon,
+  "TextSelectionIcon",
+);
+export const MoreVerticalIcon = create(
+  HugeMoreVerticalIcon,
+  "MoreVerticalIcon",
+);

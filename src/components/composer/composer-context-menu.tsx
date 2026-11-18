@@ -46,7 +46,11 @@ import {
   Trash2Icon,
   UnlinkIcon,
 } from "@/components/ui/icons";
-import type { BlockType, ComposerEditor, FormatState } from "@/lib/composer/editor";
+import type {
+  BlockType,
+  ComposerEditor,
+  FormatState,
+} from "@/lib/composer/editor";
 
 import { ColorGrid } from "./composer-controls";
 import { altShortcut, mod, shortcut } from "./composer-keys";
@@ -60,7 +64,13 @@ type Props = {
   readState: () => FormatState | null;
 };
 
-export function ComposerContextMenu({ children, editor, onImage, onLink, readState }: Props) {
+export function ComposerContextMenu({
+  children,
+  editor,
+  onImage,
+  onLink,
+  readState,
+}: Props) {
   // Read once when the menu opens, so its items match where it was opened.
   const [state, setState] = useState<FormatState | null>(null);
   const image = editor?.getSelectedImage() ?? null;
@@ -81,22 +91,32 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
             editor.focus();
           }}
         >
-          <ContextMenuItem disabled={!state.hasSelection && !image} onSelect={() => editor.copySelection(true)}>
+          <ContextMenuItem
+            disabled={!state.hasSelection && !image}
+            onSelect={() => editor.copySelection(true)}
+          >
             <ScissorsIcon />
             Cut
             <ContextMenuShortcut>{shortcut("X")}</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem disabled={!state.hasSelection && !image} onSelect={() => editor.copySelection(false)}>
+          <ContextMenuItem
+            disabled={!state.hasSelection && !image}
+            onSelect={() => editor.copySelection(false)}
+          >
             <ClipboardIcon />
             Copy
             <ContextMenuShortcut>{shortcut("C")}</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem onSelect={() => void editor.pasteFromClipboard(false)}>
+          <ContextMenuItem
+            onSelect={() => void editor.pasteFromClipboard(false)}
+          >
             <ClipboardPasteIcon />
             Paste
             <ContextMenuShortcut>{shortcut("V")}</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem onSelect={() => void editor.pasteFromClipboard(true)}>
+          <ContextMenuItem
+            onSelect={() => void editor.pasteFromClipboard(true)}
+          >
             <ClipboardPasteIcon />
             Paste without formatting
             <ContextMenuShortcut>{shortcut("V", true)}</ContextMenuShortcut>
@@ -123,7 +143,11 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
                     <ContextMenuItem
                       key={label}
                       onSelect={() => {
-                        const width = (editor.root.getBoundingClientRect().width / editor.zoom()) * 0.75 * share;
+                        const width =
+                          (editor.root.getBoundingClientRect().width /
+                            editor.zoom()) *
+                          0.75 *
+                          share;
                         editor.setImageWidth(image, width);
                       }}
                     >
@@ -132,7 +156,10 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
                   ))}
                 </ContextMenuSubContent>
               </ContextMenuSub>
-              <ContextMenuItem variant="destructive" onSelect={() => editor.removeImage(image)}>
+              <ContextMenuItem
+                variant="destructive"
+                onSelect={() => editor.removeImage(image)}
+              >
                 <Trash2Icon />
                 Delete picture
               </ContextMenuItem>
@@ -147,7 +174,9 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
                 Edit link…
               </ContextMenuItem>
               <ContextMenuItem
-                onSelect={() => window.open(state.link!, "_blank", "noopener,noreferrer")}
+                onSelect={() =>
+                  window.open(state.link!, "_blank", "noopener,noreferrer")
+                }
               >
                 <ExternalLinkIcon />
                 Open link
@@ -172,27 +201,41 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
                 Table
               </ContextMenuSubTrigger>
               <ContextMenuSubContent className="w-60">
-                <ContextMenuItem onSelect={() => editor.tableAction("rowAbove")}>
+                <ContextMenuItem
+                  onSelect={() => editor.tableAction("rowAbove")}
+                >
                   <InsertRowUpIcon />
                   Insert row above
                 </ContextMenuItem>
-                <ContextMenuItem onSelect={() => editor.tableAction("rowBelow")}>
+                <ContextMenuItem
+                  onSelect={() => editor.tableAction("rowBelow")}
+                >
                   <InsertRowDownIcon />
                   Insert row below
                 </ContextMenuItem>
-                <ContextMenuItem onSelect={() => editor.tableAction("columnLeft")}>
+                <ContextMenuItem
+                  onSelect={() => editor.tableAction("columnLeft")}
+                >
                   <InsertColumnLeftIcon />
                   Insert column left
                 </ContextMenuItem>
-                <ContextMenuItem onSelect={() => editor.tableAction("columnRight")}>
+                <ContextMenuItem
+                  onSelect={() => editor.tableAction("columnRight")}
+                >
                   <InsertColumnRightIcon />
                   Insert column right
                 </ContextMenuItem>
                 <ContextMenuSeparator />
-                <ContextMenuCheckboxItem checked={state.tableHeader} onCheckedChange={() => editor.tableAction("toggleHeader")}>
+                <ContextMenuCheckboxItem
+                  checked={state.tableHeader}
+                  onCheckedChange={() => editor.tableAction("toggleHeader")}
+                >
                   Header row
                 </ContextMenuCheckboxItem>
-                <ContextMenuCheckboxItem checked={state.tableBorders} onCheckedChange={() => editor.tableAction("toggleBorders")}>
+                <ContextMenuCheckboxItem
+                  checked={state.tableBorders}
+                  onCheckedChange={() => editor.tableAction("toggleBorders")}
+                >
                   Borders
                 </ContextMenuCheckboxItem>
                 <ContextMenuSub>
@@ -209,15 +252,24 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
                   </ContextMenuSubContent>
                 </ContextMenuSub>
                 <ContextMenuSeparator />
-                <ContextMenuItem variant="destructive" onSelect={() => editor.tableAction("deleteRow")}>
+                <ContextMenuItem
+                  variant="destructive"
+                  onSelect={() => editor.tableAction("deleteRow")}
+                >
                   <DeleteRowIcon />
                   Delete row
                 </ContextMenuItem>
-                <ContextMenuItem variant="destructive" onSelect={() => editor.tableAction("deleteColumn")}>
+                <ContextMenuItem
+                  variant="destructive"
+                  onSelect={() => editor.tableAction("deleteColumn")}
+                >
                   <DeleteColumnIcon />
                   Delete column
                 </ContextMenuItem>
-                <ContextMenuItem variant="destructive" onSelect={() => editor.tableAction("deleteTable")}>
+                <ContextMenuItem
+                  variant="destructive"
+                  onSelect={() => editor.tableAction("deleteTable")}
+                >
                   <Trash2Icon />
                   Delete table
                 </ContextMenuItem>
@@ -258,7 +310,9 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
               </ContextMenuItem>
               <ContextMenuSub>
                 <ContextMenuSubTrigger>
-                  <span aria-hidden="true" className="w-4 text-center">Ω</span>
+                  <span aria-hidden="true" className="w-4 text-center">
+                    Ω
+                  </span>
                   Special character
                 </ContextMenuSubTrigger>
                 <ContextMenuSubContent className="w-auto p-2">
@@ -285,25 +339,48 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
               Format
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-56">
-              <ContextMenuCheckboxItem checked={state.bold} onCheckedChange={() => editor.toggleMark("bold")}>
+              <ContextMenuCheckboxItem
+                checked={state.bold}
+                onCheckedChange={() => editor.toggleMark("bold")}
+              >
                 Bold<ContextMenuShortcut>{shortcut("B")}</ContextMenuShortcut>
               </ContextMenuCheckboxItem>
-              <ContextMenuCheckboxItem checked={state.italic} onCheckedChange={() => editor.toggleMark("italic")}>
+              <ContextMenuCheckboxItem
+                checked={state.italic}
+                onCheckedChange={() => editor.toggleMark("italic")}
+              >
                 Italic<ContextMenuShortcut>{shortcut("I")}</ContextMenuShortcut>
               </ContextMenuCheckboxItem>
-              <ContextMenuCheckboxItem checked={state.underline} onCheckedChange={() => editor.toggleMark("underline")}>
-                Underline<ContextMenuShortcut>{shortcut("U")}</ContextMenuShortcut>
+              <ContextMenuCheckboxItem
+                checked={state.underline}
+                onCheckedChange={() => editor.toggleMark("underline")}
+              >
+                Underline
+                <ContextMenuShortcut>{shortcut("U")}</ContextMenuShortcut>
               </ContextMenuCheckboxItem>
-              <ContextMenuCheckboxItem checked={state.strike} onCheckedChange={() => editor.toggleMark("strikeThrough")}>
-                Strikethrough<ContextMenuShortcut>{shortcut("X", true)}</ContextMenuShortcut>
+              <ContextMenuCheckboxItem
+                checked={state.strike}
+                onCheckedChange={() => editor.toggleMark("strikeThrough")}
+              >
+                Strikethrough
+                <ContextMenuShortcut>{shortcut("X", true)}</ContextMenuShortcut>
               </ContextMenuCheckboxItem>
-              <ContextMenuCheckboxItem checked={state.superscript} onCheckedChange={() => editor.toggleMark("superscript")}>
+              <ContextMenuCheckboxItem
+                checked={state.superscript}
+                onCheckedChange={() => editor.toggleMark("superscript")}
+              >
                 Superscript<ContextMenuShortcut>{mod}.</ContextMenuShortcut>
               </ContextMenuCheckboxItem>
-              <ContextMenuCheckboxItem checked={state.subscript} onCheckedChange={() => editor.toggleMark("subscript")}>
+              <ContextMenuCheckboxItem
+                checked={state.subscript}
+                onCheckedChange={() => editor.toggleMark("subscript")}
+              >
                 Subscript<ContextMenuShortcut>{mod},</ContextMenuShortcut>
               </ContextMenuCheckboxItem>
-              <ContextMenuCheckboxItem checked={state.code} onCheckedChange={() => editor.toggleCode()}>
+              <ContextMenuCheckboxItem
+                checked={state.code}
+                onCheckedChange={() => editor.toggleCode()}
+              >
                 Inline code
               </ContextMenuCheckboxItem>
             </ContextMenuSubContent>
@@ -315,11 +392,29 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
               Paragraph style
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-56">
-              {(["p", "title", "subtitle", "h1", "h2", "h3", "h4", "blockquote", "pre"] as BlockType[]).map((type) => (
-                <ContextMenuCheckboxItem checked={state.block === type} key={type} onCheckedChange={() => editor.setBlockType(type)}>
+              {(
+                [
+                  "p",
+                  "title",
+                  "subtitle",
+                  "h1",
+                  "h2",
+                  "h3",
+                  "h4",
+                  "blockquote",
+                  "pre",
+                ] as BlockType[]
+              ).map((type) => (
+                <ContextMenuCheckboxItem
+                  checked={state.block === type}
+                  key={type}
+                  onCheckedChange={() => editor.setBlockType(type)}
+                >
                   {BLOCK_LABELS[type]}
                   {type === "p" || /^h\d$/.test(type) ? (
-                    <ContextMenuShortcut>{altShortcut(type === "p" ? "0" : type.slice(1))}</ContextMenuShortcut>
+                    <ContextMenuShortcut>
+                      {altShortcut(type === "p" ? "0" : type.slice(1))}
+                    </ContextMenuShortcut>
                   ) : null}
                 </ContextMenuCheckboxItem>
               ))}
@@ -366,13 +461,22 @@ export function ComposerContextMenu({ children, editor, onImage, onLink, readSta
               Bullets and numbering
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-56">
-              <ContextMenuCheckboxItem checked={state.list === "ul"} onCheckedChange={() => editor.toggleList("ul")}>
+              <ContextMenuCheckboxItem
+                checked={state.list === "ul"}
+                onCheckedChange={() => editor.toggleList("ul")}
+              >
                 Bulleted list
               </ContextMenuCheckboxItem>
-              <ContextMenuCheckboxItem checked={state.list === "ol"} onCheckedChange={() => editor.toggleList("ol")}>
+              <ContextMenuCheckboxItem
+                checked={state.list === "ol"}
+                onCheckedChange={() => editor.toggleList("ol")}
+              >
                 Numbered list
               </ContextMenuCheckboxItem>
-              <ContextMenuCheckboxItem checked={state.list === "checklist"} onCheckedChange={() => editor.toggleList("checklist")}>
+              <ContextMenuCheckboxItem
+                checked={state.list === "checklist"}
+                onCheckedChange={() => editor.toggleList("checklist")}
+              >
                 Checklist
               </ContextMenuCheckboxItem>
             </ContextMenuSubContent>

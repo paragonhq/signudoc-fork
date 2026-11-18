@@ -136,7 +136,12 @@ const INLINE_STYLE_PROPS = [
   "vertical-align",
 ] as const;
 
-const CELL_STYLE_PROPS = ["background-color", "text-align", "vertical-align", "width"] as const;
+const CELL_STYLE_PROPS = [
+  "background-color",
+  "text-align",
+  "vertical-align",
+  "width",
+] as const;
 
 export type SanitizeOptions = {
   /** Keep colours and fonts (false for "paste without formatting"). */
@@ -262,7 +267,9 @@ function isDefaultTextColor(value: string) {
 function isWhite(value: string) {
   const v = value.replace(/\s+/g, "").toLowerCase();
 
-  return v === "#fff" || v === "#ffffff" || v === "white" || v === "rgb(255,255,255)";
+  return (
+    v === "#fff" || v === "#ffffff" || v === "white" || v === "rgb(255,255,255)"
+  );
 }
 
 function cleanColor(value: string) {
@@ -527,7 +534,9 @@ function cleanElement(
   if (
     tag === "b" &&
     (element.id.startsWith("docs-internal-guid") ||
-      /font-weight\s*:\s*(normal|400)/i.test(element.getAttribute("style") ?? ""))
+      /font-weight\s*:\s*(normal|400)/i.test(
+        element.getAttribute("style") ?? "",
+      ))
   ) {
     unwrap(element);
     return null;
@@ -541,7 +550,8 @@ function cleanElement(
 
     if (face) span.style.fontFamily = face;
     if (color) span.style.color = color;
-    if (size >= 1 && size <= 7) span.style.fontSize = `${FONT_TAG_SIZES[size]}pt`;
+    if (size >= 1 && size <= 7)
+      span.style.fontSize = `${FONT_TAG_SIZES[size]}pt`;
 
     element = span;
     tag = "span";
@@ -632,7 +642,8 @@ function cleanElement(
 
   if (tag === "li") {
     const checked = element.getAttribute("data-checked");
-    if (checked === "true" || checked === "false") kept["data-checked"] = checked;
+    if (checked === "true" || checked === "false")
+      kept["data-checked"] = checked;
   }
 
   if (tag === "td" || tag === "th") {
@@ -768,7 +779,10 @@ function normalizeStructure(root: HTMLElement) {
       }
     }
 
-    if (child.nodeType === Node.ELEMENT_NODE && (child as Element).tagName === "BR") {
+    if (
+      child.nodeType === Node.ELEMENT_NODE &&
+      (child as Element).tagName === "BR"
+    ) {
       if (!paragraph) {
         child.remove();
         paragraph = null;
@@ -798,7 +812,10 @@ function normalizeStructure(root: HTMLElement) {
     }
 
     for (const cell of Array.from(table.querySelectorAll("td, th"))) {
-      if (!cell.firstElementChild || !BLOCKS.has(cell.firstElementChild.tagName.toLowerCase())) {
+      if (
+        !cell.firstElementChild ||
+        !BLOCKS.has(cell.firstElementChild.tagName.toLowerCase())
+      ) {
         const p = doc.createElement("p");
         while (cell.firstChild) p.appendChild(cell.firstChild);
         cell.appendChild(p);
@@ -824,9 +841,16 @@ function normalizeStructure(root: HTMLElement) {
   }
 
   // Paragraphs inside paragraphs (div > div from the web) flatten out.
-  for (const inner of Array.from(root.querySelectorAll("p p, h1 p, h2 p, h3 p, h4 p, h5 p, h6 p"))) {
+  for (const inner of Array.from(
+    root.querySelectorAll("p p, h1 p, h2 p, h3 p, h4 p, h5 p, h6 p"),
+  )) {
     const outer = inner.parentElement!;
-    if (outer.tagName === "LI" || outer.tagName === "TD" || outer.tagName === "TH") continue;
+    if (
+      outer.tagName === "LI" ||
+      outer.tagName === "TD" ||
+      outer.tagName === "TH"
+    )
+      continue;
     unwrap(inner);
     outer.appendChild(doc.createElement("br"));
   }
@@ -834,7 +858,10 @@ function normalizeStructure(root: HTMLElement) {
   for (const block of Array.from(
     root.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, td, th"),
   )) {
-    if (!block.textContent && !block.querySelector("img, br, hr, ul, ol, table, p")) {
+    if (
+      !block.textContent &&
+      !block.querySelector("img, br, hr, ul, ol, table, p")
+    ) {
       block.appendChild(doc.createElement("br"));
     }
   }
@@ -872,7 +899,11 @@ export function sanitizeHtml(html: string, options: SanitizeOptions = {}) {
 export function htmlToPlainText(html: string) {
   const parsed = new DOMParser().parseFromString(html, "text/html");
 
-  for (const block of Array.from(parsed.body.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, tr, pre, blockquote"))) {
+  for (const block of Array.from(
+    parsed.body.querySelectorAll(
+      "p, h1, h2, h3, h4, h5, h6, li, tr, pre, blockquote",
+    ),
+  )) {
     block.append("\n");
   }
 

@@ -1,7 +1,12 @@
 // Starting points offered on an empty page. Structure only: bracketed
 // placeholders to replace, nothing that reads as legal advice.
 
-export type Starter = { description: string; html: string; id: string; label: string };
+export type Starter = {
+  description: string;
+  html: string;
+  id: string;
+  label: string;
+};
 
 const signatureBlock = (role: string) =>
   `<p><br></p><p><strong>${role}</strong></p><p><br></p><p>Signature: ____________________</p><p>Name: [Full name]</p><p>Date: ______________</p>`;

@@ -7,7 +7,13 @@ import {
   type DragEvent,
   type ReactNode,
 } from "react";
-import { ChevronDown, FileText, FileX2, RotateCcw, Upload } from "@/components/ui/icons";
+import {
+  ChevronDown,
+  FileText,
+  FileX2,
+  RotateCcw,
+  Upload,
+} from "@/components/ui/icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { AuthNotice, IconTile } from "@/components/auth/auth-parts";

@@ -53,7 +53,9 @@ export function titleFromFileName(name: string) {
     .trim();
 }
 
-export async function importDocumentFile(file: File): Promise<ImportedDocument> {
+export async function importDocumentFile(
+  file: File,
+): Promise<ImportedDocument> {
   const kind = kindOf(file);
 
   if (kind === "doc") {
@@ -69,7 +71,9 @@ export async function importDocumentFile(file: File): Promise<ImportedDocument> 
   }
 
   if (file.size > MAX_IMPORT_BYTES) {
-    throw new ImportError("That document is larger than 30 MB. Choose a smaller one.");
+    throw new ImportError(
+      "That document is larger than 30 MB. Choose a smaller one.",
+    );
   }
 
   const title = titleFromFileName(file.name);

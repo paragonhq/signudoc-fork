@@ -47,8 +47,9 @@ export function defaultPageSize(): PageSizeId {
 
   const region = (navigator.language.split("-")[1] ?? "").toUpperCase();
 
-  return ["US", "CA", "MX", "PH", "CL", "CO", "VE", "GT", "PR"].includes(region) ||
-    region === ""
+  return ["US", "CA", "MX", "PH", "CL", "CO", "VE", "GT", "PR"].includes(
+    region,
+  ) || region === ""
     ? "letter"
     : "a4";
 }
@@ -85,18 +86,23 @@ export function matchMarginPreset(margins: PageMargins): MarginPreset | null {
 }
 
 /** The nearest standard size for a page measured in points. */
-export function matchPageSize(width: number, height: number): {
+export function matchPageSize(
+  width: number,
+  height: number,
+): {
   orientation: PageOrientation;
   size: PageSizeId;
 } {
-  const orientation: PageOrientation = width > height ? "landscape" : "portrait";
+  const orientation: PageOrientation =
+    width > height ? "landscape" : "portrait";
   const short = Math.min(width, height);
   const long = Math.max(width, height);
   let best: PageSizeId = "letter";
   let bestDistance = Number.POSITIVE_INFINITY;
 
   for (const [id, size] of Object.entries(PAGE_SIZES)) {
-    const distance = Math.abs(size.width - short) + Math.abs(size.height - long);
+    const distance =
+      Math.abs(size.width - short) + Math.abs(size.height - long);
 
     if (distance < bestDistance) {
       best = id as PageSizeId;

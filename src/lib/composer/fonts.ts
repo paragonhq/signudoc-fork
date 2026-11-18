@@ -16,12 +16,7 @@
 export type FontFace = "regular" | "italic" | "bold" | "bolditalic";
 
 export type FontCategory =
-  | "standard"
-  | "sans"
-  | "serif"
-  | "display"
-  | "mono"
-  | "handwriting";
+  "standard" | "sans" | "serif" | "display" | "mono" | "handwriting";
 
 export type StandardPdfFont = "Helvetica" | "Times" | "Courier";
 
@@ -98,7 +93,13 @@ export const COMPOSER_FONTS: readonly ComposerFont[] = [
   hosted("Roboto Slab", "roboto-slab", "serif", "serif", UPRIGHT_FACES),
   hosted("Playfair Display", "playfair-display", "display", "serif"),
   hosted("Roboto Mono", "roboto-mono", "mono", "monospace"),
-  hosted("Dancing Script", "dancing-script", "handwriting", "cursive", UPRIGHT_FACES),
+  hosted(
+    "Dancing Script",
+    "dancing-script",
+    "handwriting",
+    "cursive",
+    UPRIGHT_FACES,
+  ),
   hosted("Caveat", "caveat", "handwriting", "cursive", UPRIGHT_FACES),
 ];
 
@@ -178,7 +179,10 @@ export function matchFont(cssFamily: string | null | undefined) {
   }
 
   for (const raw of cssFamily.split(",")) {
-    const name = raw.trim().replace(/^["']|["']$/g, "").toLowerCase();
+    const name = raw
+      .trim()
+      .replace(/^["']|["']$/g, "")
+      .toLowerCase();
 
     if (!name) {
       continue;
@@ -201,7 +205,13 @@ export function matchFont(cssFamily: string | null | undefined) {
 }
 
 export function fontFaceKey(bold: boolean, italic: boolean): FontFace {
-  return bold ? (italic ? "bolditalic" : "bold") : italic ? "italic" : "regular";
+  return bold
+    ? italic
+      ? "bolditalic"
+      : "bold"
+    : italic
+      ? "italic"
+      : "regular";
 }
 
 export function fontFileUrl(font: ComposerFont, face: FontFace) {

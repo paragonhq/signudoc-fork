@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, GitPullRequestArrow, RefreshCw } from "@/components/ui/icons";
+import {
+  ExternalLink,
+  GitPullRequestArrow,
+  RefreshCw,
+} from "@/components/ui/icons";
 
 import {
   CardNotice,

@@ -29,12 +29,25 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from "@/components/ui/icons";
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Segmented } from "@/components/ui/segmented";
 import { toast } from "@/components/ui/toaster";
 import { cn } from "@/lib/cn";
-import { readComposerDraft as readStored, writeComposerDraft as writeStored, type ComposerSource } from "@/lib/composer/drafts";
-import { ComposerEditor, EMPTY_DOCUMENT, type FormatState } from "@/lib/composer/editor";
+import {
+  readComposerDraft as readStored,
+  writeComposerDraft as writeStored,
+  type ComposerSource,
+} from "@/lib/composer/drafts";
+import {
+  ComposerEditor,
+  EMPTY_DOCUMENT,
+  type FormatState,
+} from "@/lib/composer/editor";
 import {
   COMPOSER_IMPORT_ACCEPT,
   importDocumentFile,
@@ -52,7 +65,11 @@ import {
   type PageSetup,
   type PageSizeId,
 } from "@/lib/composer/page";
-import { ensureComposerStyles, measurePageStarts, renderDocumentPdf } from "@/lib/composer/pdf";
+import {
+  ensureComposerStyles,
+  measurePageStarts,
+  renderDocumentPdf,
+} from "@/lib/composer/pdf";
 import { STARTERS } from "@/lib/composer/starters";
 
 import { keepSelection } from "./composer-controls";
@@ -61,7 +78,11 @@ import { ComposerToolbar } from "./composer-toolbar";
 
 export type { ComposerSource };
 
-export type ComposerResult = { file: File; pageCount: number; source: ComposerSource };
+export type ComposerResult = {
+  file: File;
+  pageCount: number;
+  source: ComposerSource;
+};
 
 export type DocumentComposerProps = {
   /** What the primary button says: "Continue", "Use this document". */
@@ -109,7 +130,9 @@ const EMPTY_STATE: FormatState = {
 };
 
 function fileSafeName(title: string) {
-  return (title.trim() || "Document").replace(/[\\/:*?"<>|]+/g, "-").slice(0, 120);
+  return (title.trim() || "Document")
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .slice(0, 120);
 }
 
 export default function DocumentComposer({
@@ -122,8 +145,11 @@ export default function DocumentComposer({
 }: DocumentComposerProps) {
   const start = useMemo<ComposerSource>(() => {
     if (initial) return initial;
-    const stored = typeof window === "undefined" ? null : readStored(storageKey);
-    return stored ?? { html: EMPTY_DOCUMENT, page: defaultPageSetup(), title: "" };
+    const stored =
+      typeof window === "undefined" ? null : readStored(storageKey);
+    return (
+      stored ?? { html: EMPTY_DOCUMENT, page: defaultPageSetup(), title: "" }
+    );
     // Read once, when the composer opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -133,18 +159,28 @@ export default function DocumentComposer({
   // word processor; elsewhere at 100%.
   const [zoom, setZoom] = useState(() => {
     const pageWidthPx = pageDimensions(start.page).width * PX_PER_PT;
-    const available = typeof window === "undefined" ? pageWidthPx : window.innerWidth - 32;
-    return available < pageWidthPx ? Math.max(0.3, Math.floor((available / pageWidthPx) * 100) / 100) : 1;
+    const available =
+      typeof window === "undefined" ? pageWidthPx : window.innerWidth - 32;
+    return available < pageWidthPx
+      ? Math.max(0.3, Math.floor((available / pageWidthPx) * 100) / 100)
+      : 1;
   });
   const [state, setState] = useState<FormatState>(EMPTY_STATE);
   const [editor, setEditor] = useState<ComposerEditor | null>(null);
   const [empty, setEmpty] = useState(true);
   const [counts, setCounts] = useState({ characters: 0, words: 0 });
-  const [pages, setPages] = useState<{ count: number; starts: number[] }>({ count: 1, starts: [] });
+  const [pages, setPages] = useState<{ count: number; starts: number[] }>({
+    count: 1,
+    starts: [],
+  });
   const [saved, setSaved] = useState<"idle" | "saved" | "failed">("idle");
   const [visibleNotes, setVisibleNotes] = useState(notes);
   const [busy, setBusy] = useState<null | "import" | "render">(null);
-  const [linkEditor, setLinkEditor] = useState<{ href: string; rect: DOMRect; text: string } | null>(null);
+  const [linkEditor, setLinkEditor] = useState<{
+    href: string;
+    rect: DOMRect;
+    text: string;
+  } | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -161,7 +197,8 @@ export default function DocumentComposer({
   });
 
   const { height: pageHeightPt, width: pageWidthPt } = pageDimensions(page);
-  const contentHeightPx = (pageHeightPt - page.margins.top - page.margins.bottom) * PX_PER_PT;
+  const contentHeightPx =
+    (pageHeightPt - page.margins.top - page.margins.bottom) * PX_PER_PT;
 
   useLayoutEffect(() => {
     ensureComposerStyles();
@@ -181,8 +218,20 @@ export default function DocumentComposer({
     saveTimer.current = window.setTimeout(() => {
       const instance = editorInstance.current;
       if (!instance) return;
-      const { page: currentPage, storageKey: key, title: currentTitle } = latest.current;
-      setSaved(writeStored(key, { html: instance.getHtml(), page: currentPage, title: currentTitle }) ? "saved" : "failed");
+      const {
+        page: currentPage,
+        storageKey: key,
+        title: currentTitle,
+      } = latest.current;
+      setSaved(
+        writeStored(key, {
+          html: instance.getHtml(),
+          page: currentPage,
+          title: currentTitle,
+        })
+          ? "saved"
+          : "failed",
+      );
     }, 600);
   }, []);
 
@@ -211,7 +260,8 @@ export default function DocumentComposer({
     const instance = editorInstance.current;
     if (!instance) return;
     instance.focus();
-    const rect = instance.selectionRect() ?? instance.root.getBoundingClientRect();
+    const rect =
+      instance.selectionRect() ?? instance.root.getBoundingClientRect();
     const link = instance.currentLink();
     setLinkEditor({
       href: link?.getAttribute("href") ?? "",
@@ -241,7 +291,9 @@ export default function DocumentComposer({
             .catch((error: Error) => toast.error(error.message));
         }
         if (!images.length && !documents.length) {
-          toast.error("Drop pictures or documents (.docx, .html, .md, .txt) here.");
+          toast.error(
+            "Drop pictures or documents (.docx, .html, .md, .txt) here.",
+          );
         }
       },
       onImageSelect: setImage,
@@ -266,7 +318,13 @@ export default function DocumentComposer({
       editorInstance.current = null;
       setEditor(null);
     };
-  }, [openLinkEditor, refreshCounts, scheduleMeasure, scheduleSave, start.html]);
+  }, [
+    openLinkEditor,
+    refreshCounts,
+    scheduleMeasure,
+    scheduleSave,
+    start.html,
+  ]);
 
   // Fonts arriving late move lines: measure again when they land.
   useEffect(() => {
@@ -319,7 +377,11 @@ export default function DocumentComposer({
       setVisibleNotes(imported.notes);
       toast.success(`Imported ${file.name}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "That file couldn't be imported.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "That file couldn't be imported.",
+      );
     } finally {
       setBusy(null);
     }
@@ -341,23 +403,35 @@ export default function DocumentComposer({
 
     try {
       const html = instance.getHtml();
-      const rendered = await renderDocumentPdf({ html, page, title: finalTitle });
+      const rendered = await renderDocumentPdf({
+        html,
+        page,
+        title: finalTitle,
+      });
 
       if (rendered.bytes.byteLength > MAX_PDF_BYTES) {
-        toast.error("This document makes a PDF over 20 MB, usually because of large pictures. Use smaller pictures and try again.");
+        toast.error(
+          "This document makes a PDF over 20 MB, usually because of large pictures. Use smaller pictures and try again.",
+        );
         return;
       }
 
-      const file = new File([rendered.bytes as BlobPart], `${fileSafeName(finalTitle)}.pdf`, {
-        lastModified: Date.now(),
-        type: "application/pdf",
-      });
+      const file = new File(
+        [rendered.bytes as BlobPart],
+        `${fileSafeName(finalTitle)}.pdf`,
+        {
+          lastModified: Date.now(),
+          type: "application/pdf",
+        },
+      );
       const source = { html, page, title: finalTitle };
       writeStored(storageKey, source);
       await onConfirm({ file, pageCount: rendered.pageCount, source });
     } catch (error) {
       console.error("The document could not be turned into a PDF.", error);
-      toast.error("The PDF couldn't be made. Try again; if it keeps failing, remove pictures one at a time to find the cause.");
+      toast.error(
+        "The PDF couldn't be made. Try again; if it keeps failing, remove pictures one at a time to find the cause.",
+      );
     } finally {
       setBusy(null);
     }
@@ -395,7 +469,8 @@ export default function DocumentComposer({
         onChange={(event: ChangeEvent<HTMLInputElement>) => {
           const files = Array.from(event.target.files ?? []);
           event.target.value = "";
-          if (files.length) void editorInstance.current?.insertImageFiles(files);
+          if (files.length)
+            void editorInstance.current?.insertImageFiles(files);
         }}
         ref={imageInputRef}
         tabIndex={-1}
@@ -416,10 +491,18 @@ export default function DocumentComposer({
 
       {/* Top bar */}
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-(--divider) bg-(--paper) px-2 sm:gap-3 sm:px-4">
-        <IconButton aria-label="Close editor (your draft is kept)" onClick={onClose} size="sm" tooltip="Close · draft is kept on this device">
+        <IconButton
+          aria-label="Close editor (your draft is kept)"
+          onClick={onClose}
+          size="sm"
+          tooltip="Close · draft is kept on this device"
+        >
           <XIcon />
         </IconButton>
-        <span aria-hidden="true" className="hidden size-8 shrink-0 items-center justify-center rounded-[0.5rem] bg-(--accent-soft) text-(--accent-ink) sm:flex">
+        <span
+          aria-hidden="true"
+          className="hidden size-8 shrink-0 items-center justify-center rounded-[0.5rem] bg-(--accent-soft) text-(--accent-ink) sm:flex"
+        >
           <FileTextIcon className="size-4" />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -438,8 +521,15 @@ export default function DocumentComposer({
             ref={titleRef}
             value={title}
           />
-          <span aria-live="polite" className="truncate px-1.5 text-[0.75rem] leading-4 text-(--tertiary)">
-            {saved === "failed" ? "Couldn’t save a copy on this device" : saved === "saved" ? "Draft saved on this device" : "Drafts are kept on this device"}
+          <span
+            aria-live="polite"
+            className="truncate px-1.5 text-[0.75rem] leading-4 text-(--tertiary)"
+          >
+            {saved === "failed"
+              ? "Couldn’t save a copy on this device"
+              : saved === "saved"
+                ? "Draft saved on this device"
+                : "Drafts are kept on this device"}
           </span>
         </div>
 
@@ -464,18 +554,38 @@ export default function DocumentComposer({
           <FileImportIcon />
         </IconButton>
         <PageSetupButton onChange={setPage} value={page} />
-        <Button disabled={busy !== null} loading={busy === "render"} onClick={() => void handleConfirm()} size="sm">
+        <Button
+          disabled={busy !== null}
+          loading={busy === "render"}
+          onClick={() => void handleConfirm()}
+          size="sm"
+        >
           {busy === "render" ? "Making the PDF…" : confirmLabel}
         </Button>
       </header>
 
-      <ComposerToolbar actions={{ onImage: () => imageInputRef.current?.click(), onLink: openLinkEditor }} editor={editor} state={state} />
+      <ComposerToolbar
+        actions={{
+          onImage: () => imageInputRef.current?.click(),
+          onLink: openLinkEditor,
+        }}
+        editor={editor}
+        state={state}
+      />
 
       {visibleNotes.length ? (
-        <div className="flex items-start gap-3 border-b border-(--divider) bg-(--warning-soft) px-4 py-2.5 text-[0.8125rem] leading-5 text-(--fg)" role="status">
-          <CircleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-(--warning)" />
+        <div
+          className="flex items-start gap-3 border-b border-(--divider) bg-(--warning-soft) px-4 py-2.5 text-[0.8125rem] leading-5 text-(--fg)"
+          role="status"
+        >
+          <CircleAlertIcon
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0 text-(--warning)"
+          />
           <p className="flex-1">
-            <span className="font-medium">Imported, with a few things left out. </span>
+            <span className="font-medium">
+              Imported, with a few things left out.{" "}
+            </span>
             {visibleNotes.join(" ")}
           </p>
           <button
@@ -498,17 +608,26 @@ export default function DocumentComposer({
         <div
           className="relative min-h-0 flex-1 overflow-auto overscroll-contain"
           onDragOver={(event) => {
-            if (event.dataTransfer.types.includes("Files")) event.preventDefault();
+            if (event.dataTransfer.types.includes("Files"))
+              event.preventDefault();
           }}
           onDrop={(event) => {
             // Drops outside the sheet land at the end of the document.
-            if (!editorRef.current?.contains(event.target as Node) && event.dataTransfer.files.length) {
+            if (
+              !editorRef.current?.contains(event.target as Node) &&
+              event.dataTransfer.files.length
+            ) {
               event.preventDefault();
               editorInstance.current?.focusEnd();
               const files = Array.from(event.dataTransfer.files);
-              const images = files.filter((file) => file.type.startsWith("image/"));
-              if (images.length) void editorInstance.current?.insertImageFiles(images);
-              const documents = files.filter((file) => isComposerImportable(file));
+              const images = files.filter((file) =>
+                file.type.startsWith("image/"),
+              );
+              if (images.length)
+                void editorInstance.current?.insertImageFiles(images);
+              const documents = files.filter((file) =>
+                isComposerImportable(file),
+              );
               for (const file of documents) void handleImport(file);
             }
           }}
@@ -543,7 +662,10 @@ export default function DocumentComposer({
                   </span>
                 </div>
               ))}
-              <span aria-hidden="true" className="absolute top-3 -right-2 translate-x-full rounded-full bg-(--paper) px-2 py-0.5 text-[0.6875rem] font-medium tabular-nums text-(--secondary) shadow-(--shadow-xs) max-sm:hidden">
+              <span
+                aria-hidden="true"
+                className="absolute top-3 -right-2 translate-x-full rounded-full bg-(--paper) px-2 py-0.5 text-[0.6875rem] font-medium tabular-nums text-(--secondary) shadow-(--shadow-xs) max-sm:hidden"
+              >
                 1
               </span>
 
@@ -556,12 +678,27 @@ export default function DocumentComposer({
               />
 
               {empty && editor ? (
-                <div className="pointer-events-none absolute right-0 left-0" style={{ top: page.margins.top * PX_PER_PT, paddingLeft: page.margins.left * PX_PER_PT, paddingRight: page.margins.right * PX_PER_PT }}>
-                  <p className="text-[11pt] text-[#9aa0a6]" style={{ fontFamily: "Arial, sans-serif" }}>
+                <div
+                  className="pointer-events-none absolute right-0 left-0"
+                  style={{
+                    top: page.margins.top * PX_PER_PT,
+                    paddingLeft: page.margins.left * PX_PER_PT,
+                    paddingRight: page.margins.right * PX_PER_PT,
+                  }}
+                >
+                  <p
+                    className="text-[11pt] text-[#9aa0a6]"
+                    style={{ fontFamily: "Arial, sans-serif" }}
+                  >
                     Start typing, paste from anywhere, or drop in a document…
                   </p>
-                  <div className="pointer-events-auto mt-8 flex flex-col gap-2" style={{ zoom: 1 / zoom }}>
-                    <p className="text-[0.75rem] font-medium tracking-wide text-[#80868b] uppercase">Or start from</p>
+                  <div
+                    className="pointer-events-auto mt-8 flex flex-col gap-2"
+                    style={{ zoom: 1 / zoom }}
+                  >
+                    <p className="text-[0.75rem] font-medium tracking-wide text-[#80868b] uppercase">
+                      Or start from
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {STARTERS.map((starter) => (
                         <button
@@ -571,8 +708,12 @@ export default function DocumentComposer({
                           onMouseDown={keepSelection}
                           type="button"
                         >
-                          <span className="text-[0.8125rem] font-semibold text-[#1f1f1f]">{starter.label}</span>
-                          <span className="text-[0.75rem] leading-4 text-[#5f6368]">{starter.description}</span>
+                          <span className="text-[0.8125rem] font-semibold text-[#1f1f1f]">
+                            {starter.label}
+                          </span>
+                          <span className="text-[0.75rem] leading-4 text-[#5f6368]">
+                            {starter.description}
+                          </span>
                         </button>
                       ))}
                       <button
@@ -581,8 +722,12 @@ export default function DocumentComposer({
                         onMouseDown={keepSelection}
                         type="button"
                       >
-                        <span className="text-[0.8125rem] font-semibold text-[#1f1f1f]">Import a document</span>
-                        <span className="text-[0.75rem] leading-4 text-[#5f6368]">Word (.docx), HTML, Markdown or text</span>
+                        <span className="text-[0.8125rem] font-semibold text-[#1f1f1f]">
+                          Import a document
+                        </span>
+                        <span className="text-[0.75rem] leading-4 text-[#5f6368]">
+                          Word (.docx), HTML, Markdown or text
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -600,14 +745,26 @@ export default function DocumentComposer({
         </span>
         <span aria-hidden="true">·</span>
         <span className="tabular-nums">
-          {counts.words.toLocaleString()} {counts.words === 1 ? "word" : "words"}
+          {counts.words.toLocaleString()}{" "}
+          {counts.words === 1 ? "word" : "words"}
         </span>
-        <span aria-hidden="true" className="max-sm:hidden">·</span>
-        <span className="tabular-nums max-sm:hidden">{counts.characters.toLocaleString()} characters</span>
+        <span aria-hidden="true" className="max-sm:hidden">
+          ·
+        </span>
+        <span className="tabular-nums max-sm:hidden">
+          {counts.characters.toLocaleString()} characters
+        </span>
         <span className="flex-1" />
-        <span className="max-md:hidden">Signature fields are placed in the next step</span>
+        <span className="max-md:hidden">
+          Signature fields are placed in the next step
+        </span>
         <div className="flex items-center gap-0.5">
-          <IconButton aria-label="Zoom out" disabled={!zoomOut} onClick={() => zoomOut && setZoom(zoomOut)} size="xs">
+          <IconButton
+            aria-label="Zoom out"
+            disabled={!zoomOut}
+            onClick={() => zoomOut && setZoom(zoomOut)}
+            size="xs"
+          >
             <ZoomOutIcon />
           </IconButton>
           <button
@@ -618,7 +775,12 @@ export default function DocumentComposer({
           >
             {Math.round(zoom * 100)}%
           </button>
-          <IconButton aria-label="Zoom in" disabled={!zoomIn} onClick={() => zoomIn && setZoom(zoomIn)} size="xs">
+          <IconButton
+            aria-label="Zoom in"
+            disabled={!zoomIn}
+            onClick={() => zoomIn && setZoom(zoomIn)}
+            size="xs"
+          >
             <ZoomInIcon />
           </IconButton>
         </div>
@@ -635,13 +797,21 @@ export default function DocumentComposer({
         />
       ) : null}
 
-      {image && editor && image.isConnected ? <ImageControls editor={editor} image={image} zoom={zoom} /> : null}
+      {image && editor && image.isConnected ? (
+        <ImageControls editor={editor} image={image} zoom={zoom} />
+      ) : null}
     </div>,
     document.body,
   );
 }
 
-function PageSetupButton({ onChange, value }: { onChange: (page: PageSetup) => void; value: PageSetup }) {
+function PageSetupButton({
+  onChange,
+  value,
+}: {
+  onChange: (page: PageSetup) => void;
+  value: PageSetup;
+}) {
   const preset = matchMarginPreset(value.margins);
   const toInches = (pt: number) => Math.round((pt / 72) * 100) / 100;
 
@@ -653,36 +823,55 @@ function PageSetupButton({ onChange, value }: { onChange: (page: PageSetup) => v
           <span className="max-md:hidden">Page setup</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="flex w-80 flex-col gap-4" onCloseAutoFocus={(event) => event.preventDefault()}>
+      <PopoverContent
+        align="end"
+        className="flex w-80 flex-col gap-4"
+        onCloseAutoFocus={(event) => event.preventDefault()}
+      >
         <div className="flex flex-col gap-2">
-          <p className="text-[0.8125rem] font-semibold text-(--fg)">Paper size</p>
+          <p className="text-[0.8125rem] font-semibold text-(--fg)">
+            Paper size
+          </p>
           <div className="grid grid-cols-3 gap-1.5">
             {(Object.keys(PAGE_SIZES) as PageSizeId[]).map((id) => (
               <button
                 aria-pressed={value.size === id}
                 className={cn(
                   "flex flex-col items-start rounded-[0.625rem] border px-2.5 py-2 text-left outline-none transition-colors duration-(--dur-hover) focus-visible:shadow-(--focus-ring)",
-                  value.size === id ? "border-(--accent) bg-(--accent-softer)" : "border-(--border) hover:border-(--border-hover)",
+                  value.size === id
+                    ? "border-(--accent) bg-(--accent-softer)"
+                    : "border-(--border) hover:border-(--border-hover)",
                 )}
                 key={id}
                 onClick={() => onChange({ ...value, size: id })}
                 type="button"
               >
-                <span className="text-[0.8125rem] font-medium">{PAGE_SIZES[id].label}</span>
-                <span className="text-[0.6875rem] text-(--secondary)">{PAGE_SIZES[id].detail}</span>
+                <span className="text-[0.8125rem] font-medium">
+                  {PAGE_SIZES[id].label}
+                </span>
+                <span className="text-[0.6875rem] text-(--secondary)">
+                  {PAGE_SIZES[id].detail}
+                </span>
               </button>
             ))}
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <p className="text-[0.8125rem] font-semibold text-(--fg)">Orientation</p>
+          <p className="text-[0.8125rem] font-semibold text-(--fg)">
+            Orientation
+          </p>
           <Segmented
             aria-label="Orientation"
             items={[
               { label: "Portrait", value: "portrait" },
               { label: "Landscape", value: "landscape" },
             ]}
-            onValueChange={(orientation) => onChange({ ...value, orientation: orientation as PageSetup["orientation"] })}
+            onValueChange={(orientation) =>
+              onChange({
+                ...value,
+                orientation: orientation as PageSetup["orientation"],
+              })
+            }
             value={value.orientation}
           />
         </div>
@@ -694,10 +883,14 @@ function PageSetupButton({ onChange, value }: { onChange: (page: PageSetup) => v
                 aria-pressed={preset === name}
                 className={cn(
                   "flex h-8 items-center justify-between rounded-[0.5rem] px-2.5 text-[0.8125rem] outline-none transition-colors duration-(--dur-hover) focus-visible:shadow-(--focus-ring)",
-                  preset === name ? "bg-(--accent-softer) font-medium text-(--accent-ink)" : "hover:bg-(--hover)",
+                  preset === name
+                    ? "bg-(--accent-softer) font-medium text-(--accent-ink)"
+                    : "hover:bg-(--hover)",
                 )}
                 key={name}
-                onClick={() => onChange({ ...value, margins: { ...MARGIN_PRESETS[name] } })}
+                onClick={() =>
+                  onChange({ ...value, margins: { ...MARGIN_PRESETS[name] } })
+                }
                 type="button"
               >
                 {MARGIN_PRESET_LABELS[name]}
@@ -706,7 +899,10 @@ function PageSetupButton({ onChange, value }: { onChange: (page: PageSetup) => v
           </div>
           <div className="grid grid-cols-4 gap-1.5 pt-1">
             {(["top", "bottom", "left", "right"] as const).map((side) => (
-              <label className="flex flex-col gap-1 text-[0.6875rem] font-medium text-(--secondary) capitalize" key={side}>
+              <label
+                className="flex flex-col gap-1 text-[0.6875rem] font-medium text-(--secondary) capitalize"
+                key={side}
+              >
                 {side}
                 <input
                   className="h-8 w-full rounded-[0.4375rem] border border-(--border) bg-(--paper) px-1.5 text-center text-[0.8125rem] tabular-nums text-(--fg) outline-none focus:border-(--accent) focus:shadow-(--focus-ring-input)"
@@ -716,7 +912,13 @@ function PageSetupButton({ onChange, value }: { onChange: (page: PageSetup) => v
                   onChange={(event) => {
                     const inches = Number.parseFloat(event.target.value);
                     if (Number.isFinite(inches) && inches >= 0 && inches <= 4) {
-                      onChange({ ...value, margins: { ...value.margins, [side]: Math.round(inches * 72) } });
+                      onChange({
+                        ...value,
+                        margins: {
+                          ...value.margins,
+                          [side]: Math.round(inches * 72),
+                        },
+                      });
                     }
                   }}
                   step={0.25}
@@ -726,7 +928,9 @@ function PageSetupButton({ onChange, value }: { onChange: (page: PageSetup) => v
               </label>
             ))}
           </div>
-          <p className="text-[0.6875rem] text-(--tertiary)">Margins in inches.</p>
+          <p className="text-[0.6875rem] text-(--tertiary)">
+            Margins in inches.
+          </p>
         </div>
       </PopoverContent>
     </Popover>
@@ -750,7 +954,12 @@ function LinkEditor({
   return (
     <Popover onOpenChange={(open) => !open && onClose()} open>
       <PopoverAnchor virtualRef={anchor} />
-      <PopoverContent align="start" className="w-80" onCloseAutoFocus={(event) => event.preventDefault()} side="bottom">
+      <PopoverContent
+        align="start"
+        className="w-80"
+        onCloseAutoFocus={(event) => event.preventDefault()}
+        side="bottom"
+      >
         <form
           className="flex flex-col gap-3"
           onSubmit={(event) => {
@@ -809,7 +1018,15 @@ function LinkEditor({
 }
 
 /** Resize handle and a small bar for the selected picture. */
-function ImageControls({ editor, image, zoom }: { editor: ComposerEditor; image: HTMLImageElement; zoom: number }) {
+function ImageControls({
+  editor,
+  image,
+  zoom,
+}: {
+  editor: ComposerEditor;
+  image: HTMLImageElement;
+  zoom: number;
+}) {
   const [rect, setRect] = useState(() => image.getBoundingClientRect());
   const drag = useRef<{ startWidth: number; startX: number } | null>(null);
 
@@ -823,7 +1040,8 @@ function ImageControls({ editor, image, zoom }: { editor: ComposerEditor; image:
     return () => cancelAnimationFrame(frame);
   }, [image]);
 
-  const contentWidthPt = (editor.root.getBoundingClientRect().width / zoom) * 0.75;
+  const contentWidthPt =
+    (editor.root.getBoundingClientRect().width / zoom) * 0.75;
   const align = image.getAttribute("data-align") ?? "inline";
   const setAlign = (value: "left" | "center" | "right") => {
     editor.run(() => {
@@ -836,7 +1054,10 @@ function ImageControls({ editor, image, zoom }: { editor: ComposerEditor; image:
       <div
         className="fixed z-[65] flex items-center gap-0.5 rounded-[0.625rem] bg-(--paper) p-1 shadow-(--shadow-pop)"
         onMouseDown={keepSelection}
-        style={{ left: Math.max(8, rect.left), top: Math.max(64, rect.top - 44) }}
+        style={{
+          left: Math.max(8, rect.left),
+          top: Math.max(64, rect.top - 44),
+        }}
       >
         {(
           [
@@ -867,7 +1088,9 @@ function ImageControls({ editor, image, zoom }: { editor: ComposerEditor; image:
           <IconButton
             aria-label={`Align picture ${value}`}
             aria-pressed={align === value}
-            className={cn(align === value && "bg-(--accent-soft) text-(--accent-ink)")}
+            className={cn(
+              align === value && "bg-(--accent-soft) text-(--accent-ink)",
+            )}
             key={value}
             onClick={() => setAlign(value)}
             size="xs"
@@ -877,7 +1100,12 @@ function ImageControls({ editor, image, zoom }: { editor: ComposerEditor; image:
           </IconButton>
         ))}
         <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-(--divider)" />
-        <IconButton aria-label="Delete picture" onClick={() => editor.removeImage(image)} size="xs" tooltipSide="top">
+        <IconButton
+          aria-label="Delete picture"
+          onClick={() => editor.removeImage(image)}
+          size="xs"
+          tooltipSide="top"
+        >
           <Trash2Icon />
         </IconButton>
       </div>
@@ -887,12 +1115,22 @@ function ImageControls({ editor, image, zoom }: { editor: ComposerEditor; image:
         onPointerDown={(event) => {
           event.preventDefault();
           (event.target as HTMLElement).setPointerCapture(event.pointerId);
-          drag.current = { startWidth: image.getBoundingClientRect().width / zoom, startX: event.clientX };
+          drag.current = {
+            startWidth: image.getBoundingClientRect().width / zoom,
+            startX: event.clientX,
+          };
         }}
         onPointerMove={(event) => {
           if (!drag.current) return;
-          const width = Math.max(24, drag.current.startWidth + (event.clientX - drag.current.startX) / zoom);
-          editor.previewImageWidth(image, Math.min(width * 0.75, contentWidthPt));
+          const width = Math.max(
+            24,
+            drag.current.startWidth +
+              (event.clientX - drag.current.startX) / zoom,
+          );
+          editor.previewImageWidth(
+            image,
+            Math.min(width * 0.75, contentWidthPt),
+          );
         }}
         onPointerUp={() => {
           if (!drag.current) return;

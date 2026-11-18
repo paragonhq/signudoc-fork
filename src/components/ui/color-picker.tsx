@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type PointerEvent,
-} from "react";
+import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 import { Check } from "@/components/ui/icons";
 import {

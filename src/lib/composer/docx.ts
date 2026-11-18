@@ -98,7 +98,9 @@ const PAGE_BREAK = "\u0000PAGE\u0000";
 function kids(element: Element | null | undefined, name: string) {
   if (!element) return [];
 
-  return Array.from(element.children).filter((child) => child.localName === name);
+  return Array.from(element.children).filter(
+    (child) => child.localName === name,
+  );
 }
 
 function kid(element: Element | null | undefined, name: string) {
@@ -109,9 +111,7 @@ function attr(element: Element | null | undefined, name: string) {
   if (!element) return null;
 
   return (
-    element.getAttribute(`w:${name}`) ??
-    element.getAttribute(name) ??
-    null
+    element.getAttribute(`w:${name}`) ?? element.getAttribute(name) ?? null
   );
 }
 
@@ -311,7 +311,9 @@ function imageFor(ctx: Context, relId: string) {
       const type = IMAGE_TYPES[ext];
       const read = ctx.entries.get(path);
       if (!type || !read) {
-        ctx.notes.add("Some pictures use a format that can't be shown and were left out.");
+        ctx.notes.add(
+          "Some pictures use a format that can't be shown and were left out.",
+        );
         return null;
       }
       return `data:${type};base64,${bytesToBase64(await read())}`;
@@ -331,7 +333,12 @@ function runStyle(props: RunProps, base: RunProps, heading: boolean) {
     styles.push(`font-family: '${font.family}'`);
   }
 
-  if (props.sizePt && (heading ? props.sizePt !== base.sizePt : props.sizePt !== DEFAULT_FONT_SIZE_PT)) {
+  if (
+    props.sizePt &&
+    (heading
+      ? props.sizePt !== base.sizePt
+      : props.sizePt !== DEFAULT_FONT_SIZE_PT)
+  ) {
     styles.push(`font-size: ${props.sizePt}pt`);
   }
 
@@ -346,7 +353,12 @@ function runStyle(props: RunProps, base: RunProps, heading: boolean) {
   return styles.join("; ");
 }
 
-function wrapRun(text: string, props: RunProps, base: RunProps, heading: boolean) {
+function wrapRun(
+  text: string,
+  props: RunProps,
+  base: RunProps,
+  heading: boolean,
+) {
   let html = text;
   const style = runStyle(props, base, heading);
 
@@ -383,7 +395,12 @@ async function convertRun(
   let text = "";
   const flush = () => {
     if (text) {
-      out += wrapRun(escapeHtml(props.caps ? text.toUpperCase() : text), props, base, heading);
+      out += wrapRun(
+        escapeHtml(props.caps ? text.toUpperCase() : text),
+        props,
+        base,
+        heading,
+      );
       text = "";
     }
   };
@@ -471,7 +488,12 @@ async function convertInline(
       case "proofErr":
         break;
       case "sdt":
-        out += await convertInline(kid(child, "sdtContent") ?? child, ctx, base, heading);
+        out += await convertInline(
+          kid(child, "sdtContent") ?? child,
+          ctx,
+          base,
+          heading,
+        );
         break;
       default:
         // ins, smartTag, fldSimple, customXml, moveTo …: their runs count.
@@ -489,9 +511,11 @@ function paragraphStyle(props: ParaProps, inList: boolean) {
   if (!inList && props.indentPt && props.indentPt > 0) {
     styles.push(`margin-left: ${props.indentPt}pt`);
   }
-  if (!inList && props.firstLinePt) styles.push(`text-indent: ${props.firstLinePt}pt`);
+  if (!inList && props.firstLinePt)
+    styles.push(`text-indent: ${props.firstLinePt}pt`);
   if (props.spaceBeforePt) styles.push(`margin-top: ${props.spaceBeforePt}pt`);
-  if (props.spaceAfterPt && !inList) styles.push(`margin-bottom: ${props.spaceAfterPt}pt`);
+  if (props.spaceAfterPt && !inList)
+    styles.push(`margin-bottom: ${props.spaceAfterPt}pt`);
   if (props.lineHeight && Math.abs(props.lineHeight - 1.15) > 0.04) {
     styles.push(`line-height: ${Math.round(props.lineHeight * 100) / 100}`);
   }
@@ -501,11 +525,20 @@ function paragraphStyle(props: ParaProps, inList: boolean) {
 
 type Block =
   | { kind: "html"; html: string }
-  | { kind: "list"; html: string; level: number; ordered: boolean; listStyle?: string; start: number; key: string };
+  | {
+      kind: "list";
+      html: string;
+      level: number;
+      ordered: boolean;
+      listStyle?: string;
+      start: number;
+      key: string;
+    };
 
 function listInfo(ctx: Context, numId: string, level: number) {
   const levels = ctx.numbering.get(numId);
-  const info = levels?.get(level) ?? levels?.get(0) ?? { format: "bullet", start: 1 };
+  const info = levels?.get(level) ??
+    levels?.get(0) ?? { format: "bullet", start: 1 };
   const ordered = info.format !== "bullet" && info.format !== "none";
   const listStyle: Record<string, string> = {
     decimal: "decimal",
@@ -577,7 +610,10 @@ function vMergeOf(tc: Element) {
 }
 
 function gridSpanOf(tc: Element) {
-  return Number.parseInt(attr(kid(kid(tc, "tcPr"), "gridSpan"), "val") ?? "1", 10) || 1;
+  return (
+    Number.parseInt(attr(kid(kid(tc, "tcPr"), "gridSpan"), "val") ?? "1", 10) ||
+    1
+  );
 }
 
 /** Rowspan of each cell that starts a vertical merge, keyed "row_column". */
@@ -644,12 +680,18 @@ async function convertTable(table: Element, ctx: Context): Promise<string> {
       const vAlign = attr(kid(tcPr, "vAlign"), "val");
       const styles: string[] = [];
 
-      if (fill && /^[0-9a-f]{6}$/i.test(fill) && fill.toLowerCase() !== "ffffff") {
+      if (
+        fill &&
+        /^[0-9a-f]{6}$/i.test(fill) &&
+        fill.toLowerCase() !== "ffffff"
+      ) {
         styles.push(`background-color: #${fill}`);
       }
       if (widthPt) styles.push(`width: ${Math.round(widthPt)}pt`);
       if (vAlign === "center" || vAlign === "bottom") {
-        styles.push(`vertical-align: ${vAlign === "center" ? "middle" : "bottom"}`);
+        styles.push(
+          `vertical-align: ${vAlign === "center" ? "middle" : "bottom"}`,
+        );
       }
 
       const rowspan = rowspans.get(`${rowIndex}_${column}`) ?? 1;
@@ -747,7 +789,8 @@ async function convertBody(container: Element, ctx: Context): Promise<string> {
         break;
       case "sdt": {
         const content = kid(child, "sdtContent");
-        if (content) blocks.push({ kind: "html", html: await convertBody(content, ctx) });
+        if (content)
+          blocks.push({ kind: "html", html: await convertBody(content, ctx) });
         break;
       }
       case "customXml":
@@ -766,7 +809,9 @@ function parseXml(text: string | null) {
   return doc.getElementsByTagName("parsererror").length ? null : doc;
 }
 
-export async function docxToHtml(buffer: ArrayBuffer): Promise<ImportedDocument> {
+export async function docxToHtml(
+  buffer: ArrayBuffer,
+): Promise<ImportedDocument> {
   const entries = readZip(buffer);
   const documentXml = parseXml(await readZipText(entries, "word/document.xml"));
 
@@ -775,9 +820,15 @@ export async function docxToHtml(buffer: ArrayBuffer): Promise<ImportedDocument>
   }
 
   const stylesXml = parseXml(await readZipText(entries, "word/styles.xml"));
-  const numberingXml = parseXml(await readZipText(entries, "word/numbering.xml"));
-  const relsXml = parseXml(await readZipText(entries, "word/_rels/document.xml.rels"));
-  const themeXml = parseXml(await readZipText(entries, "word/theme/theme1.xml"));
+  const numberingXml = parseXml(
+    await readZipText(entries, "word/numbering.xml"),
+  );
+  const relsXml = parseXml(
+    await readZipText(entries, "word/_rels/document.xml.rels"),
+  );
+  const themeXml = parseXml(
+    await readZipText(entries, "word/theme/theme1.xml"),
+  );
   const coreXml = parseXml(await readZipText(entries, "docProps/core.xml"));
 
   const ctx: Context = {
@@ -795,12 +846,18 @@ export async function docxToHtml(buffer: ArrayBuffer): Promise<ImportedDocument>
   if (themeXml) {
     const major = themeXml.getElementsByTagName("a:majorFont")[0];
     const minor = themeXml.getElementsByTagName("a:minorFont")[0];
-    ctx.theme.major = major?.getElementsByTagName("a:latin")[0]?.getAttribute("typeface") ?? undefined;
-    ctx.theme.minor = minor?.getElementsByTagName("a:latin")[0]?.getAttribute("typeface") ?? undefined;
+    ctx.theme.major =
+      major?.getElementsByTagName("a:latin")[0]?.getAttribute("typeface") ??
+      undefined;
+    ctx.theme.minor =
+      minor?.getElementsByTagName("a:latin")[0]?.getAttribute("typeface") ??
+      undefined;
   }
 
   if (relsXml) {
-    for (const rel of Array.from(relsXml.getElementsByTagName("Relationship"))) {
+    for (const rel of Array.from(
+      relsXml.getElementsByTagName("Relationship"),
+    )) {
       ctx.rels.set(rel.getAttribute("Id") ?? "", {
         mode: rel.getAttribute("TargetMode") ?? undefined,
         target: rel.getAttribute("Target") ?? "",
@@ -837,7 +894,8 @@ export async function docxToHtml(buffer: ArrayBuffer): Promise<ImportedDocument>
       for (const lvl of kids(abstract, "lvl")) {
         levels.set(Number.parseInt(attr(lvl, "ilvl") ?? "0", 10), {
           format: attr(kid(lvl, "numFmt"), "val") ?? "bullet",
-          start: Number.parseInt(attr(kid(lvl, "start"), "val") ?? "1", 10) || 1,
+          start:
+            Number.parseInt(attr(kid(lvl, "start"), "val") ?? "1", 10) || 1,
         });
       }
       abstracts.set(attr(abstract, "abstractNumId") ?? "", levels);
@@ -877,16 +935,24 @@ export async function docxToHtml(buffer: ArrayBuffer): Promise<ImportedDocument>
       };
     }
 
-    if (kids(sectPr, "headerReference").length || kids(sectPr, "footerReference").length) {
+    if (
+      kids(sectPr, "headerReference").length ||
+      kids(sectPr, "footerReference").length
+    ) {
       ctx.notes.add("Headers and footers were left out.");
     }
   }
 
-  if (entries.has("word/footnotes.xml") && documentXml.getElementsByTagName("w:footnoteReference").length) {
+  if (
+    entries.has("word/footnotes.xml") &&
+    documentXml.getElementsByTagName("w:footnoteReference").length
+  ) {
     ctx.notes.add("Footnotes were left out.");
   }
 
-  const title = coreXml?.getElementsByTagName("dc:title")[0]?.textContent?.trim() || undefined;
+  const title =
+    coreXml?.getElementsByTagName("dc:title")[0]?.textContent?.trim() ||
+    undefined;
 
   return { html, notes: [...ctx.notes], page, title };
 }

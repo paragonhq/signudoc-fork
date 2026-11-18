@@ -50,10 +50,23 @@ import {
   TextUnderlineIcon,
   Undo2Icon,
 } from "@/components/ui/icons";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { SimpleTooltip } from "@/components/ui/tooltip";
-import type { BlockType, ComposerEditor, FormatState } from "@/lib/composer/editor";
-import { COMPOSER_FONTS, FONT_CATEGORY_LABELS, FONT_SIZES_PT, type FontCategory } from "@/lib/composer/fonts";
+import type {
+  BlockType,
+  ComposerEditor,
+  FormatState,
+} from "@/lib/composer/editor";
+import {
+  COMPOSER_FONTS,
+  FONT_CATEGORY_LABELS,
+  FONT_SIZES_PT,
+  type FontCategory,
+} from "@/lib/composer/fonts";
 import { cn } from "@/lib/cn";
 
 import {
@@ -94,9 +107,64 @@ const BLOCK_PREVIEW: Record<BlockType, string> = {
   title: "text-[1.375rem]",
 };
 
-const BLOCK_ORDER: BlockType[] = ["p", "title", "subtitle", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "pre"];
+const BLOCK_ORDER: BlockType[] = [
+  "p",
+  "title",
+  "subtitle",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "blockquote",
+  "pre",
+];
 
-export const SYMBOLS = ["©", "®", "™", "§", "¶", "†", "‡", "•", "…", "—", "–", "°", "±", "×", "÷", "≈", "≠", "≤", "≥", "½", "¼", "¾", "€", "£", "¥", "¢", "→", "←", "↑", "↓", "“", "”", "‘", "’", "«", "»", "µ", "Ω", "π", "∞", "√", "✓"];
+export const SYMBOLS = [
+  "©",
+  "®",
+  "™",
+  "§",
+  "¶",
+  "†",
+  "‡",
+  "•",
+  "…",
+  "—",
+  "–",
+  "°",
+  "±",
+  "×",
+  "÷",
+  "≈",
+  "≠",
+  "≤",
+  "≥",
+  "½",
+  "¼",
+  "¾",
+  "€",
+  "£",
+  "¥",
+  "¢",
+  "→",
+  "←",
+  "↑",
+  "↓",
+  "“",
+  "”",
+  "‘",
+  "’",
+  "«",
+  "»",
+  "µ",
+  "Ω",
+  "π",
+  "∞",
+  "√",
+  "✓",
+];
 
 const LINE_HEIGHTS = [1, 1.15, 1.5, 2, 2.5, 3];
 
@@ -137,13 +205,27 @@ export function ComposerToolbar({
       role="toolbar"
     >
       <div className="flex h-12 items-center gap-0.5 overflow-x-auto px-2 [scrollbar-width:none] sm:px-3 [&::-webkit-scrollbar]:hidden">
-        <ToolButton disabled={!state.canUndo} label="Undo" onClick={() => editor.undo()} shortcut={shortcut("Z")}>
+        <ToolButton
+          disabled={!state.canUndo}
+          label="Undo"
+          onClick={() => editor.undo()}
+          shortcut={shortcut("Z")}
+        >
           <Undo2Icon />
         </ToolButton>
-        <ToolButton disabled={!state.canRedo} label="Redo" onClick={() => editor.redo()} shortcut={shortcut("Z", true)}>
+        <ToolButton
+          disabled={!state.canRedo}
+          label="Redo"
+          onClick={() => editor.redo()}
+          shortcut={shortcut("Z", true)}
+        >
           <Redo2Icon />
         </ToolButton>
-        <ToolButton label="Clear formatting" onClick={() => editor.clearFormatting()} shortcut={`${mod}\\`}>
+        <ToolButton
+          label="Clear formatting"
+          onClick={() => editor.clearFormatting()}
+          shortcut={`${mod}\\`}
+        >
           <TextClearIcon />
         </ToolButton>
 
@@ -151,19 +233,35 @@ export function ComposerToolbar({
 
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <ToolTrigger className="w-[8.25rem] justify-between" label="Paragraph style">
+            <ToolTrigger
+              className="w-[8.25rem] justify-between"
+              label="Paragraph style"
+            >
               {BLOCK_LABELS[state.block]}
             </ToolTrigger>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-64" onCloseAutoFocus={closeFocus}>
             {BLOCK_ORDER.map((type) => (
               <DropdownMenuItem
-                className={cn("justify-between", state.block === type && "bg-(--accent-softer)")}
+                className={cn(
+                  "justify-between",
+                  state.block === type && "bg-(--accent-softer)",
+                )}
                 key={type}
                 onSelect={() => editor.setBlockType(type)}
               >
-                <span className={BLOCK_PREVIEW[type]}>{BLOCK_LABELS[type]}</span>
-                {type === "p" ? <DropdownMenuShortcut>{altShortcut("0")}</DropdownMenuShortcut> : /^h[1-6]$/.test(type) ? <DropdownMenuShortcut>{altShortcut(type.slice(1))}</DropdownMenuShortcut> : null}
+                <span className={BLOCK_PREVIEW[type]}>
+                  {BLOCK_LABELS[type]}
+                </span>
+                {type === "p" ? (
+                  <DropdownMenuShortcut>
+                    {altShortcut("0")}
+                  </DropdownMenuShortcut>
+                ) : /^h[1-6]$/.test(type) ? (
+                  <DropdownMenuShortcut>
+                    {altShortcut(type.slice(1))}
+                  </DropdownMenuShortcut>
+                ) : null}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -171,7 +269,11 @@ export function ComposerToolbar({
 
         <ToolDivider />
 
-        <FontMenu editor={editor} onCloseAutoFocus={closeFocus} value={state.fontFamily} />
+        <FontMenu
+          editor={editor}
+          onCloseAutoFocus={closeFocus}
+          value={state.fontFamily}
+        />
 
         <ToolDivider />
 
@@ -179,16 +281,36 @@ export function ComposerToolbar({
 
         <ToolDivider />
 
-        <ToolButton active={state.bold} label="Bold" onClick={() => editor.toggleMark("bold")} shortcut={shortcut("B")}>
+        <ToolButton
+          active={state.bold}
+          label="Bold"
+          onClick={() => editor.toggleMark("bold")}
+          shortcut={shortcut("B")}
+        >
           <TextBoldIcon />
         </ToolButton>
-        <ToolButton active={state.italic} label="Italic" onClick={() => editor.toggleMark("italic")} shortcut={shortcut("I")}>
+        <ToolButton
+          active={state.italic}
+          label="Italic"
+          onClick={() => editor.toggleMark("italic")}
+          shortcut={shortcut("I")}
+        >
           <TextItalicIcon />
         </ToolButton>
-        <ToolButton active={state.underline} label="Underline" onClick={() => editor.toggleMark("underline")} shortcut={shortcut("U")}>
+        <ToolButton
+          active={state.underline}
+          label="Underline"
+          onClick={() => editor.toggleMark("underline")}
+          shortcut={shortcut("U")}
+        >
           <TextUnderlineIcon />
         </ToolButton>
-        <ToolButton active={state.strike} label="Strikethrough" onClick={() => editor.toggleMark("strikeThrough")} shortcut={shortcut("X", true)}>
+        <ToolButton
+          active={state.strike}
+          label="Strikethrough"
+          onClick={() => editor.toggleMark("strikeThrough")}
+          shortcut={shortcut("X", true)}
+        >
           <TextStrikethroughIcon />
         </ToolButton>
         <ColorButton
@@ -212,7 +334,12 @@ export function ComposerToolbar({
 
         <ToolDivider />
 
-        <ToolButton active={!!state.link} label={state.link ? "Edit link" : "Insert link"} onClick={actions.onLink} shortcut={shortcut("K")}>
+        <ToolButton
+          active={!!state.link}
+          label={state.link ? "Edit link" : "Insert link"}
+          onClick={actions.onLink}
+          shortcut={shortcut("K")}
+        >
           <LinkIcon />
         </ToolButton>
         <ToolButton label="Insert picture" onClick={actions.onImage}>
@@ -233,7 +360,11 @@ export function ComposerToolbar({
             </DropdownMenuTrigger>
           </SimpleTooltip>
           <DropdownMenuContent className="w-60" onCloseAutoFocus={closeFocus}>
-            <InsertMenuItems editor={editor} onImage={actions.onImage} onLink={actions.onLink} />
+            <InsertMenuItems
+              editor={editor}
+              onImage={actions.onImage}
+              onLink={actions.onLink}
+            />
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -241,8 +372,13 @@ export function ComposerToolbar({
 
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <ToolTrigger className="px-2 [&_svg:first-child]:size-4" label="Align and indent">
-              <span className="flex items-center text-(--secondary-strong) [&_svg]:size-4">{alignIcon}</span>
+            <ToolTrigger
+              className="px-2 [&_svg:first-child]:size-4"
+              label="Align and indent"
+            >
+              <span className="flex items-center text-(--secondary-strong) [&_svg]:size-4">
+                {alignIcon}
+              </span>
             </ToolTrigger>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" onCloseAutoFocus={closeFocus}>
@@ -261,7 +397,9 @@ export function ComposerToolbar({
               >
                 {icon}
                 {label}
-                <DropdownMenuShortcut>{shortcut(key, true)}</DropdownMenuShortcut>
+                <DropdownMenuShortcut>
+                  {shortcut(key, true)}
+                </DropdownMenuShortcut>
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
@@ -281,26 +419,42 @@ export function ComposerToolbar({
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <ToolTrigger className="px-2" label="Line and paragraph spacing">
-              <span className="text-xs tabular-nums text-(--secondary-strong)">{state.lineHeight.toFixed(2).replace(/0$/, "")}</span>
+              <span className="text-xs tabular-nums text-(--secondary-strong)">
+                {state.lineHeight.toFixed(2).replace(/0$/, "")}
+              </span>
             </ToolTrigger>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-60" onCloseAutoFocus={closeFocus}>
             <DropdownMenuLabel>Line spacing</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               onValueChange={(value) => editor.setLineHeight(Number(value))}
-              value={String(LINE_HEIGHTS.find((height) => Math.abs(height - state.lineHeight) < 0.03) ?? "")}
+              value={String(
+                LINE_HEIGHTS.find(
+                  (height) => Math.abs(height - state.lineHeight) < 0.03,
+                ) ?? "",
+              )}
             >
               {LINE_HEIGHTS.map((height) => (
                 <DropdownMenuRadioItem key={height} value={String(height)}>
-                  {height === 1 ? "Single" : height === 2 ? "Double" : height.toFixed(2).replace(/0$/, "")}
+                  {height === 1
+                    ? "Single"
+                    : height === 2
+                      ? "Double"
+                      : height.toFixed(2).replace(/0$/, "")}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem checked={state.spaceBefore} onCheckedChange={() => editor.toggleSpacing("before")}>
+            <DropdownMenuCheckboxItem
+              checked={state.spaceBefore}
+              onCheckedChange={() => editor.toggleSpacing("before")}
+            >
               Space before paragraph
             </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem checked={state.spaceAfter} onCheckedChange={() => editor.toggleSpacing("after")}>
+            <DropdownMenuCheckboxItem
+              checked={state.spaceAfter}
+              onCheckedChange={() => editor.toggleSpacing("after")}
+            >
               Space after paragraph
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
@@ -308,15 +462,38 @@ export function ComposerToolbar({
 
         <ToolDivider />
 
-        <ListButton editor={editor} kind="ul" onCloseAutoFocus={closeFocus} state={state} />
-        <ListButton editor={editor} kind="ol" onCloseAutoFocus={closeFocus} state={state} />
-        <ToolButton active={state.list === "checklist"} label="Checklist" onClick={() => editor.toggleList("checklist")} shortcut={shortcut("9", true)}>
+        <ListButton
+          editor={editor}
+          kind="ul"
+          onCloseAutoFocus={closeFocus}
+          state={state}
+        />
+        <ListButton
+          editor={editor}
+          kind="ol"
+          onCloseAutoFocus={closeFocus}
+          state={state}
+        />
+        <ToolButton
+          active={state.list === "checklist"}
+          label="Checklist"
+          onClick={() => editor.toggleList("checklist")}
+          shortcut={shortcut("9", true)}
+        >
           <CheckListIcon />
         </ToolButton>
-        <ToolButton label="Decrease indent" onClick={() => editor.outdent()} shortcut={`${mod}[`}>
+        <ToolButton
+          label="Decrease indent"
+          onClick={() => editor.outdent()}
+          shortcut={`${mod}[`}
+        >
           <TextIndentLessIcon />
         </ToolButton>
-        <ToolButton label="Increase indent" onClick={() => editor.indent()} shortcut={`${mod}]`}>
+        <ToolButton
+          label="Increase indent"
+          onClick={() => editor.indent()}
+          shortcut={`${mod}]`}
+        >
           <TextIndentMoreIcon />
         </ToolButton>
 
@@ -335,32 +512,57 @@ export function ComposerToolbar({
               </button>
             </DropdownMenuTrigger>
           </SimpleTooltip>
-          <DropdownMenuContent align="end" className="w-64" onCloseAutoFocus={closeFocus}>
-            <DropdownMenuCheckboxItem checked={state.superscript} onCheckedChange={() => editor.toggleMark("superscript")}>
+          <DropdownMenuContent
+            align="end"
+            className="w-64"
+            onCloseAutoFocus={closeFocus}
+          >
+            <DropdownMenuCheckboxItem
+              checked={state.superscript}
+              onCheckedChange={() => editor.toggleMark("superscript")}
+            >
               <TextSuperscriptIcon />
               Superscript
               <DropdownMenuShortcut>{mod}.</DropdownMenuShortcut>
             </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem checked={state.subscript} onCheckedChange={() => editor.toggleMark("subscript")}>
+            <DropdownMenuCheckboxItem
+              checked={state.subscript}
+              onCheckedChange={() => editor.toggleMark("subscript")}
+            >
               <TextSubscriptIcon />
               Subscript
               <DropdownMenuShortcut>{mod},</DropdownMenuShortcut>
             </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem checked={state.code} onCheckedChange={() => editor.toggleCode()}>
+            <DropdownMenuCheckboxItem
+              checked={state.code}
+              onCheckedChange={() => editor.toggleCode()}
+            >
               <SourceCodeIcon />
               Inline code
             </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => editor.setBlockType(state.block === "blockquote" ? "p" : "blockquote")}>
+            <DropdownMenuItem
+              onSelect={() =>
+                editor.setBlockType(
+                  state.block === "blockquote" ? "p" : "blockquote",
+                )
+              }
+            >
               <QuoteDownIcon />
               {state.block === "blockquote" ? "Remove quote" : "Quote"}
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => editor.setBlockType(state.block === "pre" ? "p" : "pre")}>
+            <DropdownMenuItem
+              onSelect={() =>
+                editor.setBlockType(state.block === "pre" ? "p" : "pre")
+              }
+            >
               <SourceCodeIcon />
               {state.block === "pre" ? "Remove code block" : "Code block"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => void editor.pasteFromClipboard(true)}>
+            <DropdownMenuItem
+              onSelect={() => void editor.pasteFromClipboard(true)}
+            >
               <ClipboardPasteIcon />
               Paste without formatting
               <DropdownMenuShortcut>{shortcut("V", true)}</DropdownMenuShortcut>
@@ -402,7 +604,10 @@ export function InsertMenuItems({
         Horizontal line
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => editor.insertPageBreak()}>
-        <span aria-hidden="true" className="flex size-4 flex-col justify-center gap-[3px]">
+        <span
+          aria-hidden="true"
+          className="flex size-4 flex-col justify-center gap-[3px]"
+        >
           <span className="h-px w-full bg-current opacity-60" />
           <span className="h-px w-full border-t border-dashed border-current" />
         </span>
@@ -419,7 +624,9 @@ export function InsertMenuItems({
       </DropdownMenuItem>
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
-          <span aria-hidden="true" className="w-4 text-center text-sm">Ω</span>
+          <span aria-hidden="true" className="w-4 text-center text-sm">
+            Ω
+          </span>
           Special character
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="w-auto p-2">
@@ -450,7 +657,7 @@ function FontMenu({
   onCloseAutoFocus: (event: Event) => void;
   value: string;
 }) {
-  const groups = new Map<FontCategory, typeof COMPOSER_FONTS[number][]>();
+  const groups = new Map<FontCategory, (typeof COMPOSER_FONTS)[number][]>();
   for (const font of COMPOSER_FONTS) {
     groups.set(font.category, [...(groups.get(font.category) ?? []), font]);
   }
@@ -463,14 +670,22 @@ function FontMenu({
           <span style={{ fontFamily: current?.stack }}>{value}</span>
         </ToolTrigger>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="max-h-[min(28rem,var(--radix-dropdown-menu-content-available-height))] w-60" onCloseAutoFocus={onCloseAutoFocus}>
+      <DropdownMenuContent
+        className="max-h-[min(28rem,var(--radix-dropdown-menu-content-available-height))] w-60"
+        onCloseAutoFocus={onCloseAutoFocus}
+      >
         {[...groups.entries()].map(([category, fonts], index) => (
           <div key={category}>
             {index > 0 ? <DropdownMenuSeparator /> : null}
-            <DropdownMenuLabel>{FONT_CATEGORY_LABELS[category]}</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              {FONT_CATEGORY_LABELS[category]}
+            </DropdownMenuLabel>
             {fonts.map((font) => (
               <DropdownMenuItem
-                className={cn("justify-between text-[0.9375rem]", font.family === value && "bg-(--accent-softer)")}
+                className={cn(
+                  "justify-between text-[0.9375rem]",
+                  font.family === value && "bg-(--accent-softer)",
+                )}
                 key={font.family}
                 onSelect={() => editor.setFontFamily(font.family)}
                 style={{ fontFamily: font.stack }}
@@ -485,7 +700,13 @@ function FontMenu({
   );
 }
 
-function FontSizeControl({ editor, value }: { editor: ComposerEditor; value: number }) {
+function FontSizeControl({
+  editor,
+  value,
+}: {
+  editor: ComposerEditor;
+  value: number;
+}) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(String(value));
 
@@ -498,7 +719,11 @@ function FontSizeControl({ editor, value }: { editor: ComposerEditor; value: num
 
   return (
     <div className="flex shrink-0 items-center">
-      <ToolButton label="Decrease font size" onClick={() => editor.stepFontSize(-1)} shortcut={shortcut("<", true)}>
+      <ToolButton
+        label="Decrease font size"
+        onClick={() => editor.stepFontSize(-1)}
+        shortcut={shortcut("<", true)}
+      >
         <MinusIcon />
       </ToolButton>
       <Popover
@@ -547,7 +772,8 @@ function FontSizeControl({ editor, value }: { editor: ComposerEditor; value: num
               <button
                 className={cn(
                   "flex h-8 w-full items-center rounded-[0.4375rem] px-3 text-left text-[0.8125rem] tabular-nums outline-none hover:bg-(--hover) focus-visible:bg-(--hover)",
-                  size === value && "bg-(--accent-softer) font-medium text-(--accent-ink)",
+                  size === value &&
+                    "bg-(--accent-softer) font-medium text-(--accent-ink)",
                 )}
                 key={size}
                 onClick={() => apply(size)}
@@ -559,7 +785,11 @@ function FontSizeControl({ editor, value }: { editor: ComposerEditor; value: num
           </div>
         </PopoverContent>
       </Popover>
-      <ToolButton label="Increase font size" onClick={() => editor.stepFontSize(1)} shortcut={shortcut(">", true)}>
+      <ToolButton
+        label="Increase font size"
+        onClick={() => editor.stepFontSize(1)}
+        shortcut={shortcut(">", true)}
+      >
         <PlusIcon />
       </ToolButton>
     </div>
@@ -631,8 +861,17 @@ function ListButton({
 
   return (
     <div className="flex shrink-0 items-center">
-      <ToolButton active={active} label={label} onClick={() => editor.toggleList(kind)} shortcut={shortcut(kind === "ul" ? "8" : "7", true)}>
-        {kind === "ul" ? <LeftToRightListBulletIcon /> : <LeftToRightListNumberIcon />}
+      <ToolButton
+        active={active}
+        label={label}
+        onClick={() => editor.toggleList(kind)}
+        shortcut={shortcut(kind === "ul" ? "8" : "7", true)}
+      >
+        {kind === "ul" ? (
+          <LeftToRightListBulletIcon />
+        ) : (
+          <LeftToRightListNumberIcon />
+        )}
       </ToolButton>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -643,14 +882,27 @@ function ListButton({
             type="button"
           >
             <svg aria-hidden="true" className="size-2.5" viewBox="0 0 10 10">
-              <path d="M2 4l3 3 3-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+              <path
+                d="M2 4l3 3 3-3"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+              />
             </svg>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-52" onCloseAutoFocus={onCloseAutoFocus}>
+        <DropdownMenuContent
+          className="w-52"
+          onCloseAutoFocus={onCloseAutoFocus}
+        >
           {styles.map(([style, preview]) => (
             <DropdownMenuItem
-              className={cn("font-mono text-[0.8125rem] whitespace-pre", active && state.listStyle === style && "bg-(--accent-softer)")}
+              className={cn(
+                "font-mono text-[0.8125rem] whitespace-pre",
+                active && state.listStyle === style && "bg-(--accent-softer)",
+              )}
               key={style}
               onSelect={() => {
                 if (state.list !== kind) editor.toggleList(kind);

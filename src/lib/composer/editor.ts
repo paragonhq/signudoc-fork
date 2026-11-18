@@ -7,7 +7,12 @@
 
 import { INDENT_STEP_PT } from "./doc-styles.ts";
 import { DEFAULT_FONT, DEFAULT_FONT_SIZE_PT, matchFont } from "./fonts.ts";
-import { escapeHtml, htmlToPlainText, sanitizeHtml, textToHtml } from "./sanitize.ts";
+import {
+  escapeHtml,
+  htmlToPlainText,
+  sanitizeHtml,
+  textToHtml,
+} from "./sanitize.ts";
 
 export type BlockType =
   | "p"
@@ -73,7 +78,17 @@ export type FormatState = {
 
 export const EMPTY_DOCUMENT = "<p><br></p>";
 
-const LEAF_BLOCK_TAGS = new Set(["P", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "PRE"]);
+const LEAF_BLOCK_TAGS = new Set([
+  "P",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "H6",
+  "LI",
+  "PRE",
+]);
 const BLOCK_TAGS = new Set([
   ...LEAF_BLOCK_TAGS,
   "BLOCKQUOTE",
@@ -90,20 +105,34 @@ const BLOCK_TAGS = new Set([
 ]);
 
 type Snapshot = { html: string; selection: SavedPath | null };
-type SavedPath = { anchor: number[]; anchorOffset: number; focus: number[]; focusOffset: number };
-type NodeSelection = { anchor: Node; anchorOffset: number; focus: Node; focusOffset: number };
+type SavedPath = {
+  anchor: number[];
+  anchorOffset: number;
+  focus: number[];
+  focusOffset: number;
+};
+type NodeSelection = {
+  anchor: Node;
+  anchorOffset: number;
+  focus: Node;
+  focusOffset: number;
+};
 
 const HISTORY_LIMIT = 300;
 
 function isMac() {
-  return typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+  return (
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad/.test(navigator.platform)
+  );
 }
 
 function rgbToHex(value: string) {
   const match = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/.exec(value);
 
   if (!match) return value;
-  if (match[4] !== undefined && Number.parseFloat(match[4]) === 0) return "transparent";
+  if (match[4] !== undefined && Number.parseFloat(match[4]) === 0)
+    return "transparent";
 
   return `#${[match[1], match[2], match[3]]
     .map((n) => Number(n).toString(16).padStart(2, "0"))
@@ -157,13 +186,25 @@ export class ComposerEditor {
       // Older engines: Enter still works, it just makes <div>s we tidy up.
     }
 
-    this.listen(root, "beforeinput", (event) => this.onBeforeInput(event as InputEvent));
+    this.listen(root, "beforeinput", (event) =>
+      this.onBeforeInput(event as InputEvent),
+    );
     this.listen(root, "input", (event) => this.onInput(event as InputEvent));
-    this.listen(root, "keydown", (event) => this.onKeyDown(event as KeyboardEvent));
-    this.listen(root, "paste", (event) => this.onPaste(event as ClipboardEvent));
-    this.listen(root, "copy", (event) => this.onCopy(event as ClipboardEvent, false));
-    this.listen(root, "cut", (event) => this.onCopy(event as ClipboardEvent, true));
-    this.listen(root, "mousedown", (event) => this.onMouseDown(event as MouseEvent));
+    this.listen(root, "keydown", (event) =>
+      this.onKeyDown(event as KeyboardEvent),
+    );
+    this.listen(root, "paste", (event) =>
+      this.onPaste(event as ClipboardEvent),
+    );
+    this.listen(root, "copy", (event) =>
+      this.onCopy(event as ClipboardEvent, false),
+    );
+    this.listen(root, "cut", (event) =>
+      this.onCopy(event as ClipboardEvent, true),
+    );
+    this.listen(root, "mousedown", (event) =>
+      this.onMouseDown(event as MouseEvent),
+    );
     this.listen(root, "click", (event) => this.onClick(event as MouseEvent));
     this.listen(root, "dragstart", () => {
       this.internalDrag = true;
@@ -175,7 +216,11 @@ export class ComposerEditor {
     this.listen(document, "selectionchange", () => this.onSelectionChange());
   }
 
-  private listen(target: EventTarget, type: string, handler: (event: Event) => void) {
+  private listen(
+    target: EventTarget,
+    type: string,
+    handler: (event: Event) => void,
+  ) {
     target.addEventListener(type, handler);
     this.cleanup.push(() => target.removeEventListener(type, handler));
   }
@@ -191,7 +236,11 @@ export class ComposerEditor {
   getHtml() {
     const clone = this.root.cloneNode(true) as HTMLElement;
 
-    for (const element of Array.from(clone.querySelectorAll("[data-selected], [data-cell-selected], [data-placeholder]"))) {
+    for (const element of Array.from(
+      clone.querySelectorAll(
+        "[data-selected], [data-cell-selected], [data-placeholder]",
+      ),
+    )) {
       element.removeAttribute("data-selected");
       element.removeAttribute("data-cell-selected");
       element.removeAttribute("data-placeholder");
@@ -217,7 +266,10 @@ export class ComposerEditor {
   }
 
   isEmpty() {
-    return !this.root.textContent?.trim() && !this.root.querySelector("img, table, hr");
+    return (
+      !this.root.textContent?.trim() &&
+      !this.root.querySelector("img, table, hr")
+    );
   }
 
   focus() {
@@ -227,7 +279,11 @@ export class ComposerEditor {
 
     const selection = window.getSelection();
 
-    if (this.savedRange && selection && !this.root.contains(selection.anchorNode)) {
+    if (
+      this.savedRange &&
+      selection &&
+      !this.root.contains(selection.anchorNode)
+    ) {
       selection.removeAllRanges();
       selection.addRange(this.savedRange);
     } else if (selection && !this.root.contains(selection.anchorNode)) {
@@ -254,7 +310,11 @@ export class ComposerEditor {
   private range(): Range | null {
     const selection = window.getSelection();
 
-    if (selection && selection.rangeCount > 0 && this.root.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+    if (
+      selection &&
+      selection.rangeCount > 0 &&
+      this.root.contains(selection.getRangeAt(0).commonAncestorContainer)
+    ) {
       return selection.getRangeAt(0);
     }
 
@@ -266,7 +326,11 @@ export class ComposerEditor {
   private savePath(): SavedPath | null {
     const selection = window.getSelection();
 
-    if (!selection || !selection.anchorNode || !this.root.contains(selection.anchorNode)) {
+    if (
+      !selection ||
+      !selection.anchorNode ||
+      !this.root.contains(selection.anchorNode)
+    ) {
       return null;
     }
 
@@ -302,13 +366,23 @@ export class ComposerEditor {
       return node;
     };
     const clamp = (node: Node, offset: number) =>
-      Math.min(offset, node.nodeType === Node.TEXT_NODE ? (node.textContent?.length ?? 0) : node.childNodes.length);
+      Math.min(
+        offset,
+        node.nodeType === Node.TEXT_NODE
+          ? (node.textContent?.length ?? 0)
+          : node.childNodes.length,
+      );
 
     try {
       const anchor = resolve(saved.anchor);
       const focus = resolve(saved.focus);
       const selection = window.getSelection();
-      selection?.setBaseAndExtent(anchor, clamp(anchor, saved.anchorOffset), focus, clamp(focus, saved.focusOffset));
+      selection?.setBaseAndExtent(
+        anchor,
+        clamp(anchor, saved.anchorOffset),
+        focus,
+        clamp(focus, saved.focusOffset),
+      );
     } catch {
       // A path that no longer fits: leave the caret where it is.
     }
@@ -469,29 +543,37 @@ export class ComposerEditor {
     if (mod && !event.altKey) {
       const shift = event.shiftKey;
       const handled = (() => {
-        if (key === "z" && !shift) return this.undo(), true;
-        if ((key === "z" && shift) || key === "y") return this.redo(), true;
-        if (key === "b" && !shift) return this.toggleMark("bold"), true;
-        if (key === "i" && !shift) return this.toggleMark("italic"), true;
-        if (key === "u" && !shift) return this.toggleMark("underline"), true;
-        if (key === "x" && shift) return this.toggleMark("strikeThrough"), true;
-        if (key === "k") return this.options.onLinkShortcut(), true;
-        if (key === "\\") return this.clearFormatting(), true;
-        if (key === "enter") return this.insertPageBreak(), true;
-        if (key === "." && !shift) return this.toggleMark("superscript"), true;
-        if (key === "," && !shift) return this.toggleMark("subscript"), true;
-        if (key === "]") return this.indent(), true;
-        if (key === "[") return this.outdent(), true;
-        if (shift && (key === "7" || event.code === "Digit7")) return this.toggleList("ol"), true;
-        if (shift && (key === "8" || event.code === "Digit8")) return this.toggleList("ul"), true;
-        if (shift && (key === "9" || event.code === "Digit9")) return this.toggleList("checklist"), true;
-        if (shift && key === "l") return this.setAlign("left"), true;
-        if (shift && key === "e") return this.setAlign("center"), true;
-        if (shift && key === "r") return this.setAlign("right"), true;
-        if (shift && key === "j") return this.setAlign("justify"), true;
-        if (shift && (key === ">" || key === ".")) return this.stepFontSize(1), true;
-        if (shift && (key === "<" || key === ",")) return this.stepFontSize(-1), true;
-        if (shift && key === "v") return void this.pasteFromClipboard(true), true;
+        if (key === "z" && !shift) return (this.undo(), true);
+        if ((key === "z" && shift) || key === "y") return (this.redo(), true);
+        if (key === "b" && !shift) return (this.toggleMark("bold"), true);
+        if (key === "i" && !shift) return (this.toggleMark("italic"), true);
+        if (key === "u" && !shift) return (this.toggleMark("underline"), true);
+        if (key === "x" && shift)
+          return (this.toggleMark("strikeThrough"), true);
+        if (key === "k") return (this.options.onLinkShortcut(), true);
+        if (key === "\\") return (this.clearFormatting(), true);
+        if (key === "enter") return (this.insertPageBreak(), true);
+        if (key === "." && !shift)
+          return (this.toggleMark("superscript"), true);
+        if (key === "," && !shift) return (this.toggleMark("subscript"), true);
+        if (key === "]") return (this.indent(), true);
+        if (key === "[") return (this.outdent(), true);
+        if (shift && (key === "7" || event.code === "Digit7"))
+          return (this.toggleList("ol"), true);
+        if (shift && (key === "8" || event.code === "Digit8"))
+          return (this.toggleList("ul"), true);
+        if (shift && (key === "9" || event.code === "Digit9"))
+          return (this.toggleList("checklist"), true);
+        if (shift && key === "l") return (this.setAlign("left"), true);
+        if (shift && key === "e") return (this.setAlign("center"), true);
+        if (shift && key === "r") return (this.setAlign("right"), true);
+        if (shift && key === "j") return (this.setAlign("justify"), true);
+        if (shift && (key === ">" || key === "."))
+          return (this.stepFontSize(1), true);
+        if (shift && (key === "<" || key === ","))
+          return (this.stepFontSize(-1), true);
+        if (shift && key === "v")
+          return (void this.pasteFromClipboard(true), true);
         return false;
       })();
 
@@ -505,7 +587,9 @@ export class ComposerEditor {
       const digit = /^Digit(\d)$/.exec(event.code)?.[1];
       if (digit !== undefined) {
         event.preventDefault();
-        this.setBlockType(digit === "0" ? "p" : (`h${Math.min(6, Number(digit))}` as BlockType));
+        this.setBlockType(
+          digit === "0" ? "p" : (`h${Math.min(6, Number(digit))}` as BlockType),
+        );
         return;
       }
     }
@@ -537,7 +621,10 @@ export class ComposerEditor {
       this.handleEnter(event);
     }
 
-    if ((event.key === "Backspace" || event.key === "Delete") && this.selectedImage) {
+    if (
+      (event.key === "Backspace" || event.key === "Delete") &&
+      this.selectedImage
+    ) {
       event.preventDefault();
       const image = this.selectedImage;
       this.run(() => image.remove());
@@ -554,7 +641,8 @@ export class ComposerEditor {
     if (!range || !range.collapsed) return;
     const block = this.leafBlock(range.startContainer);
     if (!block) return;
-    const styled = /^H\d$/.test(block.tagName) || block.hasAttribute("data-style");
+    const styled =
+      /^H\d$/.test(block.tagName) || block.hasAttribute("data-style");
     if (!styled) return;
 
     const tail = document.createRange();
@@ -593,13 +681,18 @@ export class ComposerEditor {
     const target = event.target as HTMLElement;
 
     // The checkbox of a checklist item is drawn in the gutter to its left.
-    const li = target.closest?.("ul[data-type='checklist'] > li") as HTMLElement | null;
+    const li = target.closest?.(
+      "ul[data-type='checklist'] > li",
+    ) as HTMLElement | null;
     if (li && this.root.contains(li)) {
       const box = li.getBoundingClientRect();
       if (event.clientX < box.left) {
         event.preventDefault();
         this.run(() => {
-          li.setAttribute("data-checked", li.getAttribute("data-checked") === "true" ? "false" : "true");
+          li.setAttribute(
+            "data-checked",
+            li.getAttribute("data-checked") === "true" ? "false" : "true",
+          );
         });
         return;
       }
@@ -624,7 +717,11 @@ export class ComposerEditor {
 
     // Links open with a modifier click, like in Docs.
     const link = target.closest?.("a") as HTMLAnchorElement | null;
-    if (link && (event.metaKey || event.ctrlKey) && /^(https?:|mailto:|tel:)/.test(link.href)) {
+    if (
+      link &&
+      (event.metaKey || event.ctrlKey) &&
+      /^(https?:|mailto:|tel:)/.test(link.href)
+    ) {
       window.open(link.href, "_blank", "noopener,noreferrer");
     }
   }
@@ -689,7 +786,9 @@ export class ComposerEditor {
       if (!plain && "read" in navigator.clipboard) {
         const items = await navigator.clipboard.read();
         for (const item of items) {
-          const imageType = item.types.find((type) => type.startsWith("image/"));
+          const imageType = item.types.find((type) =>
+            type.startsWith("image/"),
+          );
           if (item.types.includes("text/html")) {
             const html = await (await item.getType("text/html")).text();
             this.insertContent(sanitizeHtml(html));
@@ -697,7 +796,9 @@ export class ComposerEditor {
           }
           if (imageType && !item.types.includes("text/plain")) {
             const blob = await item.getType(imageType);
-            await this.insertImageFiles([new File([blob], "pasted", { type: imageType })]);
+            await this.insertImageFiles([
+              new File([blob], "pasted", { type: imageType }),
+            ]);
             return;
           }
         }
@@ -716,7 +817,9 @@ export class ComposerEditor {
     this.focus();
     const ok = document.execCommand(cut ? "cut" : "copy");
     if (!ok) {
-      this.options.onNotice(`Use ${isMac() ? (cut ? "⌘X" : "⌘C") : cut ? "Ctrl+X" : "Ctrl+C"} instead.`);
+      this.options.onNotice(
+        `Use ${isMac() ? (cut ? "⌘X" : "⌘C") : cut ? "Ctrl+X" : "Ctrl+C"} instead.`,
+      );
     }
   }
 
@@ -758,7 +861,10 @@ export class ComposerEditor {
 
   private rangeFromPoint(x: number, y: number): Range | null {
     const doc = document as Document & {
-      caretPositionFromPoint?: (x: number, y: number) => { offset: number; offsetNode: Node } | null;
+      caretPositionFromPoint?: (
+        x: number,
+        y: number,
+      ) => { offset: number; offsetNode: Node } | null;
       caretRangeFromPoint?: (x: number, y: number) => Range | null;
     };
 
@@ -780,20 +886,31 @@ export class ComposerEditor {
   // ── Structure helpers ────────────────────────────────────────────────
 
   private closest(node: Node | null, selector: string): HTMLElement | null {
-    const element = node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : node?.parentElement;
+    const element =
+      node?.nodeType === Node.ELEMENT_NODE
+        ? (node as Element)
+        : node?.parentElement;
     const found = element?.closest(selector) as HTMLElement | null;
 
-    return found && this.root.contains(found) && found !== this.root ? found : null;
+    return found && this.root.contains(found) && found !== this.root
+      ? found
+      : null;
   }
 
   private leafBlock(node: Node | null): HTMLElement | null {
     let current: Node | null = node;
 
     while (current && current !== this.root) {
-      if (current.nodeType === Node.ELEMENT_NODE && LEAF_BLOCK_TAGS.has((current as Element).tagName)) {
+      if (
+        current.nodeType === Node.ELEMENT_NODE &&
+        LEAF_BLOCK_TAGS.has((current as Element).tagName)
+      ) {
         return current as HTMLElement;
       }
-      if (current.nodeType === Node.ELEMENT_NODE && /^(TD|TH|BLOCKQUOTE)$/.test((current as Element).tagName)) {
+      if (
+        current.nodeType === Node.ELEMENT_NODE &&
+        /^(TD|TH|BLOCKQUOTE)$/.test((current as Element).tagName)
+      ) {
         return current as HTMLElement;
       }
       current = current.parentNode;
@@ -812,11 +929,18 @@ export class ComposerEditor {
     if (start) blocks.add(start);
 
     if (!range.collapsed) {
-      const walker = document.createTreeWalker(range.commonAncestorContainer, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+      const walker = document.createTreeWalker(
+        range.commonAncestorContainer,
+        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+      );
       let node: Node | null = walker.currentNode;
       while (node) {
         if (range.intersectsNode(node)) {
-          if (node.nodeType === Node.TEXT_NODE || (node as Element).tagName === "BR" || (node as Element).tagName === "IMG") {
+          if (
+            node.nodeType === Node.TEXT_NODE ||
+            (node as Element).tagName === "BR" ||
+            (node as Element).tagName === "IMG"
+          ) {
             const block = this.leafBlock(node);
             if (block) blocks.add(block);
           }
@@ -842,7 +966,8 @@ export class ComposerEditor {
 
   private keepSelection(): NodeSelection | null {
     const selection = window.getSelection();
-    if (!selection?.anchorNode || !this.root.contains(selection.anchorNode)) return null;
+    if (!selection?.anchorNode || !this.root.contains(selection.anchorNode))
+      return null;
 
     return {
       anchor: selection.anchorNode,
@@ -853,10 +978,22 @@ export class ComposerEditor {
   }
 
   private putSelection(saved: NodeSelection | null) {
-    if (!saved || !this.root.contains(saved.anchor) || !this.root.contains(saved.focus)) return;
+    if (
+      !saved ||
+      !this.root.contains(saved.anchor) ||
+      !this.root.contains(saved.focus)
+    )
+      return;
 
     try {
-      window.getSelection()?.setBaseAndExtent(saved.anchor, saved.anchorOffset, saved.focus, saved.focusOffset);
+      window
+        .getSelection()
+        ?.setBaseAndExtent(
+          saved.anchor,
+          saved.anchorOffset,
+          saved.focus,
+          saved.focusOffset,
+        );
     } catch {
       // Offsets past the end after a move: leave it.
     }
@@ -872,14 +1009,17 @@ export class ComposerEditor {
 
     for (const div of Array.from(root.querySelectorAll("div"))) {
       const p = document.createElement("p");
-      for (const attr of Array.from(div.attributes)) p.setAttribute(attr.name, attr.value);
+      for (const attr of Array.from(div.attributes))
+        p.setAttribute(attr.name, attr.value);
       while (div.firstChild) p.appendChild(div.firstChild);
       div.replaceWith(p);
     }
 
     let loose: HTMLElement | null = null;
     for (const child of Array.from(root.childNodes)) {
-      const isBlock = child.nodeType === Node.ELEMENT_NODE && BLOCK_TAGS.has((child as Element).tagName);
+      const isBlock =
+        child.nodeType === Node.ELEMENT_NODE &&
+        BLOCK_TAGS.has((child as Element).tagName);
       if (isBlock) {
         loose = null;
         continue;
@@ -913,7 +1053,9 @@ export class ComposerEditor {
       root.insertBefore(p, first);
     }
 
-    for (const block of Array.from(root.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li"))) {
+    for (const block of Array.from(
+      root.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li"),
+    )) {
       if (!block.firstChild) block.appendChild(document.createElement("br"));
     }
 
@@ -1014,33 +1156,46 @@ export class ComposerEditor {
 
   stepFontSize(direction: 1 | -1) {
     const current = this.getState().fontSizePt;
-    const sizes = [6, 7, 8, 9, 10, 10.5, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96];
+    const sizes = [
+      6, 7, 8, 9, 10, 10.5, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24, 26, 28, 32,
+      36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96,
+    ];
     const next =
       direction > 0
         ? (sizes.find((size) => size > current) ?? current + 8)
-        : ([...sizes].reverse().find((size) => size < current) ?? Math.max(1, current - 1));
+        : ([...sizes].reverse().find((size) => size < current) ??
+          Math.max(1, current - 1));
     this.setFontSize(next);
   }
 
   private replaceSizeMarkers(pt: number) {
     const saved = this.keepSelection();
 
-    for (const font of Array.from(this.root.querySelectorAll("font[size='7']"))) {
+    for (const font of Array.from(
+      this.root.querySelectorAll("font[size='7']"),
+    )) {
       const span = document.createElement("span");
       span.style.fontSize = `${pt}pt`;
       while (font.firstChild) span.appendChild(font.firstChild);
       font.replaceWith(span);
     }
 
-    for (const span of Array.from(this.root.querySelectorAll<HTMLElement>("span[style*='xxx-large']"))) {
+    for (const span of Array.from(
+      this.root.querySelectorAll<HTMLElement>("span[style*='xxx-large']"),
+    )) {
       span.style.fontSize = `${pt}pt`;
     }
 
     // Spans inside the resized text that set their own size would win
     // over the new one; drop theirs.
-    for (const span of Array.from(this.root.querySelectorAll<HTMLElement>(`span[style*='font-size: ${pt}pt'] span[style*='font-size']`))) {
+    for (const span of Array.from(
+      this.root.querySelectorAll<HTMLElement>(
+        `span[style*='font-size: ${pt}pt'] span[style*='font-size']`,
+      ),
+    )) {
       span.style.removeProperty("font-size");
-      if (!span.getAttribute("style")) span.replaceWith(...Array.from(span.childNodes));
+      if (!span.getAttribute("style"))
+        span.replaceWith(...Array.from(span.childNodes));
     }
 
     this.putSelection(saved);
@@ -1058,10 +1213,17 @@ export class ComposerEditor {
         this.exec("backColor", color ?? "transparent", true);
       }
       if (!color) {
-        for (const span of Array.from(this.root.querySelectorAll<HTMLElement>("span[style*='background-color']"))) {
-          if (/transparent|rgba\(0, 0, 0, 0\)/.test(span.style.backgroundColor)) {
+        for (const span of Array.from(
+          this.root.querySelectorAll<HTMLElement>(
+            "span[style*='background-color']",
+          ),
+        )) {
+          if (
+            /transparent|rgba\(0, 0, 0, 0\)/.test(span.style.backgroundColor)
+          ) {
             span.style.removeProperty("background-color");
-            if (!span.getAttribute("style")) span.replaceWith(...Array.from(span.childNodes));
+            if (!span.getAttribute("style"))
+              span.replaceWith(...Array.from(span.childNodes));
           }
         }
       }
@@ -1075,7 +1237,9 @@ export class ComposerEditor {
       const range = this.range();
       if (!range) return;
 
-      for (const span of Array.from(this.root.querySelectorAll<HTMLElement>("span, code, u, s, sup, sub"))) {
+      for (const span of Array.from(
+        this.root.querySelectorAll<HTMLElement>("span, code, u, s, sup, sub"),
+      )) {
         if (range.intersectsNode(span) && !span.closest("pre")) {
           span.replaceWith(...Array.from(span.childNodes));
         }
@@ -1087,7 +1251,9 @@ export class ComposerEditor {
 
   currentLink(): HTMLAnchorElement | null {
     const range = this.range();
-    return range ? (this.closest(range.startContainer, "a") as HTMLAnchorElement | null) : null;
+    return range
+      ? (this.closest(range.startContainer, "a") as HTMLAnchorElement | null)
+      : null;
   }
 
   selectedText() {
@@ -1119,7 +1285,11 @@ export class ComposerEditor {
         anchor.textContent = text || url;
         range.deleteContents();
         range.insertNode(anchor);
-        this.placeCaret(anchor.parentNode!, Array.prototype.indexOf.call(anchor.parentNode!.childNodes, anchor) + 1);
+        this.placeCaret(
+          anchor.parentNode!,
+          Array.prototype.indexOf.call(anchor.parentNode!.childNodes, anchor) +
+            1,
+        );
       } else {
         this.exec("createLink", url);
       }
@@ -1144,7 +1314,9 @@ export class ComposerEditor {
     const range = this.range();
     if (!range) return null;
     const rects = range.getClientRects();
-    return rects.length ? rects[rects.length - 1] : range.getBoundingClientRect();
+    return rects.length
+      ? rects[rects.length - 1]
+      : range.getBoundingClientRect();
   }
 
   // ── Blocks ───────────────────────────────────────────────────────────
@@ -1181,7 +1353,8 @@ export class ComposerEditor {
       }
       const image = this.selectedImage;
       if (image) {
-        if (align === "left" || align === "justify") image.removeAttribute("data-align");
+        if (align === "left" || align === "justify")
+          image.removeAttribute("data-align");
         else image.setAttribute("data-align", align);
       }
     });
@@ -1190,7 +1363,8 @@ export class ComposerEditor {
   setLineHeight(value: number) {
     this.run(() => {
       for (const block of this.selectedBlocks()) {
-        block.style.lineHeight = Math.abs(value - 1.15) < 0.01 ? "" : String(value);
+        block.style.lineHeight =
+          Math.abs(value - 1.15) < 0.01 ? "" : String(value);
         if (!block.getAttribute("style")) block.removeAttribute("style");
       }
     });
@@ -1257,7 +1431,8 @@ export class ComposerEditor {
     let nested = previous.lastElementChild as HTMLElement | null;
     if (!nested || (nested.tagName !== "UL" && nested.tagName !== "OL")) {
       nested = document.createElement(list.tagName.toLowerCase());
-      if (list.getAttribute("data-type") === "checklist") nested.setAttribute("data-type", "checklist");
+      if (list.getAttribute("data-type") === "checklist")
+        nested.setAttribute("data-type", "checklist");
       previous.appendChild(nested);
     }
 
@@ -1279,7 +1454,8 @@ export class ComposerEditor {
     if (parentItem && parentItem.tagName === "LI") {
       if (following.length) {
         const rest = document.createElement(list.tagName.toLowerCase());
-        if (list.getAttribute("data-type") === "checklist") rest.setAttribute("data-type", "checklist");
+        if (list.getAttribute("data-type") === "checklist")
+          rest.setAttribute("data-type", "checklist");
         for (const item of following) rest.appendChild(item);
         li.appendChild(rest);
       }
@@ -1291,18 +1467,26 @@ export class ComposerEditor {
     // Out of the list entirely: becomes a paragraph between two lists.
     const p = document.createElement("p");
     for (const child of Array.from(li.childNodes)) {
-      if (child.nodeType === Node.ELEMENT_NODE && /^(UL|OL)$/.test((child as Element).tagName)) continue;
+      if (
+        child.nodeType === Node.ELEMENT_NODE &&
+        /^(UL|OL)$/.test((child as Element).tagName)
+      )
+        continue;
       p.appendChild(child);
     }
     if (!p.firstChild) p.appendChild(document.createElement("br"));
-    const nestedLists = Array.from(li.children).filter((child) => /^(UL|OL)$/.test(child.tagName));
+    const nestedLists = Array.from(li.children).filter((child) =>
+      /^(UL|OL)$/.test(child.tagName),
+    );
 
     let after: Element = list;
     if (following.length || nestedLists.length) {
       const rest = document.createElement(list.tagName.toLowerCase());
-      for (const attr of Array.from(list.attributes)) rest.setAttribute(attr.name, attr.value);
+      for (const attr of Array.from(list.attributes))
+        rest.setAttribute(attr.name, attr.value);
       rest.removeAttribute("start");
-      for (const nested of nestedLists) for (const item of Array.from(nested.children)) rest.appendChild(item);
+      for (const nested of nestedLists)
+        for (const item of Array.from(nested.children)) rest.appendChild(item);
       for (const item of following) rest.appendChild(item);
       list.after(rest);
       after = list;
@@ -1318,9 +1502,15 @@ export class ComposerEditor {
   toggleList(kind: ListKind) {
     this.run(() => {
       const range = this.range();
-      const list = range ? (this.closest(range.startContainer, "ul, ol") as HTMLElement | null) : null;
+      const list = range
+        ? (this.closest(range.startContainer, "ul, ol") as HTMLElement | null)
+        : null;
       const isChecklist = list?.getAttribute("data-type") === "checklist";
-      const currentKind: ListKind | null = list ? (isChecklist ? "checklist" : (list.tagName.toLowerCase() as ListKind)) : null;
+      const currentKind: ListKind | null = list
+        ? isChecklist
+          ? "checklist"
+          : (list.tagName.toLowerCase() as ListKind)
+        : null;
 
       if (currentKind === kind) {
         this.exec(kind === "ol" ? "insertOrderedList" : "insertUnorderedList");
@@ -1336,17 +1526,21 @@ export class ComposerEditor {
       }
 
       const after = this.range();
-      const target = after ? (this.closest(after.startContainer, "ul, ol") as HTMLElement | null) : null;
+      const target = after
+        ? (this.closest(after.startContainer, "ul, ol") as HTMLElement | null)
+        : null;
       if (!target) return;
 
       if (kind === "checklist") {
         target.setAttribute("data-type", "checklist");
         for (const li of Array.from(target.children)) {
-          if (!li.hasAttribute("data-checked")) li.setAttribute("data-checked", "false");
+          if (!li.hasAttribute("data-checked"))
+            li.setAttribute("data-checked", "false");
         }
       } else {
         target.removeAttribute("data-type");
-        for (const li of Array.from(target.children)) li.removeAttribute("data-checked");
+        for (const li of Array.from(target.children))
+          li.removeAttribute("data-checked");
       }
     });
   }
@@ -1354,7 +1548,9 @@ export class ComposerEditor {
   setListStyle(style: string) {
     this.run(() => {
       const range = this.range();
-      const list = range ? (this.closest(range.startContainer, "ul, ol") as HTMLElement | null) : null;
+      const list = range
+        ? (this.closest(range.startContainer, "ul, ol") as HTMLElement | null)
+        : null;
       if (!list) return;
       list.style.listStyleType = style;
     });
@@ -1378,13 +1574,20 @@ export class ComposerEditor {
       const nodes = Array.from(template.content.childNodes);
       if (!nodes.length) return;
 
-      const isBlock = (node: Node) => node.nodeType === Node.ELEMENT_NODE && BLOCK_TAGS.has((node as Element).tagName);
-      const mergeable = (node: Node) => node.nodeType === Node.ELEMENT_NODE && /^(P|H\d)$/.test((node as Element).tagName);
+      const isBlock = (node: Node) =>
+        node.nodeType === Node.ELEMENT_NODE &&
+        BLOCK_TAGS.has((node as Element).tagName);
+      const mergeable = (node: Node) =>
+        node.nodeType === Node.ELEMENT_NODE &&
+        /^(P|H\d)$/.test((node as Element).tagName);
 
       // Inline only, or a single paragraph: goes into the line as is.
       if (!nodes.some(isBlock) || (nodes.length === 1 && mergeable(nodes[0]))) {
         const fragment = document.createDocumentFragment();
-        const source = nodes.length === 1 && mergeable(nodes[0]) ? Array.from(nodes[0].childNodes) : nodes;
+        const source =
+          nodes.length === 1 && mergeable(nodes[0])
+            ? Array.from(nodes[0].childNodes)
+            : nodes;
         for (const node of source) fragment.appendChild(node);
         const lastNode = fragment.lastChild;
         range.insertNode(fragment);
@@ -1424,16 +1627,25 @@ export class ComposerEditor {
       const tail = tailFragment.firstElementChild as HTMLElement | null;
       const head = block;
       const headEmpty = !head.textContent && !head.querySelector("img");
-      const tailEmpty = !tail || (!tail.textContent && !tail.querySelector("img"));
+      const tailEmpty =
+        !tail || (!tail.textContent && !tail.querySelector("img"));
 
-      const blocks = nodes.filter((node) => node.nodeType !== Node.TEXT_NODE || node.textContent?.trim());
+      const blocks = nodes.filter(
+        (node) => node.nodeType !== Node.TEXT_NODE || node.textContent?.trim(),
+      );
       let caretAnchor: Node | null = null;
 
       // First block merges into the head line (unless the head is empty,
       // where the pasted block replaces it with its own type).
-      if (blocks.length && mergeable(blocks[0]) && !headEmpty && head.tagName !== "LI") {
+      if (
+        blocks.length &&
+        mergeable(blocks[0]) &&
+        !headEmpty &&
+        head.tagName !== "LI"
+      ) {
         const first = blocks.shift()!;
-        for (const child of Array.from(first.childNodes)) head.appendChild(child);
+        for (const child of Array.from(first.childNodes))
+          head.appendChild(child);
       }
 
       let insertAfter: Element = head;
@@ -1457,7 +1669,8 @@ export class ComposerEditor {
           // The last pasted paragraph and the rest of the line become one.
           const marker = document.createTextNode("");
           (caretAnchor as Element).appendChild(marker);
-          for (const child of Array.from(tail.childNodes)) (caretAnchor as Element).appendChild(child);
+          for (const child of Array.from(tail.childNodes))
+            (caretAnchor as Element).appendChild(child);
           tail.remove();
           this.placeCaret(marker, 0);
         } else {
@@ -1484,7 +1697,10 @@ export class ComposerEditor {
     this.run(() => {
       const range = this.range();
       const block = range ? this.leafBlock(range.startContainer) : null;
-      const target = block && block.tagName !== "TD" && block.tagName !== "TH" ? block : null;
+      const target =
+        block && block.tagName !== "TD" && block.tagName !== "TH"
+          ? block
+          : null;
 
       if (target) {
         const empty = !target.textContent && !target.querySelector("img");
@@ -1569,11 +1785,15 @@ export class ComposerEditor {
   async insertImageFiles(files: File[]) {
     for (const file of files) {
       if (!/^image\/(png|jpe?g|gif|webp|bmp)$/.test(file.type)) {
-        this.options.onNotice("Pictures need to be PNG, JPEG, GIF, WebP or BMP.");
+        this.options.onNotice(
+          "Pictures need to be PNG, JPEG, GIF, WebP or BMP.",
+        );
         continue;
       }
       if (file.size > 10 * 1024 * 1024) {
-        this.options.onNotice("That picture is larger than 10 MB. Choose a smaller one.");
+        this.options.onNotice(
+          "That picture is larger than 10 MB. Choose a smaller one.",
+        );
         continue;
       }
       const src = await new Promise<string>((resolve, reject) => {
@@ -1588,15 +1808,23 @@ export class ComposerEditor {
         probe.onerror = () => resolve({ width: 0 });
         probe.src = src;
       });
-      const contentWidthPt = this.root.getBoundingClientRect().width / this.zoom() * 0.75;
-      const widthPt = Math.min(contentWidthPt || 468, Math.max(24, size.width * 0.75));
-      this.insertContent(`<img src="${src}" style="width: ${Math.round(widthPt)}pt">`);
+      const contentWidthPt =
+        (this.root.getBoundingClientRect().width / this.zoom()) * 0.75;
+      const widthPt = Math.min(
+        contentWidthPt || 468,
+        Math.max(24, size.width * 0.75),
+      );
+      this.insertContent(
+        `<img src="${src}" style="width: ${Math.round(widthPt)}pt">`,
+      );
     }
   }
 
   /** The editor's zoom factor (the page may be drawn bigger or smaller). */
   zoom() {
-    const zoom = Number.parseFloat(getComputedStyle(this.root).getPropertyValue("--composer-zoom"));
+    const zoom = Number.parseFloat(
+      getComputedStyle(this.root).getPropertyValue("--composer-zoom"),
+    );
     return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
   }
 
@@ -1620,7 +1848,12 @@ export class ComposerEditor {
 
   private currentCell(): HTMLTableCellElement | null {
     const range = this.range();
-    return range ? (this.closest(range.startContainer, "td, th") as HTMLTableCellElement | null) : null;
+    return range
+      ? (this.closest(
+          range.startContainer,
+          "td, th",
+        ) as HTMLTableCellElement | null)
+      : null;
   }
 
   tableAction(action: TableAction) {
@@ -1642,30 +1875,44 @@ export class ComposerEditor {
         case "rowAbove":
         case "rowBelow": {
           const tr = document.createElement("tr");
-          const count = Array.from(row.cells).reduce((sum, c) => sum + (c.colSpan || 1), 0);
+          const count = Array.from(row.cells).reduce(
+            (sum, c) => sum + (c.colSpan || 1),
+            0,
+          );
           for (let i = 0; i < count; i += 1) tr.appendChild(emptyCell("td"));
           if (action === "rowAbove") row.before(tr);
           else row.after(tr);
-          this.placeCaret(tr.cells[Math.min(columnIndex, tr.cells.length - 1)].firstChild!, 0);
+          this.placeCaret(
+            tr.cells[Math.min(columnIndex, tr.cells.length - 1)].firstChild!,
+            0,
+          );
           break;
         }
         case "columnLeft":
         case "columnRight": {
           for (const tr of Array.from(table.rows)) {
-            const reference = tr.cells[Math.min(columnIndex, tr.cells.length - 1)];
-            const created = emptyCell(reference?.tagName === "TH" ? "th" : "td");
+            const reference =
+              tr.cells[Math.min(columnIndex, tr.cells.length - 1)];
+            const created = emptyCell(
+              reference?.tagName === "TH" ? "th" : "td",
+            );
             if (!reference) tr.appendChild(created);
             else if (action === "columnLeft") reference.before(created);
             else reference.after(created);
           }
-          for (const col of Array.from(table.querySelectorAll("td, th")) as HTMLElement[]) col.style.removeProperty("width");
+          for (const col of Array.from(
+            table.querySelectorAll("td, th"),
+          ) as HTMLElement[])
+            col.style.removeProperty("width");
           break;
         }
         case "deleteRow": {
-          const next = (row.nextElementSibling ?? row.previousElementSibling) as HTMLTableRowElement | null;
+          const next = (row.nextElementSibling ??
+            row.previousElementSibling) as HTMLTableRowElement | null;
           row.remove();
           if (!table.rows.length) table.remove();
-          else if (next) this.placeCaret(next.cells[0].firstChild ?? next.cells[0], 0);
+          else if (next)
+            this.placeCaret(next.cells[0].firstChild ?? next.cells[0], 0);
           break;
         }
         case "deleteColumn": {
@@ -1673,7 +1920,10 @@ export class ComposerEditor {
             tr.cells[Math.min(columnIndex, tr.cells.length - 1)]?.remove();
           }
           if (!table.querySelector("td, th")) table.remove();
-          for (const col of Array.from(table.querySelectorAll("td, th")) as HTMLElement[]) col.style.removeProperty("width");
+          for (const col of Array.from(
+            table.querySelectorAll("td, th"),
+          ) as HTMLElement[])
+            col.style.removeProperty("width");
           break;
         }
         case "deleteTable": {
@@ -1689,14 +1939,16 @@ export class ComposerEditor {
           const toHeader = first.cells[0]?.tagName !== "TH";
           for (const c of Array.from(first.cells)) {
             const next = document.createElement(toHeader ? "th" : "td");
-            for (const attr of Array.from(c.attributes)) next.setAttribute(attr.name, attr.value);
+            for (const attr of Array.from(c.attributes))
+              next.setAttribute(attr.name, attr.value);
             while (c.firstChild) next.appendChild(c.firstChild);
             c.replaceWith(next);
           }
           break;
         }
         case "toggleBorders":
-          if (table.getAttribute("data-borders") === "none") table.removeAttribute("data-borders");
+          if (table.getAttribute("data-borders") === "none")
+            table.removeAttribute("data-borders");
           else table.setAttribute("data-borders", "none");
           break;
       }
@@ -1717,7 +1969,9 @@ export class ComposerEditor {
   getState(): FormatState {
     const range = this.range();
     const node = range?.startContainer ?? this.root.firstChild ?? this.root;
-    let element = (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement) as HTMLElement;
+    let element = (
+      node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement
+    ) as HTMLElement;
 
     // A caret right before a node reads that node's style.
     if (range && range.collapsed && node.nodeType === Node.ELEMENT_NODE) {
@@ -1737,15 +1991,21 @@ export class ComposerEditor {
     let subscript = false;
     let code = false;
 
-    for (let current: HTMLElement | null = element; current && current !== this.root; current = current.parentElement) {
+    for (
+      let current: HTMLElement | null = element;
+      current && current !== this.root;
+      current = current.parentElement
+    ) {
       const s = getComputedStyle(current);
       for (const part of s.textDecorationLine.split(" ")) decorations.add(part);
       if (!highlight && current !== block) {
         const bg = rgbToHex(s.backgroundColor);
         if (bg !== "transparent" && current.tagName !== "CODE") highlight = bg;
       }
-      if (current.tagName === "SUP" || s.verticalAlign === "super") superscript = true;
-      if (current.tagName === "SUB" || s.verticalAlign === "sub") subscript = true;
+      if (current.tagName === "SUP" || s.verticalAlign === "super")
+        superscript = true;
+      if (current.tagName === "SUB" || s.verticalAlign === "sub")
+        subscript = true;
       if (current.tagName === "CODE") code = true;
       if (current === block) break;
     }
@@ -1765,14 +2025,18 @@ export class ComposerEditor {
     const list = this.closest(element, "ul, ol");
     const table = this.closest(element, "table");
     const align = blockStyle.textAlign;
-    const fontSizePt = this.pendingFontSize && range?.collapsed
-      ? this.pendingFontSize
-      : Math.round(Number.parseFloat(style.fontSize) * 0.75 * 2) / 2;
+    const fontSizePt =
+      this.pendingFontSize && range?.collapsed
+        ? this.pendingFontSize
+        : Math.round(Number.parseFloat(style.fontSize) * 0.75 * 2) / 2;
     const lineHeightPx = Number.parseFloat(blockStyle.lineHeight);
     const blockFontPx = Number.parseFloat(blockStyle.fontSize);
 
     return {
-      align: align === "center" || align === "right" || align === "justify" ? align : "left",
+      align:
+        align === "center" || align === "right" || align === "justify"
+          ? align
+          : "left",
       block: blockType,
       bold: Number.parseInt(style.fontWeight, 10) >= 600,
       canRedo: this.canRedo(),
@@ -1785,9 +2049,16 @@ export class ComposerEditor {
       highlight,
       inTable: !!table,
       italic: style.fontStyle === "italic" || style.fontStyle === "oblique",
-      lineHeight: Number.isFinite(lineHeightPx) && blockFontPx ? Math.round((lineHeightPx / blockFontPx) * 100) / 100 : 1.15,
+      lineHeight:
+        Number.isFinite(lineHeightPx) && blockFontPx
+          ? Math.round((lineHeightPx / blockFontPx) * 100) / 100
+          : 1.15,
       link: this.currentLink()?.getAttribute("href") ?? null,
-      list: list ? (list.getAttribute("data-type") === "checklist" ? "checklist" : (list.tagName.toLowerCase() as ListKind)) : null,
+      list: list
+        ? list.getAttribute("data-type") === "checklist"
+          ? "checklist"
+          : (list.tagName.toLowerCase() as ListKind)
+        : null,
       listStyle: list ? getComputedStyle(list).listStyleType : null,
       spaceAfter: Number.parseFloat(blockStyle.marginBottom) > 0.5,
       spaceBefore: Number.parseFloat(blockStyle.marginTop) > 0.5,
@@ -1795,7 +2066,9 @@ export class ComposerEditor {
       subscript,
       superscript,
       tableBorders: table?.getAttribute("data-borders") !== "none",
-      tableHeader: table ? (table as HTMLTableElement).rows[0]?.cells[0]?.tagName === "TH" : false,
+      tableHeader: table
+        ? (table as HTMLTableElement).rows[0]?.cells[0]?.tagName === "TH"
+        : false,
       underline: decorations.has("underline"),
     };
   }

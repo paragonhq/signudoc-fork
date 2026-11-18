@@ -194,7 +194,10 @@ export function WriteDocumentRow({
 }) {
   return (
     <div className={cn("flex flex-col gap-3 px-4 pt-3 sm:px-6", className)}>
-      <div aria-hidden="true" className="flex items-center gap-3 text-[0.75rem] font-medium text-(--tertiary)">
+      <div
+        aria-hidden="true"
+        className="flex items-center gap-3 text-[0.75rem] font-medium text-(--tertiary)"
+      >
         <span className="h-px flex-1 bg-(--divider)" />
         or
         <span className="h-px flex-1 bg-(--divider)" />
