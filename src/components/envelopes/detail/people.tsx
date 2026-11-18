@@ -51,7 +51,7 @@ export function People({
 }) {
   const { record, route } = model;
   const copies = record.copyRecipients ?? [];
-  const canCorrect = record.status === "sent" && !record.part11;
+  const canCorrect = model.isOwn && record.status === "sent" && !record.part11;
   const description =
     record.signatureTypeLabel ??
     (route.length > 1 ? "One after another, in this order." : null);

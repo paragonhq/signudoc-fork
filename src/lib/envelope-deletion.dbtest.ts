@@ -265,13 +265,41 @@ test("an envelope still out for signature, or a draft, is not deleted this way",
   }
 });
 
-test("an administrator cannot delete another account's envelope", async () => {
+test("an administrator deletes another member's finished envelope, and the record names its sender", async () => {
+  const owner = await createUser("user");
+  const admin = await createUser("admin");
+  const envelope = await createEnvelope(owner.userId, { status: "completed" });
+
+  await deleteAs(admin, envelope.envelopeId, "Asked to by legal.");
+
+  assert.equal(await envelopeExists(envelope.envelopeId), false);
+  assert.deepEqual(
+    await filesExist(envelope.stored),
+    envelope.stored.map(() => false),
+  );
+
+  const [event] = await listSystemAuditEvents({ limit: 1 }, database);
+
+  assert.equal(event?.event, "envelope_deleted");
+  assert.equal(event?.actorUserId, admin.userId);
+  assert.equal(event?.metadata?.ownerUserId, owner.userId);
+  assert.equal(event?.metadata?.ownerEmail, owner.email);
+  assert.equal(event?.metadata?.reason, "Asked to by legal.");
+});
+
+test("someone who is not an administrator cannot find another member's envelope to delete", async () => {
   const owner = await createUser("admin");
-  const other = await createUser("admin");
+  const other = await createUser("user");
   const envelope = await createEnvelope(owner.userId, { status: "completed" });
 
   await assert.rejects(deleteAs(other, envelope.envelopeId), rejectsWith(404));
   assert.equal(await envelopeExists(envelope.envelopeId), true);
+});
+
+test("an envelope that does not exist is not found", async () => {
+  const admin = await createUser("admin");
+
+  await assert.rejects(deleteAs(admin, randomUUID()), rejectsWith(404));
 });
 
 test("a Part 11 record needs a reason before it is deleted", async () => {
@@ -461,8 +489,8 @@ test("a deletion running while the administrator's handed-over envelopes move do
     ]);
     await demotion.query("commit");
 
-    // The envelope is no longer the deleting account's to delete.
-    await assert.rejects(deletion, rejectsWith(404));
+    // It moved while the deletion waited: told to look again.
+    await assert.rejects(deletion, rejectsWith(409));
   } finally {
     demotion.release();
   }

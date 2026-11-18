@@ -42,7 +42,7 @@ export async function GET(request: Request) {
 
   try {
     const database = getDb();
-    const [envelopes, templates] = await Promise.all([
+    const [envelopePage, templates] = await Promise.all([
       listEnvelopesForUser(
         session.user.id,
         { limit: COMMAND_DOCUMENT_LIMIT },
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       {
-        documents: envelopes.map((envelope) => {
+        documents: envelopePage.envelopes.map((envelope) => {
           // A template being made from scratch: its signers are role
           // stand-ins, and it opens where the template is finished.
           const isTemplateDraft =

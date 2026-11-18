@@ -1349,7 +1349,67 @@ test("a signer who declines is told the decline was recorded, not that the link 
     ).toBeVisible();
   });
 
-  await test.step("the administrator deletes the declined envelope for good", async () => {
+  await test.step("an administrator sees another member's envelope and deletes it for good", async () => {
+    // The envelope becomes a plain member's, as if they had sent it.
+    const memberId = `member-${runId}`;
+    const memberEmail = `member+${runId}@example.com`;
+    const db = new pg.Client({ connectionString: e2eDatabaseUrl });
+
+    await db.connect();
+
+    try {
+      await db.query(
+        `insert into public."user" (id, name, email, role, "emailVerified") values ($1, 'Mira Member', $2, 'user', true)`,
+        [memberId, memberEmail],
+      );
+      await db.query(`update envelopes set user_id = $1 where id = $2`, [
+        memberId,
+        envelopeId,
+      ]);
+    } finally {
+      await db.end();
+    }
+
+    const senderLabel = `Mira Member (${memberEmail})`;
+
+    // Gone from the administrator's own list, there in everyone's.
+    await page.goto("/dashboard");
+    await expect(
+      page.getByRole("heading", { name: "Terms to decline" }),
+    ).toHaveCount(0);
+    await page.getByRole("link", { name: "Everyone's" }).click();
+    await expect(page).toHaveURL(/\/dashboard\?view=all$/);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "All envelopes" }),
+    ).toBeVisible();
+
+    const card = page.getByRole("link").filter({ hasText: "Terms to decline" });
+
+    await expect(card).toContainText(senderLabel);
+
+    // Enter searches every envelope, the sender's address included.
+    const search = page.getByRole("searchbox", {
+      name: "Search by title or email...",
+    });
+
+    await search.fill(memberEmail);
+    await search.press("Enter");
+    await expect(page).toHaveURL(/\/dashboard\?view=all&q=/);
+    await expect(card).toBeVisible();
+    await card.click();
+    await expect(page).toHaveURL(new RegExp(`/envelopes/${envelopeId}$`));
+    await expect(page.getByText(`Sent by ${senderLabel}`)).toBeVisible();
+    // What changes the envelope stays with its sender.
+    await expect(
+      page.getByRole("button", { name: "Copy to new draft" }),
+    ).toHaveCount(0);
+
+    // A copy of someone else's certificate is on record.
+    const download = page.waitForEvent("download");
+
+    await page.getByRole("button", { name: "Download certificate" }).click();
+    expect((await download).suggestedFilename()).toMatch(/\.pdf$/);
+
     await page.getByRole("button", { name: "Delete envelope" }).click();
 
     const confirm = page.getByRole("dialog", {
@@ -1358,22 +1418,33 @@ test("a signer who declines is told the decline was recorded, not that the link 
 
     await confirm.getByLabel("Reason (optional)").fill("Never agreed.");
     await confirm.getByRole("button", { name: "Delete envelope" }).click();
-    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page).toHaveURL(/\/dashboard\?view=all$/);
 
     await page.goto(`/envelopes/${envelopeId}`);
     await expect(
       page.getByRole("heading", { name: "This envelope is unavailable" }),
     ).toBeVisible();
 
-    // The deletion itself stays on record in the install's audit trail.
+    // The download and the deletion stay on record in the install's audit
+    // trail, with whose envelope it was.
     const audit = await page.request.get("/api/admin/audit");
     const { events } = (await audit.json()) as {
       events: { event: string; metadata: Record<string, unknown> | null }[];
     };
-    const deletion = events.find((event) => event.event === "envelope_deleted");
 
-    expect(deletion?.metadata).toMatchObject({
+    expect(
+      events.find((event) => event.event === "envelope_file_downloaded")
+        ?.metadata,
+    ).toMatchObject({
       envelopeId,
+      file: "evidence",
+      ownerEmail: memberEmail,
+    });
+    expect(
+      events.find((event) => event.event === "envelope_deleted")?.metadata,
+    ).toMatchObject({
+      envelopeId,
+      ownerEmail: memberEmail,
       reason: "Never agreed.",
       status: "declined",
     });

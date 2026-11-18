@@ -6,6 +6,7 @@ import {
   EnvelopeDocumentAccessError,
   getDraftEnvelopeDocumentForUser,
 } from "@/lib/envelopes";
+import { resolveEnvelopeViewerAccess } from "@/lib/envelope-access";
 import { logRouteError } from "@/lib/security/logging";
 import { getClientIpAddress, getRequestPathname } from "@/lib/security/request";
 import { buildContentDisposition } from "@/lib/services/storage";
@@ -30,9 +31,17 @@ export async function GET(
   const { id } = await context.params;
 
   try {
-    const document = await getDraftEnvelopeDocumentForUser(session.user.id, id, {
-      database: getDb(),
-    });
+    // Its sender's, or any envelope for an administrator.
+    const access = await resolveEnvelopeViewerAccess(
+      session.user.id,
+      id,
+      getDb(),
+    );
+    const document = await getDraftEnvelopeDocumentForUser(
+      access?.ownerUserId ?? session.user.id,
+      id,
+      { database: getDb() },
+    );
     const responseBody = document.body.slice().buffer as ArrayBuffer;
 
     return new Response(responseBody, {

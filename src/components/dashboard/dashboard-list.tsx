@@ -133,6 +133,13 @@ function DocumentListRow({
             {title}
           </span>
           <span className="truncate text-[0.8125rem] leading-5 text-(--secondary)">
+            {row.source.senderLabel ? (
+              <>
+                <span className="sr-only">Sent by </span>
+                <span className="text-(--fg)/80">{row.source.senderLabel}</span>
+                <span aria-hidden="true"> · </span>
+              </>
+            ) : null}
             {plainStatusLine(row, now)}
           </span>
         </span>

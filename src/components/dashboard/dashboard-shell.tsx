@@ -39,6 +39,13 @@ import {
 import { DashboardNeedsYou } from "@/components/dashboard/dashboard-needs-you";
 import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import {
+  DocumentPager,
+  DocumentSearch,
+  WhoseEnvelopes,
+  type DashboardPagination,
+  type DashboardView,
+} from "@/components/dashboard/dashboard-scope";
+import {
   DashboardFirstRun,
   DashboardLoadError,
   DashboardNoResults,
@@ -56,6 +63,8 @@ export type DashboardShellState = "default" | "empty" | "error";
 
 type DashboardShellProps = {
   envelopes?: readonly DashboardEnvelopeListItem[];
+  /** The search the page was loaded with, run on the server. */
+  initialSearch?: string;
   initialState?: DashboardShellState;
   /** The newest thing that happened, for the header's quiet line. */
   latestActivity?: ActivityItem | null;
@@ -67,8 +76,12 @@ type DashboardShellProps = {
   now?: number;
   /** Counts beyond the list (this month, signatures in). */
   overview?: DocumentsOverview | null;
+  /** Links to the newer and older pages, when the list runs past one. */
+  pagination?: DashboardPagination;
   /** Drafts that are templates being made: they open the save step. */
   templateDraftIds?: readonly string[];
+  /** For an administrator: their own envelopes, or everyone's. */
+  view?: DashboardView;
 };
 
 /** Always offered, in this order; the rest only when something is in them. */
@@ -110,16 +123,20 @@ const EMPTY_FILTER_WORDS: Record<DocumentFilter, string | undefined> = {
  */
 export function DashboardShell({
   envelopes: providedEnvelopes,
+  initialSearch = "",
   initialState = "default",
   latestActivity = null,
   now: providedNow,
   overview = null,
+  pagination,
   templateDraftIds,
+  view,
 }: DashboardShellProps) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [retrying, startRetry] = useTransition();
   const [filter, setFilter] = useState<DocumentFilter>("all");
+  const [query, setQuery] = useState(initialSearch);
   const [direction, setDirection] = useState(1);
   const [selected, setSelected] = useState<ReadonlySet<string>>(
     () => new Set(),
@@ -146,7 +163,16 @@ export function DashboardShell({
   );
   const counts = useMemo(() => countRows(rows), [rows]);
   const attention = useMemo(() => needsYou(rows, now), [rows, now]);
-  const visible = useMemo(() => filterRows(rows, filter, ""), [rows, filter]);
+  const visible = useMemo(
+    () => filterRows(rows, filter, query),
+    [rows, filter, query],
+  );
+  const everyone = view === "all";
+  const title = everyone ? "All envelopes" : "Documents";
+  // The list itself was searched, or is a later page: "Clear" loads the
+  // start again rather than only emptying the box.
+  const narrowedOnServer = Boolean(initialSearch || pagination?.newerHref);
+  const startHref = everyone ? "/dashboard?view=all" : "/dashboard";
   const filters = useMemo(
     () => [
       ...CORE_FILTERS,
@@ -205,7 +231,7 @@ export function DashboardShell({
 
   const isEmpty =
     initialState === "empty" ||
-    (initialState === "default" && rows.length === 0);
+    (initialState === "default" && rows.length === 0 && !narrowedOnServer);
 
   function chooseFilter(next: DocumentFilter) {
     const from = filters.indexOf(filter);
@@ -216,14 +242,22 @@ export function DashboardShell({
   }
 
   function clearFilters() {
+    if (narrowedOnServer) {
+      router.push(startHref);
+      return;
+    }
+
     setDirection(-1);
     setFilter("all");
+    setQuery("");
   }
+
+  const whose = view ? <WhoseEnvelopes view={view} /> : undefined;
 
   if (initialState === "error") {
     return (
       <div className="section-stack">
-        <PageHeader title="Documents" />
+        <PageHeader actions={whose} actionsInline title={title} />
         <DashboardLoadError
           onRetry={() => startRetry(() => router.refresh())}
           retrying={retrying}
@@ -235,8 +269,8 @@ export function DashboardShell({
   if (isEmpty) {
     return (
       <div className="section-stack">
-        <PageHeader title="Documents" />
-        <DashboardFirstRun />
+        <PageHeader actions={whose} actionsInline title={title} />
+        {everyone ? <EveryoneEmpty /> : <DashboardFirstRun />}
       </div>
     );
   }
@@ -257,17 +291,21 @@ export function DashboardShell({
   return (
     <div className="section-stack">
       <PageHeader
+        actions={whose}
+        actionsInline
         description={
-          latestActivity ? (
+          everyone ? (
+            "Every envelope in your organization, whoever sent it."
+          ) : latestActivity ? (
             <LatestActivity item={latestActivity} />
           ) : (
             overviewSentence(counts)
           )
         }
-        title="Documents"
+        title={title}
       />
 
-      {overview ? (
+      {overview && !everyone ? (
         <DashboardOverview
           filter={filter}
           onFilter={(next) => chooseFilter(filter === next ? "all" : next)}
@@ -276,10 +314,10 @@ export function DashboardShell({
         />
       ) : null}
 
-      <DashboardNeedsYou items={attention} />
+      {everyone ? null : <DashboardNeedsYou items={attention} />}
 
       <section aria-label="All documents" className="flex flex-col gap-5">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Segmented
             aria-label="Show"
             className={cn(
@@ -295,53 +333,56 @@ export function DashboardShell({
             onValueChange={chooseFilter}
             value={filter}
           />
-          {selecting ? (
-            <div className="flex shrink-0 items-center gap-1">
-              <label className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-full py-2 pr-1 pl-3 text-sm font-medium text-(--secondary) transition-colors duration-(--dur-hover) hover:text-(--fg)">
-                <span className="max-sm:hidden">Select all</span>
-                <span className="sm:hidden">All</span>
-                <Checkbox
-                  aria-label="Select all shown"
-                  checked={
-                    allVisibleSelected
-                      ? true
-                      : someVisibleSelected
-                        ? "indeterminate"
-                        : false
-                  }
-                  onCheckedChange={() =>
-                    setSelected((current) => {
-                      const next = new Set(current);
+          <div className="flex w-full items-center gap-1 sm:ml-auto sm:w-auto">
+            <DocumentSearch onChange={setQuery} value={query} view={view} />
+            {selecting ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <label className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-full py-2 pr-1 pl-3 text-sm font-medium text-(--secondary) transition-colors duration-(--dur-hover) hover:text-(--fg)">
+                  <span className="max-sm:hidden">Select all</span>
+                  <span className="sm:hidden">All</span>
+                  <Checkbox
+                    aria-label="Select all shown"
+                    checked={
+                      allVisibleSelected
+                        ? true
+                        : someVisibleSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={() =>
+                      setSelected((current) => {
+                        const next = new Set(current);
 
-                      for (const id of visibleIds) {
-                        if (allVisibleSelected) {
-                          next.delete(id);
-                        } else {
-                          next.add(id);
+                        for (const id of visibleIds) {
+                          if (allVisibleSelected) {
+                            next.delete(id);
+                          } else {
+                            next.add(id);
+                          }
                         }
-                      }
 
-                      return next;
-                    })
-                  }
-                />
-              </label>
-              {selectMode || selected.size > 0 ? (
-                <Button onClick={clearSelection} size="sm" variant="ghost">
-                  Done
-                </Button>
-              ) : null}
-            </div>
-          ) : (
-            <Button
-              className="shrink-0"
-              onClick={() => setSelectMode(true)}
-              size="sm"
-              variant="ghost"
-            >
-              Select
-            </Button>
-          )}
+                        return next;
+                      })
+                    }
+                  />
+                </label>
+                {selectMode || selected.size > 0 ? (
+                  <Button onClick={clearSelection} size="sm" variant="ghost">
+                    Done
+                  </Button>
+                ) : null}
+              </div>
+            ) : (
+              <Button
+                className="shrink-0"
+                onClick={() => setSelectMode(true)}
+                size="sm"
+                variant="ghost"
+              >
+                Select
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="relative">
@@ -383,13 +424,15 @@ export function DashboardShell({
                   <DashboardNoResults
                     filterLabel={EMPTY_FILTER_WORDS[filter]}
                     onClear={clearFilters}
-                    query=""
+                    query={query}
                   />
                 </div>
               )}
             </motion.div>
           </AnimatePresence>
         </div>
+
+        <DocumentPager pagination={pagination} />
       </section>
 
       <BulkActionBar
@@ -408,6 +451,20 @@ export function DashboardShell({
         }}
         rows={selectMode && selectedRows.length === 0 ? [] : selectedRows}
       />
+    </div>
+  );
+}
+
+/** Nobody in the install has started an envelope yet. */
+function EveryoneEmpty() {
+  return (
+    <div className="flex flex-col items-center gap-1.5 rounded-(--radius-card) bg-(--paper) px-6 py-16 text-center shadow-(--shadow-card)">
+      <h2 className="text-[0.9375rem] font-medium text-(--fg)">
+        No envelopes yet
+      </h2>
+      <p className="text-sm text-(--secondary)">
+        Nobody in your organization has started an envelope.
+      </p>
     </div>
   );
 }

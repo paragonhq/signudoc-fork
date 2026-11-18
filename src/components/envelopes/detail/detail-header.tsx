@@ -93,6 +93,11 @@ export function DetailHeader({ model }: { model: DetailModel }) {
       <p className="text-[0.9375rem] leading-6 text-(--secondary)">
         {meta.join(" · ")}
       </p>
+      {model.ownerLabel ? (
+        <p className="text-[0.9375rem] leading-6 text-(--secondary)">
+          Sent by {model.ownerLabel}
+        </p>
+      ) : null}
     </header>
   );
 }
@@ -181,6 +186,47 @@ export function PrimaryAction({
   onOpenTray: (tray: TrayName) => void;
 }) {
   const { record } = model;
+
+  // Someone else's envelope, seen by an administrator: reading and
+  // downloading are theirs, changing it stays with its sender.
+  if (!model.isOwn) {
+    if (record.status === "completed") {
+      return (
+        <Button
+          className={className}
+          onClick={() => actions.download("signed")}
+        >
+          <DownloadIcon aria-hidden="true" />
+          Download signed PDF
+        </Button>
+      );
+    }
+
+    if (record.status === "declined" || record.status === "voided") {
+      return (
+        <Button
+          className={className}
+          onClick={() => actions.download("evidence")}
+        >
+          <FileClockIcon aria-hidden="true" />
+          Download certificate
+        </Button>
+      );
+    }
+
+    return (
+      <Button asChild className={className}>
+        <a
+          href={`/api/envelopes/${encodeURIComponent(model.envelopeId)}/document`}
+          rel="noopener"
+          target="_blank"
+        >
+          <ArrowUpRightIcon aria-hidden="true" />
+          Open the PDF
+        </a>
+      </Button>
+    );
+  }
 
   if (record.status === "draft") {
     return (
@@ -283,6 +329,11 @@ export function OverflowMenu({
   const copyIsPrimary = status === "declined" || status === "voided";
   const finished =
     status === "completed" || status === "declined" || status === "voided";
+  const own = model.isOwn;
+  // For someone else's declined or voided envelope the certificate is the
+  // main button already.
+  const certificateIsPrimary =
+    !own && (status === "declined" || status === "voided");
 
   return (
     <DropdownMenu>
@@ -309,7 +360,7 @@ export function OverflowMenu({
             Open the PDF
           </a>
         </DropdownMenuItem>
-        {finished ? (
+        {finished && !certificateIsPrimary ? (
           <DropdownMenuItem onSelect={() => actions.download("evidence")}>
             <FileClockIcon aria-hidden="true" />
             Download certificate
@@ -321,7 +372,7 @@ export function OverflowMenu({
             Export audit trail
           </DropdownMenuItem>
         ) : null}
-        {status === "sent" ? (
+        {own && status === "sent" ? (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => onOpenTray("deadline")}>
@@ -334,22 +385,24 @@ export function OverflowMenu({
             </DropdownMenuItem>
           </>
         ) : null}
-        {(status !== "draft" && !copyIsPrimary) || record.signers.length > 0 ? (
+        {own &&
+        ((status !== "draft" && !copyIsPrimary) ||
+          record.signers.length > 0) ? (
           <DropdownMenuSeparator />
         ) : null}
-        {status !== "draft" && !copyIsPrimary ? (
+        {own && status !== "draft" && !copyIsPrimary ? (
           <DropdownMenuItem onSelect={() => onOpenTray("copy")}>
             <CopyPlusIcon aria-hidden="true" />
             Copy to new draft
           </DropdownMenuItem>
         ) : null}
-        {record.signers.length > 0 ? (
+        {own && record.signers.length > 0 ? (
           <DropdownMenuItem onSelect={() => onOpenTray("template")}>
             <LayoutTemplateIcon aria-hidden="true" />
             Save as template
           </DropdownMenuItem>
         ) : null}
-        {status === "sent" ? (
+        {own && status === "sent" ? (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -361,7 +414,7 @@ export function OverflowMenu({
             </DropdownMenuItem>
           </>
         ) : null}
-        {status === "draft" ? (
+        {own && status === "draft" ? (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem

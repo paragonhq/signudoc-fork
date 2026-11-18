@@ -41,6 +41,12 @@ type EnvelopeDetailShellProps = {
   initialState?: "error" | "not-found";
   /** When the page was rendered (ms): one clock for server and browser. */
   now?: number;
+  /**
+   * Who sent it, when an administrator is looking at another member's
+   * envelope. They can read it, download its files and delete it once it
+   * is finished; the rest stays with its sender.
+   */
+  ownerLabel?: string;
   record?: EnvelopeDetailData;
 };
 
@@ -66,6 +72,7 @@ export function EnvelopeDetailShell({
   envelopeId,
   initialState,
   now,
+  ownerLabel,
   record,
 }: EnvelopeDetailShellProps) {
   if (initialState === "not-found") {
@@ -81,6 +88,7 @@ export function EnvelopeDetailShell({
       canDeleteFinished={canDeleteFinished}
       envelopeId={envelopeId}
       now={now}
+      ownerLabel={ownerLabel}
       record={record}
     />
   );
@@ -90,21 +98,26 @@ function EnvelopeDetail({
   canDeleteFinished,
   envelopeId,
   now: providedNow,
+  ownerLabel,
   record,
 }: {
   canDeleteFinished: boolean;
   envelopeId: string;
   now?: number;
+  ownerLabel?: string;
   record: EnvelopeDetailData;
 }) {
   const router = useRouter();
-  const actions = useEnvelopeActions(envelopeId);
+  const isOwn = ownerLabel === undefined;
+  // Back to the list it came from.
+  const listHref = isOwn ? "/dashboard" : "/dashboard?view=all";
+  const actions = useEnvelopeActions(envelopeId, isOwn ? undefined : listHref);
   // One clock for the whole render: the server's when given.
   const [firstNow] = useState(() => providedNow ?? Date.now());
   const now = providedNow ?? firstNow;
   const model = useMemo(
-    () => buildDetailModel(envelopeId, record, now),
-    [envelopeId, record, now],
+    () => buildDetailModel(envelopeId, record, now, ownerLabel),
+    [envelopeId, record, now, ownerLabel],
   );
   const [openTray, setOpenTray] = useState<TrayName>(null);
   const [correcting, setCorrecting] = useState<CorrectableSigner | null>(null);
@@ -125,7 +138,8 @@ function EnvelopeDetail({
   // screen, on a phone once its tray has been opened.
   const source = useEnvelopePdf(model, isLarge || hasOpenedDocument);
   const status = record.status;
-  const suggestTemplate = status === "completed" && record.signers.length > 0;
+  const suggestTemplate =
+    isOwn && status === "completed" && record.signers.length > 0;
   const showDeleteFinished =
     canDeleteFinished &&
     (status === "completed" || status === "declined" || status === "voided");
@@ -138,7 +152,10 @@ function EnvelopeDetail({
   return (
     <div className="section-stack">
       <div className="flex flex-col gap-4 sm:gap-5">
-        <BackLink />
+        <BackLink
+          href={listHref}
+          label={isOwn ? "Documents" : "All envelopes"}
+        />
         <DetailHeader model={model} />
       </div>
 

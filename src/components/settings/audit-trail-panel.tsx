@@ -54,6 +54,7 @@ const EVENT_LABELS: Record<SystemAuditEvent["event"], string> = {
   account_deleted: "Account deleted",
   email_domain_changed: "Email domain changed",
   envelope_deleted: "Finished envelope deleted",
+  envelope_file_downloaded: "Another member's file downloaded",
   identity_verification_revoked: "Identity confirmation taken back",
   identity_verified: "Identity confirmed",
   logo_changed: "Logo changed",
@@ -123,6 +124,12 @@ function categoryOf(event: SystemAuditEvent): Exclude<Category, "all"> {
   return CHANGE_EVENTS.has(event.event) ? "changes" : "security";
 }
 
+const DOWNLOADED_FILE_LABELS: Record<string, string> = {
+  audit_trail: "audit trail",
+  evidence: "certificate",
+  signed: "signed PDF",
+};
+
 function describeEvent(event: SystemAuditEvent): string {
   const metadata = event.metadata ?? {};
   const target =
@@ -137,6 +144,20 @@ function describeEvent(event: SystemAuditEvent): string {
         typeof metadata.status === "string" ? metadata.status : null,
         typeof metadata.reason === "string" && metadata.reason
           ? metadata.reason
+          : null,
+        typeof metadata.ownerEmail === "string"
+          ? `sent by ${metadata.ownerEmail}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(", ");
+    case "envelope_file_downloaded":
+      return [
+        typeof metadata.file === "string"
+          ? (DOWNLOADED_FILE_LABELS[metadata.file] ?? metadata.file)
+          : null,
+        typeof metadata.ownerEmail === "string"
+          ? `sent by ${metadata.ownerEmail}`
           : null,
       ]
         .filter(Boolean)

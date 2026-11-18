@@ -44,12 +44,16 @@ export function TimingCard({
       <div className={card}>
         <FactRow
           action={
-            <ChangeButton
-              label={model.isExpired ? "Set a new deadline" : "Change deadline"}
-              onClick={() => onOpenTray("deadline")}
-            >
-              {model.isExpired ? "Renew" : "Change"}
-            </ChangeButton>
+            model.isOwn ? (
+              <ChangeButton
+                label={
+                  model.isExpired ? "Set a new deadline" : "Change deadline"
+                }
+                onClick={() => onOpenTray("deadline")}
+              >
+                {model.isExpired ? "Renew" : "Change"}
+              </ChangeButton>
+            ) : undefined
           }
           icon={<CalendarClockIcon />}
           note={
@@ -66,12 +70,14 @@ export function TimingCard({
         <div className="mx-4 h-px bg-(--divider) sm:mx-5" />
         <FactRow
           action={
-            <ChangeButton
-              label="Change reminders"
-              onClick={() => onOpenTray("reminders")}
-            >
-              Change
-            </ChangeButton>
+            model.isOwn ? (
+              <ChangeButton
+                label="Change reminders"
+                onClick={() => onOpenTray("reminders")}
+              >
+                Change
+              </ChangeButton>
+            ) : undefined
           }
           icon={<BellRingIcon />}
           note={

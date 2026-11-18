@@ -21,6 +21,14 @@ import {
 
 /** Everything the page's sections read, derived once per render. */
 export type DetailModel = {
+  /**
+   * Who sent it, when an administrator is looking at another member's
+   * envelope. They can read and download it, and delete it once it is
+   * finished; everything that changes it stays with its sender.
+   */
+  ownerLabel: string | null;
+  /** The viewer sent it: every action is theirs. */
+  isOwn: boolean;
   currentSigner: EnvelopeDetailSignerView | null;
   /** The deadline as a timestamp, when its label can be read back. */
   deadlineAt: number | null;
@@ -53,6 +61,7 @@ export function buildDetailModel(
   envelopeId: string,
   record: EnvelopeDetailData,
   now: number,
+  ownerLabel?: string,
 ): DetailModel {
   const deadline = record.status === "sent" ? record.deadline : null;
   const isExpired = Boolean(deadline?.expired);
@@ -98,6 +107,8 @@ export function buildDetailModel(
   });
 
   return {
+    isOwn: ownerLabel === undefined,
+    ownerLabel: ownerLabel ?? null,
     currentSigner,
     deadlineAt: parseDeadlineLabel(deadline?.expiresAtLabel),
     deadlineText,

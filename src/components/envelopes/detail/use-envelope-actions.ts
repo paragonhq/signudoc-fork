@@ -36,7 +36,11 @@ function jsonInit(method: string, body: unknown): RequestInit {
  * endpoints as before. After a change the route is refreshed in place
  * (router.refresh) and a toast says what happened; no full page reloads.
  */
-export function useEnvelopeActions(envelopeId: string) {
+export function useEnvelopeActions(
+  envelopeId: string,
+  /** Where to go once it is deleted, when not the server's choice. */
+  afterDeleteHref?: string,
+) {
   const router = useRouter();
   const [isSendingReminder, setIsSendingReminder] = useState(false);
   const base = `/api/envelopes/${encodeURIComponent(envelopeId)}`;
@@ -267,9 +271,9 @@ export function useEnvelopeActions(envelopeId: string) {
       toast.success("Envelope deleted", {
         description: "The deletion is kept in the install's audit log.",
       });
-      router.push(payload?.redirectPath ?? "/dashboard");
+      router.push(afterDeleteHref ?? payload?.redirectPath ?? "/dashboard");
     },
-    [base, router],
+    [afterDeleteHref, base, router],
   );
 
   const voidEnvelope = useCallback(
